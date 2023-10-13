@@ -4,9 +4,9 @@
 [submodule "lib/solmate"]
 	path = lib/solmate
 	url = https://github.com/transmissions11/solmate
-[submodule "lib/euler-cvp"]
-	path = lib/euler-cvp
-	url = https://github.com/euler-xyz/euler-cvp
 [submodule "lib/erc4626-tests"]
 	path = lib/erc4626-tests
 	url = https://github.com/a16z/erc4626-tests
+[submodule "lib/euler-cvc"]
+	path = lib/euler-cvc
+	url = https://github.com/euler-xyz/euler-cvc

@@ -3,99 +3,83 @@
 pragma solidity ^0.8.0;
 
 import "euler-cvc/interfaces/ICreditVault.sol";
-import "euler-cvc/interfaces/ICreditVaultConnector.sol";
-import "./ReentrancyGuard.sol";
-import "./UnstructuredStorageBytes.sol";
+import "./CVCClient.sol";
 
-abstract contract CreditVaultBase is ReentrancyGuard, UnstructuredStorageBytes, ICreditVault {
-    error NotAuthorized();
-    error ControllerDisabled();
+abstract contract CreditVaultBase is ICreditVault, CVCClient {
+    uint internal constant REENTRANCY_GUARD__UNLOCKED = 1;
+    uint internal constant REENTRANCY_GUARD__LOCKED = 2;
 
-    ICVC public immutable cvc;
+    uint private reentrancyGuard;
+    bytes private snapshot;
 
-    uint constant internal REENTRANCY_GUARD_CHECKS_IN_PROGRESS = 3;
-    
-    constructor(ICVC _cvc) 
-    ReentrancyGuard("CreditVaultBase.reentrancyGuard") 
-    UnstructuredStorageBytes("CreditVaultBase.bytes") {
-        cvc = _cvc;
+    error Reentrancy();
+
+    constructor(ICVC _cvc) CVCClient(_cvc) {
+        reentrancyGuard = REENTRANCY_GUARD__UNLOCKED;
     }
 
-    modifier CVCOnly() {
-        if (msg.sender != address(cvc)) revert NotAuthorized();
+    modifier nonReentrant() {
+        if (reentrancyGuard != REENTRANCY_GUARD__UNLOCKED) {
+            revert Reentrancy();
+        }
+
+        reentrancyGuard = REENTRANCY_GUARD__LOCKED;
         _;
+        reentrancyGuard = REENTRANCY_GUARD__UNLOCKED;
     }
 
-    modifier checksInProgress() {
-        testReentrancyGuard(REENTRANCY_GUARD_BUSY, MustBeNonReentrant.selector);
+    modifier nonReentrantWithChecks(address account) {
+        if (reentrancyGuard != REENTRANCY_GUARD__UNLOCKED) {
+            revert Reentrancy();
+        }
 
-        setReentrancyGuard(REENTRANCY_GUARD_CHECKS_IN_PROGRESS);
+        reentrancyGuard = REENTRANCY_GUARD__LOCKED;
+        takeVaultSnapshot();
+
         _;
-        setReentrancyGuard(REENTRANCY_GUARD_BUSY);
+
+        reentrancyGuard = REENTRANCY_GUARD__UNLOCKED;
+        requireAccountAndVaultStatusCheck(account);
     }
 
-    function CVCAuthenticate(address msgSender, bool controllerEnabledCheck) internal view 
-    returns (address authMsgSender) {
-        if (msgSender == address(cvc)) {
-            (
-                ICVC.ExecutionContext memory context, 
-                bool controllerEnabled
-            ) = cvc.getExecutionContext(controllerEnabledCheck ? address(this) : address(0));
-
-            authMsgSender = context.onBehalfOfAccount;
-            
-            if (controllerEnabledCheck && !controllerEnabled) revert ControllerDisabled();
-        } else {
-            authMsgSender = msgSender;
-            if (controllerEnabledCheck && !cvc.isControllerEnabled(authMsgSender, address(this))) revert ControllerDisabled();
+    function takeVaultSnapshot() internal {
+        if (snapshot.length == 0) {
+            snapshot = doTakeVaultSnapshot();
         }
     }
 
-    function requireVaultStatusCheck() internal checksInProgress {
-        cvc.requireVaultStatusCheck();
+    function checkVaultStatus()
+        external
+        CVCOnly
+        returns (bool isValid, bytes memory data)
+    {
+        bytes memory oldSnapshot = snapshot;
+        delete snapshot;
+
+        (isValid, data) = doCheckVaultStatus(oldSnapshot);
     }
 
-    function requireAccountStatusCheck(address account) internal checksInProgress {
-        cvc.requireAccountStatusCheck(account);
-    }
-
-    function requireAccountsStatusCheck(address[] memory accounts) internal checksInProgress {
-        cvc.requireAccountsStatusCheck(accounts);
-    }
-
-    function vaultStatusSnapshot() internal {
-        testReentrancyGuard(REENTRANCY_GUARD_BUSY, MustBeNonReentrant.selector);
-        if (areBytesEmpty()) setBytes(doVaultStatusSnapshot());
-    }
-
-    function checkVaultStatus() external CVCOnly returns (bool isValid, bytes memory data) {
-        uint reentrancyGuard = getReentrancyGuard();
-
-        if (
-            reentrancyGuard != REENTRANCY_GUARD_INIT && 
-            reentrancyGuard != REENTRANCY_GUARD_CHECKS_IN_PROGRESS
-        ) revert Reentrancy();
-
-        (isValid, data) = doCheckVaultStatus(getBytes());
-    }
-
-    function checkAccountStatus(address account, address[] calldata collaterals) external view 
-    returns (bool isValid, bytes memory data) {
-        uint reentrancyGuard = getReentrancyGuard();
-
-        if (
-            reentrancyGuard != REENTRANCY_GUARD_INIT && 
-            reentrancyGuard != REENTRANCY_GUARD_CHECKS_IN_PROGRESS
-        ) revert Reentrancy();
-
+    function checkAccountStatus(
+        address account,
+        address[] calldata collaterals
+    ) external view returns (bool isValid, bytes memory data) {
         (isValid, data) = doCheckAccountStatus(account, collaterals);
     }
 
-    function doVaultStatusSnapshot() internal view virtual returns (bytes memory snapshot);
+    function doTakeVaultSnapshot()
+        internal
+        view
+        virtual
+        returns (bytes memory snapshot);
 
-    function doCheckVaultStatus(bytes memory snapshot) internal virtual returns (bool isValid, bytes memory data);
+    function doCheckVaultStatus(
+        bytes memory snapshot
+    ) internal virtual returns (bool isValid, bytes memory data);
 
-    function doCheckAccountStatus(address, address[] calldata) internal view virtual returns (bool isValid, bytes memory data);
+    function doCheckAccountStatus(
+        address,
+        address[] calldata
+    ) internal view virtual returns (bool isValid, bytes memory data);
 
     function disableController(address account) external virtual;
 }
