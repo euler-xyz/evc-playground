@@ -4,9 +4,9 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
 import "euler-cvc/CreditVaultConnector.sol";
-import "../src/CreditVaultRegularBorrowable.sol";
-import "./mocks/IRMMock.sol";
-import "./mocks/PriceOracleMock.sol";
+import "../../src/vaults/CreditVaultRegularBorrowable.sol";
+import "../mocks/IRMMock.sol";
+import "../mocks/PriceOracleMock.sol";
 
 contract CreditVaultRegularBorrowableTest is Test {
     ICVC cvc;

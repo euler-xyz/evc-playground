@@ -2,10 +2,9 @@
 pragma solidity ^0.8.0;
 
 import "erc4626-tests/ERC4626.test.sol";
-
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+import "solmate/test/utils/mocks/MockERC20.sol";
 import "euler-cvc/CreditVaultConnector.sol";
-import "../src/CreditVaultSimple.sol";
+import "../../src/vaults/CreditVaultSimple.sol";
 
 // source:
 // https://github.com/a16z/erc4626-tests

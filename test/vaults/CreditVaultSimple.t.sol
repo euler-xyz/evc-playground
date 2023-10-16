@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 pragma solidity ^0.8.0;
 
-import {DSTestPlus} from "solmate/test/utils/DSTestPlus.sol";
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
-import "euler-cvc/CreditVaultConnector.sol";
 import "forge-std/Test.sol";
-import "../src/CreditVaultSimple.sol";
+import "solmate/test/utils/DSTestPlus.sol";
+import "solmate/test/utils/mocks/MockERC20.sol";
+import "euler-cvc/CreditVaultConnector.sol";
+import "../../src/vaults/CreditVaultSimple.sol";
 
 contract CreditVaultSimpleTest is DSTestPlus {
     ICVC cvc;

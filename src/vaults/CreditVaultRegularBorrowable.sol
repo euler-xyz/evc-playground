@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.0;
 
-import "./interfaces/IIRM.sol";
-import "./interfaces/IPriceOracle.sol";
+import "../interfaces/IIRM.sol";
+import "../interfaces/IPriceOracle.sol";
 import "./CreditVaultSimpleBorrowable.sol";
 
 contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {

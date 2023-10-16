@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "euler-cvc/interfaces/ICreditVault.sol";
-import "./CVCClient.sol";
+import "../utils/CVCClient.sol";
 
 abstract contract CreditVaultBase is ICreditVault, CVCClient {
     uint internal constant REENTRANCY_GUARD__UNLOCKED = 1;
