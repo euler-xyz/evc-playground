@@ -8,6 +8,10 @@ import "solmate/utils/SafeTransferLib.sol";
 import "solmate/utils/FixedPointMathLib.sol";
 import "./CreditVaultBase.sol";
 
+/// @title CreditVaultSimple
+/// @dev It provides basic functionality for credit vaults.
+/// @notice In this contract, the CVC is authenticated before any action that may affect the state of the vault or an account.
+/// This is done to ensure that if it's CVC calling, the account is correctly authorized.
 contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -23,11 +27,16 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         string memory _symbol
     ) CreditVaultBase(_cvc) Owned(msg.sender) ERC4626(_asset, _name, _symbol) {}
 
+    /// @dev Sets the supply cap of the vault.
+    /// @param newSupplyCap The new supply cap.
     function setSupplyCap(uint newSupplyCap) external onlyOwner {
         supplyCap = newSupplyCap;
         emit SupplyCapSet(newSupplyCap);
     }
 
+    /// @notice Takes a snapshot of the vault.
+    /// @dev This function is called before any action that may affect the vault's state.
+    /// @return A snapshot of the vault's state.
     function doTakeVaultSnapshot()
         internal
         view
@@ -39,6 +48,10 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         return abi.encode(convertToAssets(totalSupply));
     }
 
+    /// @notice Checks the vault's status.
+    /// @dev This function is called after any action that may affect the vault's state.
+    /// @param oldSnapshot The snapshot of the vault's state before the action.
+    /// @return A boolean indicating whether the vault's state is valid, and a string with an error message if it's not.
     function doCheckVaultStatus(
         bytes memory oldSnapshot
     ) internal virtual override returns (bool, bytes memory) {
@@ -68,35 +81,54 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         return (true, "");
     }
 
+    /// @notice Checks the status of an account.
+    /// @dev This function is called after any action that may affect the account's state.
+    /// @param account The account to check.
+    /// @param collaterals The collaterals of the account.
+    /// @return A boolean indicating whether the account's state is valid, and a string with an error message if it's not.
     function doCheckAccountStatus(
-        address,
-        address[] calldata
+        address account,
+        address[] calldata collaterals
     ) internal view virtual override returns (bool, bytes memory) {
         return (true, "");
     }
 
+    /// @dev Disables a controller.
+    /// @param account The account of the controller.
     function disableController(
         address account
     ) external virtual override nonReentrant {
         disableSelfAsController(account);
     }
 
+    /// @dev Converts assets to shares.
+    /// @param assets The assets to convert.
+    /// @return The converted shares.
     function convertToShares(
         uint256 assets
     ) public view virtual override returns (uint256) {
         return _convertToShares(assets);
     }
 
+    /// @dev Converts shares to assets.
+    /// @param shares The shares to convert.
+    /// @return The converted assets.
     function convertToAssets(
         uint256 shares
     ) public view virtual override returns (uint256) {
         return _convertToAssets(shares);
     }
 
+    /// @dev Returns the total assets of the vault.
+    /// @return The total assets.
     function totalAssets() public view override returns (uint256) {
         return asset.balanceOf(address(this));
     }
 
+    /// @dev Approves a spender to spend a certain amount.
+    /// @param spender The spender to approve.
+    /// @param amount The amount to approve.
+    /// @return A boolean indicating whether the approval was successful.
     function approve(
         address spender,
         uint256 amount
@@ -110,6 +142,10 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         return true;
     }
 
+    /// @dev Transfers a certain amount of shares to a recipient.
+    /// @param to The recipient of the transfer.
+    /// @param amount The amount shares to transfer.
+    /// @return A boolean indicating whether the transfer was successful.
     function transfer(
         address to,
         uint256 amount
@@ -117,6 +153,11 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         return _transfer(CVCAuthenticate(), to, amount);
     }
 
+    /// @dev Transfers a certain amount of shares from a sender to a recipient.
+    /// @param from The sender of the transfer.
+    /// @param to The recipient of the transfer.
+    /// @param amount The amount of shares to transfer.
+    /// @return A boolean indicating whether the transfer was successful.
     function transferFrom(
         address from,
         address to,
@@ -125,6 +166,10 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         return _transferFrom(CVCAuthenticate(), from, to, amount);
     }
 
+    /// @dev Deposits a certain amount of assets for a receiver.
+    /// @param assets The assets to deposit.
+    /// @param receiver The receiver of the deposit.
+    /// @return shares The shares equivalent to the deposited assets.
     function deposit(
         uint256 assets,
         address receiver
@@ -132,6 +177,10 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         return _deposit(CVCAuthenticate(), assets, receiver);
     }
 
+    /// @dev Mints a certain amount of shares for a receiver.
+    /// @param shares The shares to mint.
+    /// @param receiver The receiver of the mint.
+    /// @return assets The assets equivalent to the minted shares.
     function mint(
         uint256 shares,
         address receiver
@@ -139,6 +188,11 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         return _mint(CVCAuthenticate(), shares, receiver);
     }
 
+    /// @dev Withdraws a certain amount of assets for a receiver.
+    /// @param assets The assets to withdraw.
+    /// @param receiver The receiver of the withdrawal.
+    /// @param owner The owner of the assets.
+    /// @return shares The shares equivalent to the withdrawn assets.
     function withdraw(
         uint256 assets,
         address receiver,
@@ -147,6 +201,11 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         return _withdraw(CVCAuthenticate(), assets, receiver, owner);
     }
 
+    /// @dev Redeems a certain amount of shares for a receiver.
+    /// @param shares The shares to redeem.
+    /// @param receiver The receiver of the redemption.
+    /// @param owner The owner of the shares.
+    /// @return assets The assets equivalent to the redeemed shares.
     function redeem(
         uint256 shares,
         address receiver,

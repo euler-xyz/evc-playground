@@ -6,6 +6,8 @@ import "../interfaces/IIRM.sol";
 import "../interfaces/IPriceOracle.sol";
 import "./CreditVaultSimpleBorrowable.sol";
 
+/// @title CreditVaultRegularBorrowable
+/// @notice This contract extends CreditVaultSimpleBorrowable with additional features like interest rate accrual and recognition of external collateral vaults.
 contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -50,18 +52,27 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         interestAccumulator = 1e27;
     }
 
+    /// @notice Sets the IRM of the vault.
+    /// @param _irm The new IRM.
     function setIRM(IIRM _irm) external onlyOwner {
         irm = _irm;
     }
 
+    /// @notice Sets the reference asset of the vault.
+    /// @param _referenceAsset The new reference asset.
     function setReferenceAsset(ERC20 _referenceAsset) external onlyOwner {
         referenceAsset = _referenceAsset;
     }
 
+    /// @notice Sets the price oracle of the vault.
+    /// @param _oracle The new price oracle.
     function setOracle(IPriceOracle _oracle) external onlyOwner {
         oracle = _oracle;
     }
 
+    /// @notice Sets the collateral factor of a vault.
+    /// @param vault The vault.
+    /// @param _collateralFactor The new collateral factor.
     function setCollateralFactor(
         ERC4626 vault,
         uint _collateralFactor
@@ -73,6 +84,10 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         collateralFactor[vault] = _collateralFactor;
     }
 
+    /// @notice Returns the debt of an account.
+    /// @dev This function is overriden to take into account the interest rate accrual.
+    /// @param account The account.
+    /// @return The debt of the account.
     function debtOf(
         address account
     ) public view virtual override returns (uint) {
@@ -92,6 +107,10 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
             userInterestAccumulator[account];
     }
 
+    /// @notice Checks the status of an account.
+    /// @param account The account.
+    /// @param collaterals The collaterals of the account.
+    /// @return A boolean indicating whether the account is healthy, and a string with an error message if it's not.
     function doCheckAccountStatus(
         address account,
         address[] calldata collaterals
@@ -111,6 +130,10 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         return (false, "account unhealthy");
     }
 
+    /// @notice Liquidates a violator account.
+    /// @param violator The violator account.
+    /// @param collateral The collateral of the violator.
+    /// @param repayAssets The assets to repay.
     function liquidate(
         address violator,
         address collateral,
@@ -233,6 +256,12 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         }
     }
 
+    /// @notice Calculates the liability and collateral of an account.
+    /// @param account The account.
+    /// @param collaterals The collaterals of the account.
+    /// @return liabilityAssets The liability assets.
+    /// @return liabilityValue The liability value.
+    /// @return collateralValue The risk-adjusted collateral value.
     function _calculateLiabilityAndCollateral(
         address account,
         address[] memory collaterals
@@ -269,6 +298,7 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         }
     }
 
+    /// @dev This function is overriden to take into account the interest rate accrual.
     function _convertToShares(
         uint256 assets
     ) internal view virtual override returns (uint256) {
@@ -287,6 +317,7 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         return assets.mulDivDown(supply, assetsAndBorrows);
     }
 
+    /// @dev This function is overriden to take into account the interest rate accrual.
     function _convertToAssets(
         uint256 shares
     ) internal view virtual override returns (uint256) {
@@ -305,6 +336,10 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         return shares.mulDivDown(assetsAndBorrows, supply);
     }
 
+    /// @notice Increases the owed amount of an account.
+    /// @dev This function is overriden to snaphot the interest accumulator for the account.
+    /// @param account The account.
+    /// @param assets The assets.
     function _increaseOwed(
         address account,
         uint assets
@@ -313,6 +348,10 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         userInterestAccumulator[account] = interestAccumulator;
     }
 
+    /// @notice Decreases the owed amount of an account.
+    /// @dev This function is overriden to snaphot the interest accumulator for the account.
+    /// @param account The account.
+    /// @param assets The assets.
     function _decreaseOwed(
         address account,
         uint assets
@@ -321,6 +360,7 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         userInterestAccumulator[account] = interestAccumulator;
     }
 
+    /// @notice Accrues interest.
     function _accrueInterest() internal virtual override {
         if (lastInterestUpdate == block.timestamp) return;
 
@@ -328,6 +368,8 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         lastInterestUpdate = block.timestamp;
     }
 
+    /// @notice Calculates the accrued interest.
+    /// @return The total borrowed amount and the interest accumulator.
     function _accrueInterestCalculate()
         internal
         view
@@ -349,6 +391,7 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         return (newTotalBorrowed, newInterestAccumulator);
     }
 
+    /// @notice Updates the interest rate.
     function _updateInterest() internal virtual override {
         uint borrowed = totalBorrowed;
         uint poolAssets = totalAssets() + borrowed;

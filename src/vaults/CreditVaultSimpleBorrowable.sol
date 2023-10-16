@@ -8,6 +8,10 @@ interface IFlashLoan {
     function onFlashLoan(bytes memory data) external;
 }
 
+/// @title CreditVaultSimpleBorrowable
+/// @notice This contract extends CreditVaultSimple to add borrowing functionality.
+/// @notice In this contract, the CVC is authenticated before any action that may affect the state of the vault or an account.
+/// This is done to ensure that if it's CVC calling, the account is correctly authorized and the vault is enabled as a controller if needed.
 contract CreditVaultSimpleBorrowable is CreditVaultSimple {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -33,15 +37,24 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         string memory _symbol
     ) CreditVaultSimple(_cvc, _asset, _name, _symbol) {}
 
+    /// @notice Sets the borrow cap.
+    /// @param newBorrowCap The new borrow cap.
     function setBorrowCap(uint newBorrowCap) external onlyOwner {
         borrowCap = newBorrowCap;
         emit BorrowCapSet(newBorrowCap);
     }
 
+    /// @notice Returns the debt of an account.
+    /// @param account The account to check.
+    /// @return The debt of the account.
     function debtOf(address account) public view virtual returns (uint) {
         return owed[account];
     }
 
+    /// @notice Returns the maximum amount that can be withdrawn by an owner.
+    /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
+    /// @param owner The owner of the assets.
+    /// @return The maximum amount that can be withdrawn.
     function maxWithdraw(
         address owner
     ) public view virtual override returns (uint256) {
@@ -51,12 +64,19 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
                 : convertToAssets(balanceOf[owner]);
     }
 
+    /// @notice Returns the maximum amount that can be redeemed by an owner.
+    /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
+    /// @param owner The owner of the assets.
+    /// @return The maximum amount that can be redeemed.
     function maxRedeem(
         address owner
     ) public view virtual override returns (uint256) {
         return balanceOf[owner] > totalSupply ? totalSupply : balanceOf[owner];
     }
 
+    /// @notice Takes a snapshot of the vault.
+    /// @dev This function is called before any action that may affect the vault's state.
+    /// @return A snapshot of the vault's state.
     function doTakeVaultSnapshot()
         internal
         view
@@ -68,10 +88,14 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         return abi.encode(convertToAssets(totalSupply), totalBorrowed);
     }
 
+    /// @notice Checks the vault's status.
+    /// @dev This function is called after any action that may affect the vault's state.
+    /// @param oldSnapshot The snapshot of the vault's state before the action.
+    /// @return A boolean indicating whether the vault's state is valid, and a string with an error message if it's not.
     function doCheckVaultStatus(
         bytes memory oldSnapshot
     ) internal virtual override returns (bool, bytes memory) {
-        // use the vault status hook to update the interest rate
+        // use the vault status hook to update the interest rate (it should happen only once per transaction)
         _updateInterest();
 
         // sanity check in case the snapshot hasn't been taken
@@ -113,6 +137,11 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         return (true, "");
     }
 
+    /// @notice Checks the status of an account.
+    /// @dev This function is called after any action that may affect the account's state.
+    /// @param account The account to check.
+    /// @param collaterals The collaterals of the account.
+    /// @return A boolean indicating whether the account's state is valid, and a string with an error message if it's not.
     function doCheckAccountStatus(
         address account,
         address[] calldata collaterals
@@ -137,12 +166,19 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         return (false, "account unhealthy");
     }
 
+    /// @notice Disables the controller for an account.
+    /// @dev The controller is only disabled if the account has no debt.
+    /// @param account The account to disable the controller for.
     function disableController(address account) external override nonReentrant {
         if (debtOf(account) == 0) {
             disableSelfAsController(account);
         }
     }
 
+    /// @notice Executes a flash loan.
+    /// @dev This function transfers the specified amount of assets to the caller, and expects them to be returned by the end of the transaction.
+    /// @param amount The amount of assets to loan.
+    /// @param data The data to pass to the flash loan function.
     function flashLoan(
         uint256 amount,
         bytes calldata data
@@ -158,14 +194,27 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         }
     }
 
+    /// @notice Borrows assets.
+    /// @dev This function transfers the specified amount of assets to the receiver.
+    /// @param assets The amount of assets to borrow.
+    /// @param receiver The receiver of the assets.
     function borrow(uint256 assets, address receiver) external {
         _borrow(CVCAuthenticateForBorrow(), assets, receiver);
     }
 
+    /// @notice Repays a debt.
+    /// @dev This function transfers the specified amount of assets from the caller to the vault.
+    /// @param assets The amount of assets to repay.
+    /// @param receiver The receiver of the repayment.
     function repay(uint256 assets, address receiver) external {
         _repay(CVCAuthenticate(), assets, receiver);
     }
 
+    /// @notice Winds up the vault.
+    /// @dev This function deposits assets into the vault and borrows the same amount.
+    /// @param assets The amount of assets to wind up.
+    /// @param collateralReceiver The receiver of the collateral.
+    /// @return shares The amount of shares minted.
     function wind(
         uint256 assets,
         address collateralReceiver
@@ -173,6 +222,11 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         return _wind(CVCAuthenticateForBorrow(), assets, collateralReceiver);
     }
 
+    /// @notice Unwinds the vault.
+    /// @dev This function repays a debt and withdraws the same amount of assets.
+    /// @param assets The amount of assets to unwind.
+    /// @param debtFrom The account to repay the debt from.
+    /// @return shares The amount of shares burned.
     function unwind(
         uint256 assets,
         address debtFrom
@@ -180,6 +234,11 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         return _unwind(CVCAuthenticateForBorrow(), assets, debtFrom);
     }
 
+    /// @notice Pulls debt from an account.
+    /// @dev This function decreases the debt of one account and increases the debt of another.
+    /// @param assets The amount of debt to pull.
+    /// @param from The account to pull the debt from.
+    /// @return A boolean indicating whether the operation was successful.
     function pullDebt(uint assets, address from) external returns (bool) {
         return _pullDebt(CVCAuthenticateForBorrow(), assets, from);
     }
@@ -284,6 +343,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         return true;
     }
 
+    /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
     function _convertToShares(
         uint256 assets
     ) internal view virtual override returns (uint256) {
@@ -295,6 +355,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
                 : assets.mulDivDown(supply, totalAssets() + totalBorrowed);
     }
 
+    /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
     function _convertToAssets(
         uint256 shares
     ) internal view virtual override returns (uint256) {
@@ -306,11 +367,17 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
                 : shares.mulDivDown(totalAssets() + totalBorrowed, supply);
     }
 
+    /// @notice Increases the owed amount of an account.
+    /// @param account The account.
+    /// @param assets The assets.
     function _increaseOwed(address account, uint assets) internal virtual {
         owed[account] = debtOf(account) + assets;
         totalBorrowed += assets;
     }
 
+    /// @notice Decreases the owed amount of an account.
+    /// @param account The account.
+    /// @param assets The assets.
     function _decreaseOwed(address account, uint assets) internal virtual {
         owed[account] = debtOf(account) - assets;
         totalBorrowed -= assets;
