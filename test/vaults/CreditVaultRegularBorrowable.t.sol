@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-only
+// SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
@@ -217,7 +217,7 @@ contract CreditVaultRegularBorrowableTest is Test {
 
         // liquidation fails multiple times as alice tries to liquidate too much
         vm.prank(alice);
-        vm.expectRevert(CVCClient.CollateralLiquidationFailed.selector);
+        vm.expectRevert(stdError.arithmeticError);
         liabilityVault.liquidate(bob, address(collateralVault1), 30e18);
 
         vm.prank(alice);

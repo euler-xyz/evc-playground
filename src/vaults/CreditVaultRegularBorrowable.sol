@@ -190,6 +190,7 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
                 100 -
                 (100 * collateralValue) /
                 liabilityValue;
+
             if (liquidationIncentive > MAX_LIQUIDATION_INCENTIVE) {
                 liquidationIncentive = MAX_LIQUIDATION_INCENTIVE;
             }
@@ -248,6 +249,7 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
                 );
 
             if (
+                liabilityValue != 0 &&
                 (100 * collateralValue) / liabilityValue >
                 MAX_HEALTH_FACTOR_AFTER_LIQUIDATION
             ) {

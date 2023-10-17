@@ -60,7 +60,7 @@ abstract contract CreditVaultBase is ICreditVault, CVCClient {
     /// @dev Can only be called by the CVC. Executed as a result of requiring vault status check on the CVC.
     function checkVaultStatus()
         external
-        CVCOnly
+        onlyCVC
         returns (bool isValid, bytes memory data)
     {
         bytes memory oldSnapshot = snapshot;

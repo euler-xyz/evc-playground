@@ -7,9 +7,9 @@
 [submodule "lib/erc4626-tests"]
 	path = lib/erc4626-tests
 	url = https://github.com/a16z/erc4626-tests
-[submodule "lib/euler-cvc"]
-	path = lib/euler-cvc
-	url = https://github.com/euler-xyz/euler-cvc
 [submodule "lib/openzeppelin-contracts"]
 	path = lib/openzeppelin-contracts
 	url = https://github.com/OpenZeppelin/openzeppelin-contracts
+[submodule "lib/euler-cvc"]
+	path = lib/euler-cvc
+	url = https://github.com/euler-xyz/euler-cvc

@@ -14,14 +14,13 @@ abstract contract CVCClient {
 
     error NotAuthorized();
     error ControllerDisabled();
-    error CollateralLiquidationFailed();
 
     constructor(ICVC _cvc) {
         cvc = _cvc;
     }
 
     /// @notice Modifier to ensure that the function is only called by the CVC.
-    modifier CVCOnly() {
+    modifier onlyCVC() {
         if (msg.sender != address(cvc)) revert NotAuthorized();
         _;
     }
@@ -166,14 +165,10 @@ abstract contract CVCClient {
         uint shares
     ) internal {
         // Impersonate the violator to transfer shares from the violator's vault to the liquidator.
-        (bool success, ) = cvc.impersonate(
+        cvc.impersonate(
             vault,
             violator,
             abi.encodeCall(ERC20.transfer, (liquidator, shares))
         );
-
-        if (!success) {
-            revert CollateralLiquidationFailed();
-        }
     }
 }

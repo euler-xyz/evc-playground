@@ -7,7 +7,8 @@ remappings = [
     "forge-std/=lib/forge-std/src/",
     "solmate/=lib/solmate/src/",
     "euler-cvc/=lib/euler-cvc/src/",
-    "erc4626-tests/=lib/erc4626-tests/"
+    "erc4626-tests/=lib/erc4626-tests/",
+    "openzeppelin/=lib/openzeppelin-contracts/contracts/"
 ]
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config
