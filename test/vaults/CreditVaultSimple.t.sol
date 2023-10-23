@@ -32,31 +32,6 @@ contract CreditVaultSimpleTest is DSTestPlus {
         assertEq(vault.decimals(), 18);
     }
 
-    function testCVCIntegration(address alice, address bob) public {
-        hevm.assume(uint160(alice) | 0xff != uint160(bob) | 0xff);
-
-        // check if possible to enable and disable controller right away
-        assertTrue(!cvc.isControllerEnabled(alice, address(vault)));
-
-        hevm.prank(alice);
-        cvc.enableController(alice, address(vault));
-        assertTrue(cvc.isControllerEnabled(alice, address(vault)));
-
-        // bob should be able to disable controller on behalf of alice
-        // if she doesn't have any outstanting debt
-        hevm.prank(bob);
-        vault.disableController(alice);
-        assertTrue(!cvc.isControllerEnabled(alice, address(vault)));
-
-        // the account status check must return true because alice doesn't have any debt
-        (bool isValid, ) = vault.checkAccountStatus(alice, new address[](0));
-        assertTrue(isValid);
-
-        // check vault status hook
-        hevm.prank(address(cvc));
-        vault.checkVaultStatus();
-    }
-
     function testMetadata(
         address cvcAddr,
         string calldata name,

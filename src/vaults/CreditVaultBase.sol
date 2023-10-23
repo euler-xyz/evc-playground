@@ -7,8 +7,10 @@ import "../utils/CVCClient.sol";
 
 /// @title CreditVaultBase
 /// @dev This contract is an abstract base contract for Credit Vaults.
-/// It provides utility functions for reentrancy protection, taking vault snapshots,
-/// checking vault and account status, and disabling controllers.
+/// It provides standard modifiers for reentrancy protection and account/vault 
+/// status checks scheduling. It declares functions that must be defined in the child 
+/// contract in order to correctly implement controller release, vault snapshotting and 
+/// account/vaults status checks.
 abstract contract CreditVaultBase is ICreditVault, CVCClient {
     uint internal constant REENTRANCY_GUARD__UNLOCKED = 1;
     uint internal constant REENTRANCY_GUARD__LOCKED = 2;

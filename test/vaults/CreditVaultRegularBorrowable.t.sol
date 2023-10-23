@@ -91,10 +91,20 @@ contract CreditVaultRegularBorrowableTest is Test {
     function test_RegularBorrowRepay(address alice, address bob) public {
         vm.assume(
             alice != address(0) &&
-                alice != address(cvc) &&
                 bob != address(0) &&
-                bob != address(cvc) &&
                 !cvc.haveCommonOwner(alice, bob)
+        );
+        vm.assume(
+            alice != address(cvc) &&
+                alice != address(liabilityVault) &&
+                alice != address(collateralVault1) &&
+                alice != address(collateralVault2)
+        );
+        vm.assume(
+            bob != address(cvc) &&
+                bob != address(liabilityVault) &&
+                bob != address(collateralVault1) &&
+                bob != address(collateralVault2)
         );
 
         mintAndApprove(alice, bob);
@@ -348,10 +358,20 @@ contract CreditVaultRegularBorrowableTest is Test {
     ) public {
         vm.assume(
             alice != address(0) &&
-                alice != address(cvc) &&
                 bob != address(0) &&
-                bob != address(cvc) &&
                 !cvc.haveCommonOwner(alice, bob)
+        );
+        vm.assume(
+            alice != address(cvc) &&
+                alice != address(liabilityVault) &&
+                alice != address(collateralVault1) &&
+                alice != address(collateralVault2)
+        );
+        vm.assume(
+            bob != address(cvc) &&
+                bob != address(liabilityVault) &&
+                bob != address(collateralVault1) &&
+                bob != address(collateralVault2)
         );
 
         mintAndApprove(alice, bob);
