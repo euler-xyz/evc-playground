@@ -147,7 +147,9 @@ contract CreditVaultRegularBorrowableTest is Test {
             abi.encodeWithSelector(
                 CreditVaultConnector.CVC_AccountStatusViolation.selector,
                 bob,
-                bytes("account unhealthy")
+                abi.encodeWithSelector(
+                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
+                )
             )
         );
         liabilityVault.borrow(35e18, bob);
@@ -161,7 +163,9 @@ contract CreditVaultRegularBorrowableTest is Test {
             abi.encodeWithSelector(
                 CreditVaultConnector.CVC_AccountStatusViolation.selector,
                 bob,
-                bytes("account unhealthy")
+                abi.encodeWithSelector(
+                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
+                )
             )
         );
         liabilityVault.borrow(35e18, bob);
@@ -175,7 +179,9 @@ contract CreditVaultRegularBorrowableTest is Test {
             abi.encodeWithSelector(
                 CreditVaultConnector.CVC_AccountStatusViolation.selector,
                 bob,
-                bytes("account unhealthy")
+                abi.encodeWithSelector(
+                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
+                )
             )
         );
         liabilityVault.borrow(35e18 + 0.01e18, bob);
@@ -455,7 +461,9 @@ contract CreditVaultRegularBorrowableTest is Test {
             abi.encodeWithSelector(
                 CreditVaultConnector.CVC_AccountStatusViolation.selector,
                 bob,
-                bytes("account unhealthy")
+                abi.encodeWithSelector(
+                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
+                )
             )
         );
         cvc.batch(items);

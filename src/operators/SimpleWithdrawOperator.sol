@@ -7,7 +7,7 @@ import "euler-cvc/interfaces/ICreditVaultConnector.sol";
 import "../vaults/CreditVaultSimpleBorrowable.sol";
 
 /// @title SimpleWithdrawOperator
-/// @notice This contract allows anyone, in exchange for a tip, to pull liquidity out 
+/// @notice This contract allows anyone, in exchange for a tip, to pull liquidity out
 /// of a heavily utilised vault on behalf of someone else. Thanks to this operator,
 /// a user can delegate the monitoring of their vault to someone else and go on with their life.
 contract SimpleWithdrawOperator {

@@ -6,7 +6,7 @@ import "solmate/test/utils/mocks/MockERC20.sol";
 import "euler-cvc/interfaces/ICreditVaultConnector.sol";
 import "../../src/vaults/CreditVaultSimple.sol";
 import "../../src/utils/TipsPiggyBank.sol";
-import "../../src/utils/CVCPermitSignerECDSA.sol";
+import "../utils/CVCPermitSignerECDSA.sol";
 
 contract GaslessTxTest is Test {
     ICVC cvc;
@@ -74,11 +74,11 @@ contract GaslessTxTest is Test {
             value: 0,
             data: abi.encodeWithSelector(
                 ICVC.permit.selector,
-                alice, 
-                0, 
-                1, 
-                type(uint).max, 
-                data, 
+                alice,
+                0,
+                1,
+                type(uint).max,
+                data,
                 signature
             )
         });

@@ -18,6 +18,9 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
 
     event SupplyCapSet(uint newSupplyCap);
 
+    error SnapshotNotTaken();
+    error SupplyCapExceeded();
+
     uint public supplyCap;
 
     constructor(
@@ -56,9 +59,7 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         bytes memory oldSnapshot
     ) internal virtual override returns (bool, bytes memory) {
         // sanity check in case the snapshot hasn't been taken
-        if (oldSnapshot.length == 0) {
-            return (false, "snapshot not taken");
-        }
+        if (oldSnapshot.length == 0) revert SnapshotNotTaken();
 
         // validate the vault state here:
         uint initialSupply = abi.decode(oldSnapshot, (uint));
@@ -70,30 +71,22 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
             finalSupply > supplyCap &&
             finalSupply > initialSupply
         ) {
-            return (false, "supply cap exceeded");
+            revert SupplyCapExceeded();
         }
 
-        // if 90% of the assets were withdrawn, revert the transaction
-        //if (finalSupply < initialSupply / 10) {
-        //    return (false, "withdrawal too large");
-        //}
+        // example: if 90% of the assets were withdrawn, revert the transaction
+        //require(finalSupply >= initialSupply / 10, "withdrawal too large");
 
         return (true, "");
     }
 
     /// @notice Checks the status of an account.
     /// @dev This function is called after any action that may affect the account's state.
-    /// @param account The account to check.
-    /// @param collaterals The collaterals of the account.
-    /// @return A boolean indicating whether the account's state is valid, and a string with an error message if it's not.
+    /// @return A boolean indicating that the account's state is always valid.
     function doCheckAccountStatus(
-        address account,
-        address[] calldata collaterals
+        address,
+        address[] calldata
     ) internal view virtual override returns (bool, bytes memory) {
-        // to supress the compiler warning
-        account;
-        collaterals;
-        // --
         return (true, "");
     }
 
@@ -102,7 +95,8 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     function disableController(
         address account
     ) external virtual override nonReentrant {
-        disableSelfAsController(account);
+        // ensure that the account does not have any liabilities before disabling controller
+        releaseAccountFromControl(account);
     }
 
     /// @dev Converts assets to shares.
@@ -279,8 +273,6 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         _mint(receiver, shares);
 
         emit Deposit(msgSender, receiver, assets, shares);
-
-        afterDeposit(assets, shares);
     }
 
     function _mint(
@@ -301,8 +293,6 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         _mint(receiver, shares);
 
         emit Deposit(msgSender, receiver, assets, shares);
-
-        afterDeposit(assets, shares);
     }
 
     function _withdraw(
@@ -319,8 +309,6 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
             if (allowed != type(uint256).max)
                 allowance[owner][msgSender] = allowed - shares;
         }
-
-        beforeWithdraw(assets, shares);
 
         _burn(owner, shares);
 
@@ -345,8 +333,6 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         // Check for rounding error since we round down in previewRedeem.
         require((assets = previewRedeem(shares)) != 0, "ZERO_ASSETS");
 
-        beforeWithdraw(assets, shares);
-
         _burn(owner, shares);
 
         emit Withdraw(msgSender, receiver, owner, assets, shares);
@@ -369,8 +355,4 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
 
         return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
     }
-
-    function beforeWithdraw(uint256, uint256) internal virtual override {}
-
-    function afterDeposit(uint256, uint256) internal virtual override {}
 }

@@ -21,8 +21,8 @@ import "euler-cvc/interfaces/ICreditVaultConnector.sol";
 /// Important: the submitter/executor must set the value of the tipReceiver variable to the address
 /// where they want to receive the tip. For safety, it should happen atomicaly during
 /// the CVC batch call, before the actual sumission/execution of the order.
-/// NOTE: Because the operator contract can be made to invoke any arbitrary target contract with 
-/// any arbitrary calldata, it should never be given any privileges, or hold any ETH or tokens. 
+/// NOTE: Because the operator contract can be made to invoke any arbitrary target contract with
+/// any arbitrary calldata, it should never be given any privileges, or hold any ETH or tokens.
 /// Also, one should never approve this contract to spend their ERC20 tokens.
 contract LightweightOrderOperator {
     enum OrderState {
@@ -147,7 +147,7 @@ contract LightweightOrderOperator {
             order.CVCOperations[0].onBehalfOfAccount
         );
 
-        // NOTE: it would be safer to prevent an operator calling through the CVC. otherwise, an operator 
+        // NOTE: it would be safer to prevent an operator calling through the CVC. otherwise, an operator
         // authorized for an owner can cancel any order, also for a sub-account of the owner for which it
         // might not be authorized
 
@@ -201,7 +201,7 @@ contract LightweightOrderOperator {
         }
 
         // NOTE: it would be better to prevent an operator calling through the CVC. even without it, the code is still safe
-        // as the CVC will take care of the authentication of this operator when the order is executed. however, without 
+        // as the CVC will take care of the authentication of this operator when the order is executed. however, without
         // that prevention, an operator that is authorized for an owner can create an order for any sub-account of the
         // owner for which it might not be authorized. whether it's valid will will only be checked at the execution time
 
@@ -220,7 +220,7 @@ contract LightweightOrderOperator {
         }
 
         // verify that the CVC operations contain only operations for the accounts belonging to the same user.
-        // it's critical because if a user has authorized this operator for themselves, anyone else 
+        // it's critical because if a user has authorized this operator for themselves, anyone else
         // could create a batch for their accounts and execute it
         for (uint i; i < length; ++i) {
             if (

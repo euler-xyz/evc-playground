@@ -12,6 +12,6 @@ contract TipsPiggyBank {
     /// @param token The ERC20 token to be withdrawn.
     /// @param receiver The address to receive the withdrawn tokens.
     function withdraw(ERC20 token, address receiver) external {
-        token.transfer(receiver, token.balanceOf(address(this)));
+        token.safeTransfer(receiver, token.balanceOf(address(this)));
     }
 }

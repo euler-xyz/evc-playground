@@ -109,9 +109,10 @@ abstract contract CVCClient {
         return cvc.isControllerEnabled(account, vault);
     }
 
-    /// @notice Disables the calling contract as a controller for an account.
+    /// @notice Releases the account from the control of the calling contract.
+    /// @dev Ensure that the account does not have any liabilities before doing this.
     /// @param account The address of the account.
-    function disableSelfAsController(address account) internal {
+    function releaseAccountFromControl(address account) internal {
         cvc.disableController(account);
     }
 

@@ -6,7 +6,7 @@ import "solmate/test/utils/mocks/MockERC20.sol";
 import "euler-cvc/interfaces/ICreditVaultConnector.sol";
 import "../../src/vaults/CreditVaultSimple.sol";
 import "../../src/utils/SimpleConditionsEnforcer.sol";
-import "../../src/utils/CVCPermitSignerECDSA.sol";
+import "../utils/CVCPermitSignerECDSA.sol";
 
 contract ConditionalGaslessTxTest is Test {
     ICVC cvc;
@@ -37,7 +37,8 @@ contract ConditionalGaslessTxTest is Test {
         vault.deposit(100e18, alicesSubAccount);
 
         // alice signs the calldata that allows anyone to withdraw her sub-account deposit
-        // after specified timestamp in the future.
+        // after specified timestamp in the future. The same concept can be used for implementing
+        // conditional orders (e.g. stop-loss, take-profit etc.).
         // the signed calldata can be executed by anyone using the permit() function on the CVC
         ICVC.BatchItem[] memory items = new ICVC.BatchItem[](2);
         items[0] = ICVC.BatchItem({

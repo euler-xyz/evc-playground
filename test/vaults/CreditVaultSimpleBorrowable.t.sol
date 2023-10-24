@@ -58,7 +58,9 @@ contract CreditVaultSimpleBorrowableTest is Test {
             abi.encodeWithSelector(
                 CreditVaultConnector.CVC_AccountStatusViolation.selector,
                 alice,
-                bytes("account unhealthy")
+                abi.encodeWithSelector(
+                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
+                )
             )
         );
         vault.borrow((amount * 9) / 10, alice);
@@ -72,7 +74,9 @@ contract CreditVaultSimpleBorrowableTest is Test {
             abi.encodeWithSelector(
                 CreditVaultConnector.CVC_AccountStatusViolation.selector,
                 alice,
-                bytes("account unhealthy")
+                abi.encodeWithSelector(
+                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
+                )
             )
         );
         vault.borrow((amount * 9) / 10 + 1, alice);
@@ -162,7 +166,9 @@ contract CreditVaultSimpleBorrowableTest is Test {
             abi.encodeWithSelector(
                 CreditVaultConnector.CVC_AccountStatusViolation.selector,
                 alice,
-                bytes("account unhealthy")
+                abi.encodeWithSelector(
+                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
+                )
             )
         );
         cvc.batch(items);

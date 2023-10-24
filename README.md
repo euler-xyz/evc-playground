@@ -10,7 +10,7 @@ For more information about the CVC refer to the [CVC WHITEPAPER](https://github.
 
 ## CVC Playground
 
-This repository serves as a sandbox for exploring the CVC. It includes various example vaults, operators, and patterns that can be utilized as a foundation for creating your own smart contracts that interact with the CVC. Given the complexity of the CVC, the CVC Playground repository was established to foster the development of standard patterns and best practices for building products on top of the CVC. Please note that none of the contracts in this repository have been audited and are intended solely for testing and experimentation. They should not be used in production under any circumstances.
+This repository serves as a sandbox for exploring the CVC. It includes various example vaults, operators, and patterns that can be utilized as a foundation for creating your own smart contracts that interact with the CVC. Given the complexity of the CVC, the CVC Playground repository was established to illustrate basic concepts related to the CVC, to foster the development of standard patterns and best practices for building products on top of the CVC. Please note that none of the contracts in this repository have been audited and are intended solely for testing and experimentation. They should not be used in production under any circumstances.
 
 ---
 
@@ -26,7 +26,6 @@ This repository serves as a sandbox for exploring the CVC. It includes various e
 │   └── SimpleWithdrawOperator.sol
 ├── utils
 |   ├── CVCClient.sol
-|   ├── CVCPermitSignerECDSA.sol
 |   ├── SimpleConditionsEnforcer.sol
 │   └── TipsPiggyBank.sol
 └── vaults
@@ -70,7 +69,7 @@ If you'd like to learn how CVC can be used to enable gasless transactions, you s
 
 The `GaslessTx` shows how one can use CVC's `permit` functionality in order to sign a permit message that contains calldata that can be executed by anyone on behalf of the signer. It also shows how a relayer of such a transaction can be incentivized by the signer.
 
-The `ConditionalGaslessTx` shows how one can use CVC's `permit` functionality in order to sign a permit message that contains *conditional* calldata that can be executed by anyone on behalf of the signer, but only when encoded conditions are met.
+The `ConditionalGaslessTx` shows how one can use CVC's `permit` functionality in order to sign a permit message that contains *conditional* calldata that can be executed by anyone on behalf of the signer, but only when encoded conditions are met. This concept can be used for implementing conditional orders (e.g. stop-loss, take-profit etc.).
 
 ### Operators
 

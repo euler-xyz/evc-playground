@@ -9,7 +9,6 @@ import "./CreditVaultSimpleBorrowable.sol";
 /// @title CreditVaultRegularBorrowable
 /// @notice This contract extends CreditVaultSimpleBorrowable with additional features like interest rate accrual and recognition of external collateral vaults.
 contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
-    using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
     uint internal constant COLLATERAL_FACTOR_SCALE = 100;
@@ -115,19 +114,19 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         address account,
         address[] calldata collaterals
     ) internal view virtual override returns (bool, bytes memory) {
-        if (debtOf(account) == 0) return (true, "");
+        if (debtOf(account) > 0) {
+            (
+                ,
+                uint liabilityValue,
+                uint collateralValue
+            ) = _calculateLiabilityAndCollateral(account, collaterals);
 
-        (
-            ,
-            uint liabilityValue,
-            uint collateralValue
-        ) = _calculateLiabilityAndCollateral(account, collaterals);
-
-        if (collateralValue >= liabilityValue) {
-            return (true, "");
+            if (liabilityValue > collateralValue) {
+                revert AccountUnhealthy();
+            }
         }
 
-        return (false, "account unhealthy");
+        return (true, "");
     }
 
     /// @notice Liquidates a violator account.
@@ -167,6 +166,13 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
             revert ControllerDisabled();
         }
 
+        // do not allow to seize the assets for collateral without a collateral factor.
+        // note that a user can enable any address as collateral, even if it's not recognized
+        // as such (cf == 0)
+        if (collateralFactor[ERC4626(collateral)] == 0) {
+            revert CollateralDisabled();
+        }
+
         uint liquidationIncentive;
         {
             (
@@ -186,6 +192,7 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
                 revert NoLiquidationOpportunity();
             }
 
+            // calculate dynamic liquidation incentive
             liquidationIncentive =
                 100 -
                 (100 * collateralValue) /
@@ -199,6 +206,7 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         address collateralAsset = address(ERC4626(collateral).asset());
         uint one = 10 ** ERC20(collateralAsset).decimals();
 
+        // the liquidator will be transferred the collateral value of the repaid debt + the liquidation incentive
         uint seizeValue = (IPriceOracle(oracle).getQuote(
             repayAssets,
             address(asset),
@@ -221,6 +229,8 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         emit Borrow(msgSender, msgSender, repayAssets);
 
         if (collateral == address(this)) {
+            // if the liquidator tries to seize the assets from this vault,
+            // we need to be sure that the violator has enabled this vault as collateral
             if (!isCollateralEnabled(violator, collateral)) {
                 revert CollateralDisabled();
             }
@@ -230,12 +240,30 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
 
             emit Transfer(violator, msgSender, seizeShares);
         } else {
+            // if external assets are being seized, the CVC will take care of safety
+            // checks during the violator impersonation
             liquidateCollateralShares(
                 collateral,
                 violator,
                 msgSender,
                 seizeShares
             );
+
+            // there's a possiblity that the liquidation does not bring the violator back to
+            // a healthy state. hence, the account status check that is scheduled during the
+            // impersonation may fail reverting the liquidation. hence, as a controller, we
+            // can forgive the account status check for the violator allowing it end up in
+            // an unhealthy state after the liquidation.
+            // IMPORTANT: the account status check forgiveness must be done with care!
+            // a malicious collateral could do some funky stuff during the impersonation
+            // leading to withdrawal of more collateral than specified, or withdrawal of other
+            // collaterals, leaving us with bad debt. to prevent that, we ensure that only
+            // collaterals with cf > 0 can be seized which means that only vetted collaterals
+            // are seizable and cannot do any harm during the impersonation.
+            // the other option would be to snapshot the balances of all the collaterals
+            // before the impersonation and compare them with expected balances after the
+            // impersonation. however, this is out of scope for this playground.
+            forgiveAccountStatusCheck(violator);
         }
 
         {
@@ -248,6 +276,7 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
                     getCollaterals(violator)
                 );
 
+            // verify whether we haven't sent too much collateral to the liquidator
             if (
                 liabilityValue != 0 &&
                 (100 * collateralValue) / liabilityValue >

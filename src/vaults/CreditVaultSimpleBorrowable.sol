@@ -25,6 +25,8 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
     );
 
     error FlashloanNotRepaid();
+    error BorrowCapExceeded();
+    error AccountUnhealthy();
 
     uint public borrowCap;
     uint public totalBorrowed;
@@ -99,9 +101,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         _updateInterest();
 
         // sanity check in case the snapshot hasn't been taken
-        if (oldSnapshot.length == 0) {
-            return (false, "snapshot not taken");
-        }
+        if (oldSnapshot.length == 0) revert SnapshotNotTaken();
 
         // validate the vault state here:
         (uint initialSupply, uint initialBorrowed) = abi.decode(
@@ -117,7 +117,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
             finalSupply > supplyCap &&
             finalSupply > initialSupply
         ) {
-            return (false, "supply cap exceeded");
+            revert SupplyCapExceeded();
         }
 
         // or borrow cap can be implemented like this:
@@ -126,13 +126,11 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
             finalBorrowed > borrowCap &&
             finalBorrowed > initialBorrowed
         ) {
-            return (false, "borrow cap exceeded");
+            revert BorrowCapExceeded();
         }
 
-        // if 90% of the assets were withdrawn, revert the transaction
-        //if (finalSupply < initialSupply / 10) {
-        //    return (false, "withdrawal too large");
-        //}
+        // example: if 90% of the assets were withdrawn, revert the transaction
+        //require(finalSupply >= initialSupply / 10, "withdrawal too large");
 
         return (true, "");
     }
@@ -163,15 +161,16 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
             }
         }
 
-        return (false, "account unhealthy");
+        revert AccountUnhealthy();
     }
 
     /// @notice Disables the controller for an account.
     /// @dev The controller is only disabled if the account has no debt.
     /// @param account The account to disable the controller for.
     function disableController(address account) external override nonReentrant {
+        // ensure that the account does not have any liabilities before disabling controller
         if (debtOf(account) == 0) {
-            disableSelfAsController(account);
+            releaseAccountFromControl(account);
         }
     }
 
@@ -236,11 +235,11 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
 
     /// @notice Pulls debt from an account.
     /// @dev This function decreases the debt of one account and increases the debt of another.
-    /// @param assets The amount of debt to pull.
     /// @param from The account to pull the debt from.
+    /// @param assets The amount of debt to pull.
     /// @return A boolean indicating whether the operation was successful.
-    function pullDebt(uint assets, address from) external returns (bool) {
-        return _pullDebt(CVCAuthenticateForBorrow(), assets, from);
+    function pullDebt(address from, uint assets) external returns (bool) {
+        return _pullDebt(CVCAuthenticateForBorrow(), from, assets);
     }
 
     function _borrow(
@@ -279,7 +278,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         emit Repay(msgSender, receiver, assets);
 
         if (debtOf(receiver) == 0) {
-            disableSelfAsController(receiver);
+            releaseAccountFromControl(receiver);
         }
     }
 
@@ -317,14 +316,14 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         emit Withdraw(msgSender, msgSender, msgSender, assets, shares);
 
         if (debtOf(debtFrom) == 0) {
-            disableSelfAsController(debtFrom);
+            releaseAccountFromControl(debtFrom);
         }
     }
 
     function _pullDebt(
         address msgSender,
-        uint assets,
-        address from
+        address from,
+        uint assets
     ) internal virtual nonReentrantWithChecks(msgSender) returns (bool) {
         _accrueInterest();
 
@@ -337,7 +336,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         emit Borrow(msgSender, msgSender, assets);
 
         if (debtOf(from) == 0) {
-            disableSelfAsController(from);
+            releaseAccountFromControl(from);
         }
 
         return true;

@@ -7,7 +7,7 @@ import "euler-cvc/CreditVaultConnector.sol";
 import "../../src/vaults/CreditVaultSimple.sol";
 import "../../src/operators/LightweightOrderOperator.sol";
 import "../../src/utils/SimpleConditionsEnforcer.sol";
-import "../../src/utils/CVCPermitSignerECDSA.sol";
+import "../utils/CVCPermitSignerECDSA.sol";
 
 contract LightweightOrderOperatorTest is Test {
     ICVC cvc;
