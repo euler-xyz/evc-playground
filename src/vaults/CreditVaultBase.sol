@@ -59,16 +59,14 @@ abstract contract CreditVaultBase is ICreditVault, CVCClient {
     }
 
     /// @notice Checks the vault status
-    /// @dev Can only be called by the CVC. Executed as a result of requiring vault status check on the CVC.
+    /// @dev Executed as a result of requiring vault status check on the CVC.
     function checkVaultStatus()
         external
-        onlyCVC
         returns (bool isValid, bytes memory data)
     {
-        bytes memory oldSnapshot = snapshot;
-        delete snapshot;
+        (isValid, data) = doCheckVaultStatus(snapshot);
 
-        (isValid, data) = doCheckVaultStatus(oldSnapshot);
+        if (isValid) delete snapshot;
     }
 
     /// @notice Checks the account status

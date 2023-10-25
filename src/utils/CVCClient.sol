@@ -19,12 +19,6 @@ abstract contract CVCClient {
         cvc = _cvc;
     }
 
-    /// @notice Modifier to ensure that the function is only called by the CVC.
-    modifier onlyCVC() {
-        if (msg.sender != address(cvc)) revert NotAuthorized();
-        _;
-    }
-
     /// @notice Authenticates the caller in the context of the CVC.
     /// @return The address of the account on behalf of which the operation is being executed.
     function CVCAuthenticate() internal view returns (address) {
