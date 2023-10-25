@@ -58,6 +58,7 @@ Areas of experimentation for vaults:
 1. NFT lending
 1. uncollateralized lending
 1. P2P lending
+1. deposit-only vaults that can be used a collaterals for other vaults
 1. risk management
 1. collateral types
 1. oracles

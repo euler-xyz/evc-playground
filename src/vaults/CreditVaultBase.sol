@@ -61,7 +61,7 @@ abstract contract CreditVaultBase is ICreditVault, CVCClient {
     /// @notice Checks the vault status
     /// @dev Executed as a result of requiring vault status check on the CVC.
     function checkVaultStatus()
-        external
+        external nonReentrant
         returns (bool isValid, bytes memory data)
     {
         (isValid, data) = doCheckVaultStatus(snapshot);
@@ -74,7 +74,7 @@ abstract contract CreditVaultBase is ICreditVault, CVCClient {
     function checkAccountStatus(
         address account,
         address[] calldata collaterals
-    ) external view returns (bool isValid, bytes memory data) {
+    ) external nonReentrant returns (bool isValid, bytes memory data) {
         (isValid, data) = doCheckAccountStatus(account, collaterals);
     }
 

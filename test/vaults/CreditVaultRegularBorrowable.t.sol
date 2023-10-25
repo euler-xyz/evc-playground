@@ -232,19 +232,57 @@ contract CreditVaultRegularBorrowableTest is Test {
         cvc.enableCollateral(alice, address(collateralVault2));
 
         // liquidation fails multiple times as alice tries to liquidate too much
+        ICVC.BatchItem[] memory items = new ICVC.BatchItem[](1);
+        items[0] = ICVC.BatchItem({
+            targetContract: address(liabilityVault),
+            onBehalfOfAccount: alice,
+            value: 0,
+            data: abi.encodeWithSelector(
+                CreditVaultRegularBorrowable.liquidate.selector,
+                bob,
+                address(collateralVault1),
+                30e18
+            )
+        });
+
         vm.prank(alice);
         vm.expectRevert(stdError.arithmeticError);
-        liabilityVault.liquidate(bob, address(collateralVault1), 30e18);
+        cvc.batch(items);
+
+        items[0] = ICVC.BatchItem({
+            targetContract: address(liabilityVault),
+            onBehalfOfAccount: alice,
+            value: 0,
+            data: abi.encodeWithSelector(
+                CreditVaultRegularBorrowable.liquidate.selector,
+                bob,
+                address(collateralVault2),
+                30e18
+            )
+        });
 
         vm.prank(alice);
         vm.expectRevert(
             CreditVaultRegularBorrowable.RepayAssetsExceeded.selector
         );
-        liabilityVault.liquidate(bob, address(collateralVault2), 30e18);
+        cvc.batch(items);
 
         // finally liquidation is successful
+        items[0] = ICVC.BatchItem({
+            targetContract: address(liabilityVault),
+            onBehalfOfAccount: alice,
+            value: 0,
+            data: abi.encodeWithSelector(
+                CreditVaultRegularBorrowable.liquidate.selector,
+                bob,
+                address(collateralVault2),
+                6e18 // liquidation incentive at a time is 3%
+            )
+        });
+
         vm.prank(alice);
-        liabilityVault.liquidate(bob, address(collateralVault2), 6e18); // liquidation incentive at a time is 3%
+        cvc.batch(items);
+
         assertEq(
             liabilityAsset.balanceOf(bob),
             35e18 - 2.680982126514837395e18
