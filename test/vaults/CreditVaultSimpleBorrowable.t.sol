@@ -56,11 +56,7 @@ contract CreditVaultSimpleBorrowableTest is Test {
         vm.prank(alice);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CreditVaultConnector.CVC_AccountStatusViolation.selector,
-                alice,
-                abi.encodeWithSelector(
-                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
-                )
+                CreditVaultSimpleBorrowable.AccountUnhealthy.selector
             )
         );
         vault.borrow((amount * 9) / 10, alice);
@@ -72,11 +68,7 @@ contract CreditVaultSimpleBorrowableTest is Test {
         vm.prank(alice);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CreditVaultConnector.CVC_AccountStatusViolation.selector,
-                alice,
-                abi.encodeWithSelector(
-                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
-                )
+                CreditVaultSimpleBorrowable.AccountUnhealthy.selector
             )
         );
         vault.borrow((amount * 9) / 10 + 1, alice);
@@ -164,11 +156,7 @@ contract CreditVaultSimpleBorrowableTest is Test {
         vm.prank(alice);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CreditVaultConnector.CVC_AccountStatusViolation.selector,
-                alice,
-                abi.encodeWithSelector(
-                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
-                )
+                CreditVaultSimpleBorrowable.AccountUnhealthy.selector
             )
         );
         cvc.batch(items);

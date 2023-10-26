@@ -109,11 +109,10 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
     /// @notice Checks the status of an account.
     /// @param account The account.
     /// @param collaterals The collaterals of the account.
-    /// @return A boolean indicating whether the account is healthy, and a string with an error message if it's not.
     function doCheckAccountStatus(
         address account,
         address[] calldata collaterals
-    ) internal view virtual override returns (bool, bytes memory) {
+    ) internal view virtual override {
         if (debtOf(account) > 0) {
             (
                 ,
@@ -125,8 +124,6 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
                 revert AccountUnhealthy();
             }
         }
-
-        return (true, "");
     }
 
     /// @notice Liquidates a violator account.

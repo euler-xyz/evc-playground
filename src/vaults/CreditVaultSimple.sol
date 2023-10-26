@@ -54,10 +54,9 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     /// @notice Checks the vault's status.
     /// @dev This function is called after any action that may affect the vault's state.
     /// @param oldSnapshot The snapshot of the vault's state before the action.
-    /// @return A boolean indicating whether the vault's state is valid, and a string with an error message if it's not.
     function doCheckVaultStatus(
         bytes memory oldSnapshot
-    ) internal virtual override returns (bool, bytes memory) {
+    ) internal virtual override {
         // sanity check in case the snapshot hasn't been taken
         if (oldSnapshot.length == 0) revert SnapshotNotTaken();
 
@@ -76,18 +75,15 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
 
         // example: if 90% of the assets were withdrawn, revert the transaction
         //require(finalSupply >= initialSupply / 10, "withdrawal too large");
-
-        return (true, "");
     }
 
     /// @notice Checks the status of an account.
     /// @dev This function is called after any action that may affect the account's state.
-    /// @return A boolean indicating that the account's state is always valid.
     function doCheckAccountStatus(
         address,
         address[] calldata
-    ) internal view virtual override returns (bool, bytes memory) {
-        return (true, "");
+    ) internal view virtual override {
+        // no need to do anything here because the vault does not allow borrowing
     }
 
     /// @dev Disables a controller.

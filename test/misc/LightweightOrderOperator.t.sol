@@ -51,7 +51,7 @@ contract LightweightOrderOperatorTest is Test {
 
         // alice authorizes the operator to act on behalf of her main account
         vm.prank(alice);
-        cvc.setAccountOperator(alice, address(orderOperator), type(uint).max);
+        cvc.setAccountOperator(alice, address(orderOperator), true);
 
         // alice submits an order so that anyone can deposit on her behalf to her sub-account,
         // but only after a specified timestamp in the future. for that, the order can be

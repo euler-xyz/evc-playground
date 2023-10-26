@@ -93,10 +93,9 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
     /// @notice Checks the vault's status.
     /// @dev This function is called after any action that may affect the vault's state.
     /// @param oldSnapshot The snapshot of the vault's state before the action.
-    /// @return A boolean indicating whether the vault's state is valid, and a string with an error message if it's not.
     function doCheckVaultStatus(
         bytes memory oldSnapshot
-    ) internal virtual override returns (bool, bytes memory) {
+    ) internal virtual override {
         // use the vault status hook to update the interest rate (it should happen only once per transaction)
         _updateInterest();
 
@@ -128,25 +127,19 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         ) {
             revert BorrowCapExceeded();
         }
-
-        // example: if 90% of the assets were withdrawn, revert the transaction
-        //require(finalSupply >= initialSupply / 10, "withdrawal too large");
-
-        return (true, "");
     }
 
     /// @notice Checks the status of an account.
     /// @dev This function is called after any action that may affect the account's state.
     /// @param account The account to check.
     /// @param collaterals The collaterals of the account.
-    /// @return A boolean indicating whether the account's state is valid, and a string with an error message if it's not.
     function doCheckAccountStatus(
         address account,
         address[] calldata collaterals
-    ) internal view virtual override returns (bool, bytes memory) {
+    ) internal view virtual override {
         uint liabilityAssets = debtOf(account);
 
-        if (liabilityAssets == 0) return (true, "");
+        if (liabilityAssets == 0) return;
 
         // in this simple example, let's say that it's only possible to borrow against
         // the same asset up to 90% of its value
@@ -156,7 +149,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
                 uint maxLiability = (collateral * 9) / 10;
 
                 if (liabilityAssets <= maxLiability) {
-                    return (true, "");
+                    return;
                 }
             }
         }

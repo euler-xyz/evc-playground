@@ -145,11 +145,7 @@ contract CreditVaultRegularBorrowableTest is Test {
         vm.prank(bob);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CreditVaultConnector.CVC_AccountStatusViolation.selector,
-                bob,
-                abi.encodeWithSelector(
-                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
-                )
+                CreditVaultSimpleBorrowable.AccountUnhealthy.selector
             )
         );
         liabilityVault.borrow(35e18, bob);
@@ -161,11 +157,7 @@ contract CreditVaultRegularBorrowableTest is Test {
         vm.prank(bob);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CreditVaultConnector.CVC_AccountStatusViolation.selector,
-                bob,
-                abi.encodeWithSelector(
-                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
-                )
+                CreditVaultSimpleBorrowable.AccountUnhealthy.selector
             )
         );
         liabilityVault.borrow(35e18, bob);
@@ -177,11 +169,7 @@ contract CreditVaultRegularBorrowableTest is Test {
         vm.prank(bob);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CreditVaultConnector.CVC_AccountStatusViolation.selector,
-                bob,
-                abi.encodeWithSelector(
-                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
-                )
+                CreditVaultSimpleBorrowable.AccountUnhealthy.selector
             )
         );
         liabilityVault.borrow(35e18 + 0.01e18, bob);
@@ -497,11 +485,7 @@ contract CreditVaultRegularBorrowableTest is Test {
         vm.prank(bob);
         vm.expectRevert(
             abi.encodeWithSelector(
-                CreditVaultConnector.CVC_AccountStatusViolation.selector,
-                bob,
-                abi.encodeWithSelector(
-                    CreditVaultSimpleBorrowable.AccountUnhealthy.selector
-                )
+                CreditVaultSimpleBorrowable.AccountUnhealthy.selector
             )
         );
         cvc.batch(items);

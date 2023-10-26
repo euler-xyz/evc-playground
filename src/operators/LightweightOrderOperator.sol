@@ -108,7 +108,7 @@ contract LightweightOrderOperator {
         // payout the execution tip
         _payoutTip(order.executionTip);
 
-        (address caller, ) = cvc.getExecutionContext(address(0));
+        (address caller, ) = cvc.getCurrentOnBehalfOfAccount(address(0));
         emit OrderExecuted(orderHash, caller);
     }
 
@@ -142,16 +142,12 @@ contract LightweightOrderOperator {
 
         orderLookup[orderHash] = OrderState.CANCELLED;
 
-        (address onBehalfOfAccount, ) = cvc.getExecutionContext(address(0));
+        (address onBehalfOfAccount, ) = cvc.getCurrentOnBehalfOfAccount(address(0));
         address owner = cvc.getAccountOwner(
             order.CVCOperations[0].onBehalfOfAccount
         );
 
-        // NOTE: it would be safer to prevent an operator calling through the CVC. otherwise, an operator
-        // authorized for an owner can cancel any order, also for a sub-account of the owner for which it
-        // might not be authorized
-
-        if (owner != onBehalfOfAccount) {
+        if (owner != onBehalfOfAccount || cvc.isOperatorAuthenticated()) {
             revert NotAuthorized();
         }
 
@@ -194,16 +190,11 @@ contract LightweightOrderOperator {
     /// @param order The order to verify
     function _verifyOrder(Order calldata order) internal view {
         // get the account authenticated by the CVC
-        (address onBehalfOfAccount, ) = cvc.getExecutionContext(address(0));
+        (address onBehalfOfAccount, ) = cvc.getCurrentOnBehalfOfAccount(address(0));
         address owner = cvc.getAccountOwner(onBehalfOfAccount);
-        if (owner != onBehalfOfAccount) {
+        if (owner != onBehalfOfAccount || cvc.isOperatorAuthenticated()) {
             revert NotAuthorized();
         }
-
-        // NOTE: it would be better to prevent an operator calling through the CVC. even without it, the code is still safe
-        // as the CVC will take care of the authentication of this operator when the order is executed. however, without
-        // that prevention, an operator that is authorized for an owner can create an order for any sub-account of the
-        // owner for which it might not be authorized. whether it's valid will will only be checked at the execution time
 
         // verify that the non-CVC operations contain only operations that do not involve the CVC
         uint length = order.nonCVCOperations.length;

@@ -62,11 +62,12 @@ abstract contract CreditVaultBase is ICreditVault, CVCClient {
     /// @dev Executed as a result of requiring vault status check on the CVC.
     function checkVaultStatus()
         external nonReentrant
-        returns (bool isValid, bytes memory data)
+        returns (bytes4 magicValue)
     {
-        (isValid, data) = doCheckVaultStatus(snapshot);
+        doCheckVaultStatus(snapshot);
+        delete snapshot;
 
-        if (isValid) delete snapshot;
+        return ICreditVault.checkVaultStatus.selector;
     }
 
     /// @notice Checks the account status
@@ -74,8 +75,10 @@ abstract contract CreditVaultBase is ICreditVault, CVCClient {
     function checkAccountStatus(
         address account,
         address[] calldata collaterals
-    ) external nonReentrant returns (bool isValid, bytes memory data) {
-        (isValid, data) = doCheckAccountStatus(account, collaterals);
+    ) external nonReentrant returns (bytes4 magicValue) {
+        doCheckAccountStatus(account, collaterals);
+
+        return ICreditVault.checkAccountStatus.selector;
     }
 
     /// @notice Takes a snapshot of the vault state
@@ -90,14 +93,14 @@ abstract contract CreditVaultBase is ICreditVault, CVCClient {
     /// @dev Must be overridden by child contracts
     function doCheckVaultStatus(
         bytes memory snapshot
-    ) internal virtual returns (bool isValid, bytes memory data);
+    ) internal virtual;
 
     /// @notice Checks the account status
     /// @dev Must be overridden by child contracts
     function doCheckAccountStatus(
         address,
         address[] calldata
-    ) internal view virtual returns (bool isValid, bytes memory data);
+    ) internal view virtual;
 
     /// @notice Disables a controller for an account
     /// @dev Must be overridden by child contracts

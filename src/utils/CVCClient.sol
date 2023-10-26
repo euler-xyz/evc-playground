@@ -23,7 +23,7 @@ abstract contract CVCClient {
     /// @return The address of the account on behalf of which the operation is being executed.
     function CVCAuthenticate() internal view returns (address) {
         if (msg.sender == address(cvc)) {
-            (address onBehalfOfAccount, ) = cvc.getExecutionContext(address(0));
+            (address onBehalfOfAccount, ) = cvc.getCurrentOnBehalfOfAccount(address(0));
             return onBehalfOfAccount;
         }
 
@@ -36,7 +36,7 @@ abstract contract CVCClient {
     function CVCAuthenticateForBorrow() internal view returns (address) {
         if (msg.sender == address(cvc)) {
             (address onBehalfOfAccount, bool controllerEnabled) = cvc
-                .getExecutionContext(address(this));
+                .getCurrentOnBehalfOfAccount(address(this));
 
             if (!controllerEnabled) {
                 revert ControllerDisabled();

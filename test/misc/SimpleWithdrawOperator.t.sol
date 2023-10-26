@@ -43,7 +43,7 @@ contract SimpleWithdrawOperatorTest is Test {
         cvc.setAccountOperator(
             alicesSubAccount,
             address(withdrawOperator),
-            type(uint).max
+            true
         );
         vm.stopPrank();
 
