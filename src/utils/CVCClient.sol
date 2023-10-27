@@ -19,11 +19,22 @@ abstract contract CVCClient {
         cvc = _cvc;
     }
 
+    /// @notice Ensures that the caller is the CVC in the appropriate context.
+    modifier onlyCVCWithChecksInProgress() {
+        if (msg.sender != address(cvc) || !cvc.areChecksInProgress()) {
+            revert NotAuthorized();
+        }
+
+        _;
+    }
+
     /// @notice Authenticates the caller in the context of the CVC.
     /// @return The address of the account on behalf of which the operation is being executed.
     function CVCAuthenticate() internal view returns (address) {
         if (msg.sender == address(cvc)) {
-            (address onBehalfOfAccount, ) = cvc.getCurrentOnBehalfOfAccount(address(0));
+            (address onBehalfOfAccount, ) = cvc.getCurrentOnBehalfOfAccount(
+                address(0)
+            );
             return onBehalfOfAccount;
         }
 

@@ -142,7 +142,9 @@ contract LightweightOrderOperator {
 
         orderLookup[orderHash] = OrderState.CANCELLED;
 
-        (address onBehalfOfAccount, ) = cvc.getCurrentOnBehalfOfAccount(address(0));
+        (address onBehalfOfAccount, ) = cvc.getCurrentOnBehalfOfAccount(
+            address(0)
+        );
         address owner = cvc.getAccountOwner(
             order.CVCOperations[0].onBehalfOfAccount
         );
@@ -190,7 +192,9 @@ contract LightweightOrderOperator {
     /// @param order The order to verify
     function _verifyOrder(Order calldata order) internal view {
         // get the account authenticated by the CVC
-        (address onBehalfOfAccount, ) = cvc.getCurrentOnBehalfOfAccount(address(0));
+        (address onBehalfOfAccount, ) = cvc.getCurrentOnBehalfOfAccount(
+            address(0)
+        );
         address owner = cvc.getAccountOwner(onBehalfOfAccount);
         if (owner != onBehalfOfAccount || cvc.isOperatorAuthenticated()) {
             revert NotAuthorized();
