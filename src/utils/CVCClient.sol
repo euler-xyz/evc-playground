@@ -14,6 +14,7 @@ abstract contract CVCClient {
 
     error NotAuthorized();
     error ControllerDisabled();
+    error SharesSeizureFailed();
 
     constructor(ICVC _cvc) {
         cvc = _cvc;
@@ -171,10 +172,14 @@ abstract contract CVCClient {
         uint shares
     ) internal {
         // Impersonate the violator to transfer shares from the violator's vault to the liquidator.
-        cvc.impersonate(
+        bytes memory result = cvc.impersonate(
             vault,
             violator,
             abi.encodeCall(ERC20.transfer, (liquidator, shares))
         );
+
+        if (!abi.decode(result, (bool))) {
+            revert SharesSeizureFailed();
+        }
     }
 }

@@ -187,7 +187,12 @@ contract CreditVaultRegularBorrowableTest is Test {
         assertEq(liabilityAsset.balanceOf(bob), 35e18);
         assertEq(liabilityVault.debtOf(bob), 35e18 + 3.680982126514837395e18);
         assertEq(liabilityVault.maxWithdraw(alice), 15e18);
-        assertEq(cvc.checkAccountStatus(bob), false);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CreditVaultSimpleBorrowable.AccountUnhealthy.selector
+            )
+        );
+        cvc.requireAccountStatusCheck(bob);
 
         // bob repays only some of his debt, his account is still unhealthy
         vm.prank(bob);
@@ -204,7 +209,12 @@ contract CreditVaultRegularBorrowableTest is Test {
             liabilityVault.maxWithdraw(alice),
             15e18 + 2.680982126514837395e18
         );
-        assertEq(cvc.checkAccountStatus(bob), false);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CreditVaultSimpleBorrowable.AccountUnhealthy.selector
+            )
+        );
+        cvc.requireAccountStatusCheck(bob);
 
         // alice kicks in to liquidate bob. first enable controller and collaterals
         vm.prank(alice);
@@ -285,8 +295,8 @@ contract CreditVaultRegularBorrowableTest is Test {
         ); // alice's ability to withdraw LA did't change
         assertEq(collateralVault1.maxWithdraw(alice), 0); // alices's CA1 deposit stays unchanged
         assertEq(collateralVault2.maxWithdraw(alice), 6.18e6); // alices's CA2 deposit increased by 6.18 CA2 due to liquidation (she took on bob's collateral)
-        assertEq(cvc.checkAccountStatus(alice), true);
-        assertEq(cvc.checkAccountStatus(bob), true);
+        cvc.requireAccountStatusCheck(alice);
+        cvc.requireAccountStatusCheck(bob);
 
         // alice repays her debt taken on from bob
         vm.prank(alice);
@@ -531,7 +541,12 @@ contract CreditVaultRegularBorrowableTest is Test {
         assertEq(liabilityAsset.balanceOf(bob), 35e18);
         assertEq(liabilityVault.debtOf(bob), 35e18 + 3.680982126514837395e18);
         assertEq(liabilityVault.maxWithdraw(alice), 15e18);
-        assertEq(cvc.checkAccountStatus(bob), false);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CreditVaultSimpleBorrowable.AccountUnhealthy.selector
+            )
+        );
+        cvc.requireAccountStatusCheck(bob);
 
         // bob repays only some of his debt, his account is still unhealthy
         vm.prank(bob);
@@ -548,7 +563,12 @@ contract CreditVaultRegularBorrowableTest is Test {
             liabilityVault.maxWithdraw(alice),
             15e18 + 2.680982126514837395e18
         );
-        assertEq(cvc.checkAccountStatus(bob), false);
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                CreditVaultSimpleBorrowable.AccountUnhealthy.selector
+            )
+        );
+        cvc.requireAccountStatusCheck(bob);
 
         // alice kicks in to liquidate bob, repay the debt and withdraw seized collateral
         items = new ICVC.BatchItem[](11);
