@@ -22,10 +22,12 @@ contract SimpleWithdrawOperatorTest is Test {
 
     function test_SimpleWithdrawOperator(address alice, address bot) public {
         vm.assume(
-            alice != address(0) &&
+            !cvc.haveCommonOwner(alice, address(0)) &&
                 alice != address(cvc) &&
                 bot != address(cvc) &&
-                !cvc.haveCommonOwner(alice, address(withdrawOperator))
+                !cvc.haveCommonOwner(alice, address(withdrawOperator)) &&
+                bot != address(vault) &&
+                bot != alice
         );
         address alicesSubAccount = address(uint160(alice) ^ 1);
 

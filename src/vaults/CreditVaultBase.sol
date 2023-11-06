@@ -62,7 +62,6 @@ abstract contract CreditVaultBase is ICreditVault, CVCClient {
     /// @dev Executed as a result of requiring vault status check on the CVC.
     function checkVaultStatus()
         external
-        nonReentrant
         onlyCVCWithChecksInProgress
         returns (bytes4 magicValue)
     {
@@ -77,12 +76,7 @@ abstract contract CreditVaultBase is ICreditVault, CVCClient {
     function checkAccountStatus(
         address account,
         address[] calldata collaterals
-    )
-        external
-        nonReentrant
-        onlyCVCWithChecksInProgress
-        returns (bytes4 magicValue)
-    {
+    ) external view onlyCVCWithChecksInProgress returns (bytes4 magicValue) {
         doCheckAccountStatus(account, collaterals);
 
         return ICreditVault.checkAccountStatus.selector;

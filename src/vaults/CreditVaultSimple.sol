@@ -12,6 +12,9 @@ import "./CreditVaultBase.sol";
 /// @dev It provides basic functionality for credit vaults.
 /// @notice In this contract, the CVC is authenticated before any action that may affect the state of the vault or an account.
 /// This is done to ensure that if it's CVC calling, the account is correctly authorized.
+/// Unlike solmate, CreditVaultSimple implementation prevents from share inflation attack by using virual assets and shares.
+/// Look into Open-Zeppelin documentation for more details.
+/// This contract does not take the supply cap into account when calculating max deposit and max mint values.
 contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -48,7 +51,7 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         returns (bytes memory)
     {
         // make total supply snapshot here and return it:
-        return abi.encode(convertToAssets(totalSupply));
+        return abi.encode(_convertToAssets(totalSupply, false));
     }
 
     /// @notice Checks the vault's status.
@@ -62,7 +65,7 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
 
         // validate the vault state here:
         uint initialSupply = abi.decode(oldSnapshot, (uint));
-        uint finalSupply = convertToAssets(totalSupply);
+        uint finalSupply = _convertToAssets(totalSupply, false);
 
         // the supply cap can be implemented like this:
         if (
@@ -95,13 +98,19 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         releaseAccountFromControl(account);
     }
 
+    /// @dev Returns the total assets of the vault.
+    /// @return The total assets.
+    function totalAssets() public view override returns (uint256) {
+        return asset.balanceOf(address(this));
+    }
+
     /// @dev Converts assets to shares.
     /// @param assets The assets to convert.
     /// @return The converted shares.
     function convertToShares(
         uint256 assets
     ) public view virtual override returns (uint256) {
-        return _convertToShares(assets);
+        return _convertToShares(assets, false);
     }
 
     /// @dev Converts shares to assets.
@@ -110,13 +119,43 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     function convertToAssets(
         uint256 shares
     ) public view virtual override returns (uint256) {
-        return _convertToAssets(shares);
+        return _convertToAssets(shares, false);
     }
 
-    /// @dev Returns the total assets of the vault.
-    /// @return The total assets.
-    function totalAssets() public view override returns (uint256) {
-        return asset.balanceOf(address(this));
+    /// @notice Simulates the effects of depositing a certain amount of assets at the current block.
+    /// @param assets The amount of assets to simulate depositing.
+    /// @return The amount of shares that would be minted.
+    function previewDeposit(
+        uint256 assets
+    ) public view virtual override returns (uint256) {
+        return _convertToShares(assets, false);
+    }
+
+    /// @notice Simulates the effects of minting a certain amount of shares at the current block.
+    /// @param shares The amount of shares to simulate minting.
+    /// @return The amount of assets that would be deposited.
+    function previewMint(
+        uint256 shares
+    ) public view virtual override returns (uint256) {
+        return _convertToAssets(shares, true);
+    }
+
+    /// @notice Simulates the effects of withdrawing a certain amount of assets at the current block.
+    /// @param assets The amount of assets to simulate withdrawing.
+    /// @return The amount of shares that would be burned.
+    function previewWithdraw(
+        uint256 assets
+    ) public view virtual override returns (uint256) {
+        return _convertToShares(assets, true);
+    }
+
+    /// @notice Simulates the effects of redeeming a certain amount of shares at the current block.
+    /// @param shares The amount of shares to simulate redeeming.
+    /// @return The amount of assets that would be redeemed.
+    function previewRedeem(
+        uint256 shares
+    ) public view virtual override returns (uint256) {
+        return _convertToAssets(shares, false);
     }
 
     /// @dev Approves a spender to spend a certain amount.
@@ -183,6 +222,7 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     }
 
     /// @dev Withdraws a certain amount of assets for a receiver.
+    /// @dev If address(0) passed as receiver, the owner of the shares will receive the assets.
     /// @param assets The assets to withdraw.
     /// @param receiver The receiver of the withdrawal.
     /// @param owner The owner of the assets.
@@ -196,6 +236,7 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     }
 
     /// @dev Redeems a certain amount of shares for a receiver.
+    /// @dev If address(0) passed as receiver, the owner of the shares will receive the assets.
     /// @param shares The shares to redeem.
     /// @param receiver The receiver of the redemption.
     /// @param owner The owner of the shares.
@@ -306,6 +347,8 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
                 allowance[owner][msgSender] = allowed - shares;
         }
 
+        receiver = getAccountOwner(receiver == address(0) ? owner : receiver);
+
         _burn(owner, shares);
 
         emit Withdraw(msgSender, receiver, owner, assets, shares);
@@ -329,6 +372,8 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         // Check for rounding error since we round down in previewRedeem.
         require((assets = previewRedeem(shares)) != 0, "ZERO_ASSETS");
 
+        receiver = getAccountOwner(receiver == address(0) ? owner : receiver);
+
         _burn(owner, shares);
 
         emit Withdraw(msgSender, receiver, owner, assets, shares);
@@ -337,18 +382,22 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     }
 
     function _convertToShares(
-        uint256 assets
+        uint256 assets,
+        bool roundUp
     ) internal view virtual returns (uint256) {
-        uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
-
-        return supply == 0 ? assets : assets.mulDivDown(supply, totalAssets());
+        return
+            roundUp
+                ? assets.mulDivUp(totalSupply + 1, totalAssets() + 1)
+                : assets.mulDivDown(totalSupply + 1, totalAssets() + 1);
     }
 
     function _convertToAssets(
-        uint256 shares
+        uint256 shares,
+        bool roundUp
     ) internal view virtual returns (uint256) {
-        uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
-
-        return supply == 0 ? shares : shares.mulDivDown(totalAssets(), supply);
+        return
+            roundUp
+                ? shares.mulDivUp(totalAssets() + 1, totalSupply + 1)
+                : shares.mulDivDown(totalAssets() + 1, totalSupply + 1);
     }
 }

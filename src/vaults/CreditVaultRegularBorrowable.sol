@@ -13,7 +13,9 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
 
     uint internal constant COLLATERAL_FACTOR_SCALE = 100;
     uint internal constant MAX_LIQUIDATION_INCENTIVE = 20;
-    uint internal constant MAX_HEALTH_FACTOR_AFTER_LIQUIDATION = 125;
+    uint internal constant TARGET_HEALTH_FACTOR = 125;
+    uint internal constant HARD_LIQUIDATION_THRESHOLD = 1;
+    uint internal constant ONE = 1e27;
 
     int96 internal interestRate;
     uint internal lastInterestUpdate;
@@ -32,6 +34,7 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
     error SelfLiquidation();
     error ViolatorStatusCheckDeferred();
     error NoLiquidationOpportunity();
+    error RepayAssetsInsufficient();
     error RepayAssetsExceeded();
     error CollateralDisabled();
 
@@ -48,7 +51,7 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         oracle = _oracle;
         referenceAsset = _referenceAsset;
         lastInterestUpdate = block.timestamp;
-        interestAccumulator = 1e27;
+        interestAccumulator = ONE;
     }
 
     /// @notice Sets the IRM of the vault.
@@ -155,10 +158,13 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
             revert SelfLiquidation();
         }
 
+        // due to later violator's account check forgiveness,
+        // the violator's account must be fully settled when liquidating
         if (isAccountStatusCheckDeferred(violator)) {
             revert ViolatorStatusCheckDeferred();
         }
 
+        // sanity check: the violator must be under control of the CVC
         if (!isControllerEnabled(violator, address(this))) {
             revert ControllerDisabled();
         }
@@ -166,11 +172,16 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         // do not allow to seize the assets for collateral without a collateral factor.
         // note that a user can enable any address as collateral, even if it's not recognized
         // as such (cf == 0)
-        if (collateralFactor[ERC4626(collateral)] == 0) {
+        uint cf = collateralFactor[ERC4626(collateral)];
+        if (cf == 0) {
             revert CollateralDisabled();
         }
 
-        uint liquidationIncentive;
+        if (repayAssets == 0) {
+            revert RepayAssetsInsufficient();
+        }
+
+        uint seizeShares;
         {
             (
                 uint liabilityAssets,
@@ -181,43 +192,72 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
                     getCollaterals(violator)
                 );
 
+            // trying to repay more than the violator owes
             if (repayAssets > liabilityAssets) {
                 revert RepayAssetsExceeded();
             }
 
+            // check if violator's account is unhealthy
             if (collateralValue >= liabilityValue) {
                 revert NoLiquidationOpportunity();
             }
 
             // calculate dynamic liquidation incentive
-            liquidationIncentive =
-                100 -
+            uint liquidationIncentive = 100 -
                 (100 * collateralValue) /
                 liabilityValue;
 
             if (liquidationIncentive > MAX_LIQUIDATION_INCENTIVE) {
                 liquidationIncentive = MAX_LIQUIDATION_INCENTIVE;
             }
-        }
 
-        address collateralAsset = address(ERC4626(collateral).asset());
-        uint one = 10 ** ERC20(collateralAsset).decimals();
+            // calculate the max repay value that will bring the violator back to target health factor
+            uint maxRepayValue = (TARGET_HEALTH_FACTOR *
+                liabilityValue -
+                100 *
+                collateralValue) /
+                (TARGET_HEALTH_FACTOR -
+                    (cf * (100 + liquidationIncentive)) /
+                    100);
 
-        // the liquidator will be transferred the collateral value of the repaid debt + the liquidation incentive
-        uint seizeValue = (IPriceOracle(oracle).getQuote(
-            repayAssets,
-            address(asset),
-            address(referenceAsset)
-        ) * (100 + liquidationIncentive)) / 100;
-
-        uint seizeAssets = (seizeValue * one) /
-            IPriceOracle(oracle).getQuote(
-                one,
-                collateralAsset,
+            // get the desired value of repay assets
+            uint repayValue = IPriceOracle(oracle).getQuote(
+                repayAssets,
+                address(asset),
                 address(referenceAsset)
             );
 
-        uint seizeShares = ERC4626(collateral).convertToShares(seizeAssets);
+            // check if the liquidator is not trying to repay too much.
+            // this prevents the liquidator from liquidating entire position if not necessary.
+            // if the debt is below the hard liquidation threshold, the liquidator 
+            // can always repay the entire debt to avoid dust positions
+            if (
+                repayValue > maxRepayValue &&
+                repayAssets >
+                HARD_LIQUIDATION_THRESHOLD * 10 ** asset.decimals()
+            ) {
+                revert RepayAssetsExceeded();
+            }
+
+            // the liquidator will be transferred the collateral value of the repaid debt + the liquidation incentive
+            address collateralAsset = address(ERC4626(collateral).asset());
+            uint one = 10 ** ERC20(collateralAsset).decimals();
+
+            uint seizeValue = (repayValue * (100 + liquidationIncentive)) / 100;
+
+            uint seizeAssets = (seizeValue * one) /
+                IPriceOracle(oracle).getQuote(
+                    one,
+                    collateralAsset,
+                    address(referenceAsset)
+                );
+
+            seizeShares = ERC4626(collateral).convertToShares(seizeAssets);
+
+            if (seizeShares == 0) {
+                revert RepayAssetsInsufficient();
+            }
+        }
 
         _decreaseOwed(violator, repayAssets);
         _increaseOwed(msgSender, repayAssets);
@@ -247,9 +287,10 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
             );
 
             // there's a possiblity that the liquidation does not bring the violator back to
-            // a healthy state. hence, the account status check that is scheduled during the
+            // a healthy state or the liquidator chooses not to repay enough to bring the violator
+            // back to health. hence, the account status check that is scheduled during the
             // impersonation may fail reverting the liquidation. hence, as a controller, we
-            // can forgive the account status check for the violator allowing it end up in
+            // can forgive the account status check for the violator allowing it to end up in
             // an unhealthy state after the liquidation.
             // IMPORTANT: the account status check forgiveness must be done with care!
             // a malicious collateral could do some funky stuff during the impersonation
@@ -263,24 +304,8 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
             forgiveAccountStatusCheck(violator);
         }
 
-        {
-            (
-                ,
-                uint liabilityValue,
-                uint collateralValue
-            ) = _calculateLiabilityAndCollateral(
-                    violator,
-                    getCollaterals(violator)
-                );
-
-            // verify whether we haven't sent too much collateral to the liquidator
-            if (
-                liabilityValue != 0 &&
-                (100 * collateralValue) / liabilityValue >
-                MAX_HEALTH_FACTOR_AFTER_LIQUIDATION
-            ) {
-                revert RepayAssetsExceeded();
-            }
+        if (debtOf(violator) == 0) {
+            releaseAccountFromControl(violator);
         }
     }
 
@@ -315,53 +340,23 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
             uint cf = collateralFactor[collateral];
 
             if (cf != 0) {
-                collateralValue +=
-                    (IPriceOracle(oracle).getQuote(
-                        collateral.maxWithdraw(account),
-                        address(collateral.asset()),
-                        address(referenceAsset)
-                    ) * cf) /
-                    COLLATERAL_FACTOR_SCALE;
+                uint collateralShares = collateral.balanceOf(account);
+
+                if (collateralShares > 0) {
+                    uint collateralAssets = collateral.convertToAssets(
+                        collateralShares
+                    );
+
+                    collateralValue +=
+                        (IPriceOracle(oracle).getQuote(
+                            collateralAssets,
+                            address(collateral.asset()),
+                            address(referenceAsset)
+                        ) * cf) /
+                        COLLATERAL_FACTOR_SCALE;
+                }
             }
         }
-    }
-
-    /// @dev This function is overriden to take into account the interest rate accrual.
-    function _convertToShares(
-        uint256 assets
-    ) internal view virtual override returns (uint256) {
-        uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
-
-        if (supply == 0) return assets;
-
-        uint256 assetsAndBorrows = totalAssets();
-        if (lastInterestUpdate == block.timestamp) {
-            assetsAndBorrows += totalBorrowed;
-        } else {
-            (uint newTotalBorrowed, ) = _accrueInterestCalculate();
-            assetsAndBorrows += newTotalBorrowed;
-        }
-
-        return assets.mulDivDown(supply, assetsAndBorrows);
-    }
-
-    /// @dev This function is overriden to take into account the interest rate accrual.
-    function _convertToAssets(
-        uint256 shares
-    ) internal view virtual override returns (uint256) {
-        uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
-
-        if (supply == 0) return shares;
-
-        uint256 assetsAndBorrows = totalAssets();
-        if (lastInterestUpdate == block.timestamp) {
-            assetsAndBorrows += totalBorrowed;
-        } else {
-            (uint newTotalBorrowed, ) = _accrueInterestCalculate();
-            assetsAndBorrows += newTotalBorrowed;
-        }
-
-        return shares.mulDivDown(assetsAndBorrows, supply);
     }
 
     /// @notice Increases the owed amount of an account.
@@ -388,6 +383,17 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         userInterestAccumulator[account] = interestAccumulator;
     }
 
+    /// @notice Returns the last timestamp when the interest was updated.
+    function _lastInterestUpdate()
+        internal
+        view
+        virtual
+        override
+        returns (uint)
+    {
+        return lastInterestUpdate;
+    }
+
     /// @notice Accrues interest.
     function _accrueInterest() internal virtual override {
         if (lastInterestUpdate == block.timestamp) return;
@@ -402,16 +408,17 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
         internal
         view
         virtual
+        override
         returns (uint, uint)
     {
         uint timeElapsed = block.timestamp - lastInterestUpdate;
         uint oldInterestAccumulator = interestAccumulator;
 
         uint newInterestAccumulator = (FixedPointMathLib.rpow(
-            uint(int(interestRate) + 1e27),
+            uint(int(interestRate) + int(ONE)),
             timeElapsed,
-            1e27
-        ) * oldInterestAccumulator) / 1e27;
+            ONE
+        ) * oldInterestAccumulator) / ONE;
 
         uint newTotalBorrowed = (totalBorrowed * newInterestAccumulator) /
             oldInterestAccumulator;
@@ -421,6 +428,9 @@ contract CreditVaultRegularBorrowable is CreditVaultSimpleBorrowable {
 
     /// @notice Updates the interest rate.
     function _updateInterest() internal virtual override {
+        // accrue interest just in case it hasn't been accrued yet in this block
+        _accrueInterest();
+
         uint borrowed = totalBorrowed;
         uint poolAssets = totalAssets() + borrowed;
 

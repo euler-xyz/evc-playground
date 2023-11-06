@@ -17,6 +17,11 @@ abstract contract CVCClient {
     error SharesSeizureFailed();
 
     constructor(ICVC _cvc) {
+        require(
+            address(_cvc) != address(0),
+            "CVCClient: CVC address cannot be zero"
+        );
+
         cvc = _cvc;
     }
 
@@ -63,14 +68,15 @@ abstract contract CVCClient {
     }
 
     /// @notice Retrieves the owner of an account.
+    /// @dev Use with care. If the account is not registered on the CVC yet, the account address is returned as the owner.
     /// @param account The address of the account.
     /// @return owner The address of the account owner.
     function getAccountOwner(
         address account
     ) internal view returns (address owner) {
-        if (msg.sender == address(cvc)) {
-            owner = cvc.getAccountOwner(account);
-        } else {
+        try cvc.getAccountOwner(account) returns (address _owner) {
+            owner = _owner;
+        } catch {
             owner = account;
         }
     }

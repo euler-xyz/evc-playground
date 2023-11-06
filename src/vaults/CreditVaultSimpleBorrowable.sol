@@ -3,16 +3,14 @@
 pragma solidity ^0.8.0;
 
 import "./CreditVaultSimple.sol";
-
-interface IFlashLoan {
-    function onFlashLoan(bytes memory data) external;
-}
+import "../interfaces/IERC3156FlashLender.sol";
 
 /// @title CreditVaultSimpleBorrowable
 /// @notice This contract extends CreditVaultSimple to add borrowing functionality.
 /// @notice In this contract, the CVC is authenticated before any action that may affect the state of the vault or an account.
 /// This is done to ensure that if it's CVC calling, the account is correctly authorized and the vault is enabled as a controller if needed.
-contract CreditVaultSimpleBorrowable is CreditVaultSimple {
+/// This contract does not take the account health into account when calculating max withdraw and max redeem values.
+contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
@@ -24,7 +22,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         uint256 assets
     );
 
-    error FlashloanNotRepaid();
+    error FlashloanFailure();
     error BorrowCapExceeded();
     error AccountUnhealthy();
 
@@ -60,10 +58,10 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
     function maxWithdraw(
         address owner
     ) public view virtual override returns (uint256) {
-        return
-            convertToAssets(balanceOf[owner]) > totalAssets()
-                ? totalAssets()
-                : convertToAssets(balanceOf[owner]);
+        uint totAssets = totalAssets();
+        uint ownerAssets = _convertToAssets(balanceOf[owner], false);
+
+        return ownerAssets > totAssets ? totAssets : ownerAssets;
     }
 
     /// @notice Returns the maximum amount that can be redeemed by an owner.
@@ -73,7 +71,13 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
     function maxRedeem(
         address owner
     ) public view virtual override returns (uint256) {
-        return balanceOf[owner] > totalSupply ? totalSupply : balanceOf[owner];
+        uint totAssets = totalAssets();
+        uint ownerShares = balanceOf[owner];
+
+        return
+            _convertToAssets(ownerShares, false) > totAssets
+                ? _convertToShares(totAssets, false)
+                : ownerShares;
     }
 
     /// @notice Takes a snapshot of the vault.
@@ -86,8 +90,16 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         override
         returns (bytes memory)
     {
+        uint newTotalBorrowed;
+        if (_lastInterestUpdate() == block.timestamp) {
+            newTotalBorrowed = totalBorrowed;
+        } else {
+            (newTotalBorrowed, ) = _accrueInterestCalculate();
+        }
+
         // make total supply and total borrows snapshot:
-        return abi.encode(convertToAssets(totalSupply), totalBorrowed);
+        return
+            abi.encode(_convertToAssets(totalSupply, false), newTotalBorrowed);
     }
 
     /// @notice Checks the vault's status.
@@ -96,18 +108,19 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
     function doCheckVaultStatus(
         bytes memory oldSnapshot
     ) internal virtual override {
-        // use the vault status hook to update the interest rate (it should happen only once per transaction)
-        _updateInterest();
-
         // sanity check in case the snapshot hasn't been taken
         if (oldSnapshot.length == 0) revert SnapshotNotTaken();
+
+        // use the vault status hook to update the interest rate (it should happen only once per transaction).
+        // CVC.forgiveVaultStatus check should never be used for this vault, otherwise the interest rate will not be updated.
+        _updateInterest();
 
         // validate the vault state here:
         (uint initialSupply, uint initialBorrowed) = abi.decode(
             oldSnapshot,
             (uint, uint)
         );
-        uint finalSupply = convertToAssets(totalSupply);
+        uint finalSupply = _convertToAssets(totalSupply, false);
         uint finalBorrowed = totalBorrowed;
 
         // the supply cap can be implemented like this:
@@ -119,7 +132,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
             revert SupplyCapExceeded();
         }
 
-        // or borrow cap can be implemented like this:
+        // or the borrow cap can be implemented like this:
         if (
             borrowCap != 0 &&
             finalBorrowed > borrowCap &&
@@ -145,7 +158,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         // the same asset up to 90% of its value
         for (uint i = 0; i < collaterals.length; ++i) {
             if (collaterals[i] == address(this)) {
-                uint collateral = convertToAssets(balanceOf[account]);
+                uint collateral = _convertToAssets(balanceOf[account], false);
                 uint maxLiability = (collateral * 9) / 10;
 
                 if (liabilityAssets <= maxLiability) {
@@ -167,23 +180,43 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         }
     }
 
-    /// @notice Executes a flash loan.
-    /// @dev This function transfers the specified amount of assets to the caller, and expects them to be returned by the end of the transaction.
-    /// @param amount The amount of assets to loan.
-    /// @param data The data to pass to the flash loan function.
+    /// @inheritdoc IERC3156FlashLender
+    function maxFlashLoan(address token) external view returns (uint256) {
+        return token == address(asset) ? asset.balanceOf(address(this)) : 0;
+    }
+
+    /// @inheritdoc IERC3156FlashLender
+    function flashFee(address, uint256) external pure returns (uint256) {
+        return 0;
+    }
+
+    /// @inheritdoc IERC3156FlashLender
     function flashLoan(
+        IERC3156FlashBorrower receiver,
+        address token,
         uint256 amount,
         bytes calldata data
-    ) external nonReentrant {
-        uint origBalance = asset.balanceOf(address(this));
+    ) external nonReentrant returns (bool) {
+        uint origBalance = ERC20(token).balanceOf(address(this));
 
-        asset.safeTransfer(msg.sender, amount);
+        ERC20(token).safeTransfer(msg.sender, amount);
 
-        IFlashLoan(msg.sender).onFlashLoan(data);
+        bytes32 result = receiver.onFlashLoan(
+            msg.sender,
+            token,
+            amount,
+            0,
+            data
+        );
 
-        if (asset.balanceOf(address(this)) < origBalance) {
-            revert FlashloanNotRepaid();
+        if (
+            result != IERC3156FlashBorrower.onFlashLoan.selector ||
+            ERC20(token).balanceOf(address(this)) < origBalance
+        ) {
+            revert FlashloanFailure();
         }
+
+        return true;
     }
 
     /// @notice Borrows assets.
@@ -204,6 +237,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
 
     /// @notice Winds up the vault.
     /// @dev This function deposits assets into the vault and borrows the same amount.
+    /// @dev Despite the lack of asset transfers, this function emits Deposit and Borrow events.
     /// @param assets The amount of assets to wind up.
     /// @param collateralReceiver The receiver of the collateral.
     /// @return shares The amount of shares minted.
@@ -216,6 +250,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
 
     /// @notice Unwinds the vault.
     /// @dev This function repays a debt and withdraws the same amount of assets.
+    /// @dev Despite the lack of asset transfers, this function emits Repay and Withdraw events.
     /// @param assets The amount of assets to unwind.
     /// @param debtFrom The account to repay the debt from.
     /// @return shares The amount of shares burned.
@@ -228,6 +263,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
 
     /// @notice Pulls debt from an account.
     /// @dev This function decreases the debt of one account and increases the debt of another.
+    /// @dev Despite the lack of asset transfers, this function emits Repay and Borrow events.
     /// @param from The account to pull the debt from.
     /// @param assets The amount of debt to pull.
     /// @return A boolean indicating whether the operation was successful.
@@ -240,9 +276,13 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         uint256 assets,
         address receiver
     ) internal virtual nonReentrantWithChecks(msgSender) {
+        require(assets != 0, "ZERO_ASSETS");
+
         _accrueInterest();
 
-        require(assets != 0, "ZERO_ASSETS");
+        receiver = getAccountOwner(
+            receiver == address(0) ? msgSender : receiver
+        );
 
         _increaseOwed(msgSender, assets);
 
@@ -256,13 +296,13 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         uint256 assets,
         address receiver
     ) internal virtual nonReentrantWithChecks(address(0)) {
-        _accrueInterest();
-
         require(assets != 0, "ZERO_ASSETS");
 
         if (!isControllerEnabled(receiver, address(this))) {
             revert ControllerDisabled();
         }
+
+        _accrueInterest();
 
         asset.safeTransferFrom(msgSender, address(this), assets);
 
@@ -318,9 +358,10 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         address from,
         uint assets
     ) internal virtual nonReentrantWithChecks(msgSender) returns (bool) {
-        _accrueInterest();
-
         require(assets != 0, "ZERO_AMOUNT");
+        require(msgSender != from, "SELF_DEBT_PULL");
+
+        _accrueInterest();
 
         _decreaseOwed(from, assets);
         _increaseOwed(msgSender, assets);
@@ -337,26 +378,40 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
 
     /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
     function _convertToShares(
-        uint256 assets
+        uint256 assets,
+        bool roundUp
     ) internal view virtual override returns (uint256) {
-        uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+        uint256 assetsAndBorrows = totalAssets();
+        if (_lastInterestUpdate() == block.timestamp) {
+            assetsAndBorrows += totalBorrowed;
+        } else {
+            (uint newTotalBorrowed, ) = _accrueInterestCalculate();
+            assetsAndBorrows += newTotalBorrowed;
+        }
 
         return
-            supply == 0
-                ? assets
-                : assets.mulDivDown(supply, totalAssets() + totalBorrowed);
+            roundUp
+                ? assets.mulDivUp(totalSupply + 1, assetsAndBorrows + 1)
+                : assets.mulDivDown(totalSupply + 1, assetsAndBorrows + 1);
     }
 
     /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
     function _convertToAssets(
-        uint256 shares
+        uint256 shares,
+        bool roundUp
     ) internal view virtual override returns (uint256) {
-        uint256 supply = totalSupply; // Saves an extra SLOAD if totalSupply is non-zero.
+        uint256 assetsAndBorrows = totalAssets();
+        if (_lastInterestUpdate() == block.timestamp) {
+            assetsAndBorrows += totalBorrowed;
+        } else {
+            (uint newTotalBorrowed, ) = _accrueInterestCalculate();
+            assetsAndBorrows += newTotalBorrowed;
+        }
 
         return
-            supply == 0
-                ? shares
-                : shares.mulDivDown(totalAssets() + totalBorrowed, supply);
+            roundUp
+                ? shares.mulDivUp(assetsAndBorrows + 1, totalSupply + 1)
+                : shares.mulDivDown(assetsAndBorrows + 1, totalSupply + 1);
     }
 
     /// @notice Increases the owed amount of an account.
@@ -375,7 +430,25 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple {
         totalBorrowed -= assets;
     }
 
+    /// @notice Returns the last timestamp when the interest was updated.
+    function _lastInterestUpdate() internal view virtual returns (uint) {
+        return 0;
+    }
+
+    /// @notice Accrues interest.
     function _accrueInterest() internal virtual {}
 
+    /// @notice Calculates the accrued interest.
+    /// @return The total borrowed amount and the interest accumulator.
+    function _accrueInterestCalculate()
+        internal
+        view
+        virtual
+        returns (uint, uint)
+    {
+        return (totalBorrowed, 0);
+    }
+
+    /// @notice Updates the interest rate.
     function _updateInterest() internal virtual {}
 }

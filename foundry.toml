@@ -11,4 +11,7 @@ remappings = [
     "openzeppelin/=lib/openzeppelin-contracts/contracts/"
 ]
 
+[profile.default.fuzz]
+seed = "0xee1d0f7d9556539a9c0e26aed5e63558"
+
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

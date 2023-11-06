@@ -36,7 +36,10 @@ contract ERC4626StdTest is ERC4626Test {
         super.test_maxWithdraw(init);
     }
 
-    function clamp(Init memory init, uint256 max) internal pure returns (Init memory) {
+    function clamp(
+        Init memory init,
+        uint256 max
+    ) internal pure returns (Init memory) {
         for (uint256 i = 0; i < N; i++) {
             init.share[i] = init.share[i] % max;
             init.asset[i] = init.asset[i] % max;

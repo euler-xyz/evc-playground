@@ -230,56 +230,19 @@ contract CreditVaultRegularBorrowableTest is Test {
         cvc.enableCollateral(alice, address(collateralVault2));
 
         // liquidation fails multiple times as alice tries to liquidate too much
-        ICVC.BatchItem[] memory items = new ICVC.BatchItem[](1);
-        items[0] = ICVC.BatchItem({
-            targetContract: address(liabilityVault),
-            onBehalfOfAccount: alice,
-            value: 0,
-            data: abi.encodeWithSelector(
-                CreditVaultRegularBorrowable.liquidate.selector,
-                bob,
-                address(collateralVault1),
-                30e18
-            )
-        });
-
         vm.prank(alice);
         vm.expectRevert(stdError.arithmeticError);
-        cvc.batch(items);
-
-        items[0] = ICVC.BatchItem({
-            targetContract: address(liabilityVault),
-            onBehalfOfAccount: alice,
-            value: 0,
-            data: abi.encodeWithSelector(
-                CreditVaultRegularBorrowable.liquidate.selector,
-                bob,
-                address(collateralVault2),
-                30e18
-            )
-        });
+        liabilityVault.liquidate(bob, address(collateralVault1), 30e18);
 
         vm.prank(alice);
         vm.expectRevert(
             CreditVaultRegularBorrowable.RepayAssetsExceeded.selector
         );
-        cvc.batch(items);
+        liabilityVault.liquidate(bob, address(collateralVault2), 30e18);
 
         // finally liquidation is successful
-        items[0] = ICVC.BatchItem({
-            targetContract: address(liabilityVault),
-            onBehalfOfAccount: alice,
-            value: 0,
-            data: abi.encodeWithSelector(
-                CreditVaultRegularBorrowable.liquidate.selector,
-                bob,
-                address(collateralVault2),
-                6e18 // liquidation incentive at a time is 3%
-            )
-        });
-
         vm.prank(alice);
-        cvc.batch(items);
+        liabilityVault.liquidate(bob, address(collateralVault2), 6e18);
 
         assertEq(
             liabilityAsset.balanceOf(bob),
@@ -353,24 +316,24 @@ contract CreditVaultRegularBorrowableTest is Test {
         assertEq(collateralAsset2.balanceOf(bob), 100e6 - 6.18e6);
         assertEq(collateralVault2.maxWithdraw(bob), 0);
 
-        // alice withdraws her LA deposit
+        // alice withdraws her LA deposit, account for rounding
         vm.prank(alice);
         liabilityVault.withdraw(
-            50e18 - 35e18 + 2.680982126514837395e18 + 6e18 + 30e18,
+            50e18 - 35e18 + 2.680982126514837395e18 + 6e18 + 30e18 - 1,
             alice,
             alice
         );
         assertEq(
             liabilityAsset.balanceOf(alice),
-            100e18 - 35e18 + 2.680982126514837395e18 + 30e18
+            100e18 - 35e18 + 2.680982126514837395e18 + 30e18 - 1
         );
         assertEq(liabilityVault.maxWithdraw(alice), 0);
 
         // final checks
-        assertEq(liabilityAsset.balanceOf(address(liabilityVault)), 0);
+        assertEq(liabilityAsset.balanceOf(address(liabilityVault)), 1);
         assertEq(
             liabilityAsset.balanceOf(address(alice)),
-            100e18 - 35e18 + 2.680982126514837395e18 + 30e18
+            100e18 - 35e18 + 2.680982126514837395e18 + 30e18 - 1
         );
         assertEq(
             liabilityAsset.balanceOf(address(bob)),
@@ -789,16 +752,16 @@ contract CreditVaultRegularBorrowableTest is Test {
         // alice withdraws her LA deposit
         vm.prank(alice);
         liabilityVault.withdraw(
-            50e18 - 35e18 + 2.680982126514837395e18 + 6e18 + 30e18,
+            50e18 - 35e18 + 2.680982126514837395e18 + 6e18 + 30e18 - 1,
             alice,
             alice
         );
 
         // final checks
-        assertEq(liabilityAsset.balanceOf(address(liabilityVault)), 0);
+        assertEq(liabilityAsset.balanceOf(address(liabilityVault)), 1);
         assertEq(
             liabilityAsset.balanceOf(address(alice)),
-            100e18 - 35e18 + 2.680982126514837395e18 + 30e18
+            100e18 - 35e18 + 2.680982126514837395e18 + 30e18 - 1
         );
         assertEq(
             liabilityAsset.balanceOf(address(bob)),

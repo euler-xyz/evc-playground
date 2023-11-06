@@ -37,6 +37,8 @@ contract CreditVaultSimpleTest is DSTestPlus {
         string calldata name,
         string calldata symbol
     ) public {
+        hevm.assume(cvcAddr != address(0));
+
         CreditVaultSimple vlt = new CreditVaultSimple(
             ICVC(cvcAddr),
             underlying,
@@ -220,33 +222,31 @@ contract CreditVaultSimpleTest is DSTestPlus {
         // |--------------|---------|----------|---------|----------|
         // |         7333 |    3333 |     4999 |    4000 |     6000 |
         // |--------------|---------|----------|---------|----------|
-        // | 5. Bob mints 2000 shares (costs 3001 assets)           |
+        // | 5. Bob mints 2000 shares                               |
         // |    NOTE: Bob's assets spent got rounded up             |
         // |    NOTE: Alice's vault assets got rounded up           |
         // |--------------|---------|----------|---------|----------|
-        // |         9333 |    3333 |     5000 |    6000 |     9000 |
+        // |         9333 |    3333 |     4999 |    6000 |     9000 |
         // |--------------|---------|----------|---------|----------|
         // | 6. Vault mutates by +3000 tokens...                    |
         // |    (simulated yield returned from strategy)            |
-        // |    NOTE: Vault holds 17001 tokens, but sum of          |
-        // |          assetsOf() is 17000.                          |
+        // |    NOTE: Vault holds 17000 tokens                      |
         // |--------------|---------|----------|---------|----------|
-        // |         9333 |    3333 |     6071 |    6000 |    10929 |
+        // |         9333 |    3333 |     6070 |    6000 |    10928 |
         // |--------------|---------|----------|---------|----------|
-        // | 7. Alice redeem 1333 shares (2428 assets)              |
+        // | 7. Alice redeem 1333 shares (2427 assets)              |
         // |--------------|---------|----------|---------|----------|
         // |         8000 |    2000 |     3643 |    6000 |    10929 |
         // |--------------|---------|----------|---------|----------|
-        // | 8. Bob withdraws 2928 assets (1608 shares)             |
+        // | 8. Bob withdraws 2929 assets (1608 shares)             |
         // |--------------|---------|----------|---------|----------|
         // |         6392 |    2000 |     3643 |    4392 |     8000 |
         // |--------------|---------|----------|---------|----------|
         // | 9. Alice withdraws 3643 assets (2000 shares)           |
-        // |    NOTE: Bob's assets have been rounded back up        |
         // |--------------|---------|----------|---------|----------|
         // |         4392 |       0 |        0 |    4392 |     8001 |
         // |--------------|---------|----------|---------|----------|
-        // | 10. Bob redeem 4392 shares (8001 tokens)               |
+        // | 10. Bob redeem 4392 shares (8000 tokens)               |
         // |--------------|---------|----------|---------|----------|
         // |            0 |       0 |        0 |       0 |        0 |
         // |______________|_________|__________|_________|__________|
@@ -352,6 +352,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
             // Alice share is 33.33% of the Vault, Bob 66.66% of the Vault.
             // Alice's share count stays the same but the underlying amount changes from 2000 to 3000.
             // Bob's share count stays the same but the underlying amount changes from 4000 to 6000.
+            // Note: The assets are rounded down to the nearest integer.
             underlying.mint(address(vault), mutationUnderlyingAmount);
             assertEq(vault.totalSupply(), preMutationShareBal);
             assertEq(
@@ -361,12 +362,12 @@ contract CreditVaultSimpleTest is DSTestPlus {
             assertEq(vault.balanceOf(alice), aliceShareAmount);
             assertEq(
                 vault.convertToAssets(vault.balanceOf(alice)),
-                aliceUnderlyingAmount + (mutationUnderlyingAmount / 3) * 1
+                aliceUnderlyingAmount + (mutationUnderlyingAmount / 3) * 1 - 1
             );
             assertEq(vault.balanceOf(bob), bobShareAmount);
             assertEq(
                 vault.convertToAssets(vault.balanceOf(bob)),
-                bobUnderlyingAmount + (mutationUnderlyingAmount / 3) * 2
+                bobUnderlyingAmount + (mutationUnderlyingAmount / 3) * 2 - 1
             );
         }
 
@@ -388,7 +389,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
         assertEq(vault.balanceOf(bob), 4000);
         assertEq(vault.convertToAssets(vault.balanceOf(bob)), 6000);
 
-        // 5. Bob mints 2000 shares (costs 3001 assets)
+        // 5. Bob mints 2000 shares
         // NOTE: Bob's assets spent got rounded up
         // NOTE: Alices's vault assets got rounded up
         hevm.prank(bob);
@@ -404,23 +405,24 @@ contract CreditVaultSimpleTest is DSTestPlus {
 
         assertEq(vault.totalSupply(), 9333);
         assertEq(vault.balanceOf(alice), 3333);
-        assertEq(vault.convertToAssets(vault.balanceOf(alice)), 5000);
+        assertEq(vault.convertToAssets(vault.balanceOf(alice)), 4999);
         assertEq(vault.balanceOf(bob), 6000);
         assertEq(vault.convertToAssets(vault.balanceOf(bob)), 9000);
 
         // Sanity checks:
-        // Alice and bob should have spent all their tokens now
+        // Alice should have spent all their tokens now
+        // Bob should still have 1 wei left
         assertEq(underlying.balanceOf(alice), 0);
-        assertEq(underlying.balanceOf(bob), 0);
+        assertEq(underlying.balanceOf(bob), 1);
         // Assets in vault: 4k (alice) + 7k (bob) + 3k (yield) + 1 (round up)
-        assertEq(vault.totalAssets(), 14001);
+        assertEq(vault.totalAssets(), 14000);
 
         // 6. Vault mutates by +3000 tokens
-        // NOTE: Vault holds 17001 tokens, but sum of assetsOf() is 17000.
+        // NOTE: Vault holds 17000 tokens.
         underlying.mint(address(vault), mutationUnderlyingAmount);
-        assertEq(vault.totalAssets(), 17001);
-        assertEq(vault.convertToAssets(vault.balanceOf(alice)), 6071);
-        assertEq(vault.convertToAssets(vault.balanceOf(bob)), 10929);
+        assertEq(vault.totalAssets(), 17000);
+        assertEq(vault.convertToAssets(vault.balanceOf(alice)), 6070);
+        assertEq(vault.convertToAssets(vault.balanceOf(bob)), 10928);
 
         // 7. Alice redeem 1333 shares (2428 assets)
         hevm.prank(alice);
@@ -439,7 +441,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
             );
         }
 
-        assertEq(underlying.balanceOf(alice), 2428);
+        assertEq(underlying.balanceOf(alice), 2427);
         assertEq(vault.totalSupply(), 8000);
         assertEq(vault.totalAssets(), 14573);
         assertEq(vault.balanceOf(alice), 2000);
@@ -459,7 +461,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
             );
         }
 
-        assertEq(underlying.balanceOf(bob), 2929);
+        assertEq(underlying.balanceOf(bob), 2930);
         assertEq(vault.totalSupply(), 6392);
         assertEq(vault.totalAssets(), 11644);
         assertEq(vault.balanceOf(alice), 2000);
@@ -485,15 +487,15 @@ contract CreditVaultSimpleTest is DSTestPlus {
             );
         }
 
-        assertEq(underlying.balanceOf(alice), 6071);
+        assertEq(underlying.balanceOf(alice), 6070);
         assertEq(vault.totalSupply(), 4392);
         assertEq(vault.totalAssets(), 8001);
         assertEq(vault.balanceOf(alice), 0);
         assertEq(vault.convertToAssets(vault.balanceOf(alice)), 0);
         assertEq(vault.balanceOf(bob), 4392);
-        assertEq(vault.convertToAssets(vault.balanceOf(bob)), 8001);
+        assertEq(vault.convertToAssets(vault.balanceOf(bob)), 8000);
 
-        // 10. Bob redeem 4392 shares (8001 tokens)
+        // 10. Bob redeem 4392 shares (8000 tokens)
         hevm.prank(bob);
         if (seed % 2 == 0) {
             vault.redeem(4392, bob, bob);
@@ -507,14 +509,15 @@ contract CreditVaultSimpleTest is DSTestPlus {
 
         assertEq(underlying.balanceOf(bob), 10930);
         assertEq(vault.totalSupply(), 0);
-        assertEq(vault.totalAssets(), 0);
+        assertEq(vault.totalAssets(), 1);
         assertEq(vault.balanceOf(alice), 0);
         assertEq(vault.convertToAssets(vault.balanceOf(alice)), 0);
         assertEq(vault.balanceOf(bob), 0);
         assertEq(vault.convertToAssets(vault.balanceOf(bob)), 0);
 
         // Sanity check
-        assertEq(underlying.balanceOf(address(vault)), 0);
+        // 1 wei stays in the vault due to the share inflation protection implemented
+        assertEq(underlying.balanceOf(address(vault)), 1);
     }
 
     function testFailDepositWithNotEnoughApproval() public {

@@ -99,16 +99,8 @@ contract LightweightOrderOperatorTest is Test {
             .Order({
                 nonCVCOperations: nonCVCItems,
                 CVCOperations: CVCItems,
-                submissionTip: LightweightOrderOperator.Tip({
-                    token: ERC20(address(0)),
-                    minAmount: 0,
-                    maxAmount: 0
-                }), // no tip for submission
-                executionTip: LightweightOrderOperator.Tip({
-                    token: ERC20(address(vault)),
-                    minAmount: 0,
-                    maxAmount: 1e18
-                }),
+                submissionTipToken: ERC20(address(0)), // no tip for submission
+                executionTipToken: ERC20(address(vault)),
                 salt: 0
             });
 
@@ -225,11 +217,7 @@ contract LightweightOrderOperatorTest is Test {
         // and get tipped.
         // first update salt and the tip
         order.salt = 2;
-        order.submissionTip = LightweightOrderOperator.Tip({
-            token: ERC20(address(vault)),
-            minAmount: 0.01e18,
-            maxAmount: 1e18
-        });
+        order.submissionTipToken = ERC20(address(vault));
 
         // then prepare the data for the permit
         items[0] = ICVC.BatchItem({
@@ -324,11 +312,7 @@ contract LightweightOrderOperatorTest is Test {
 
         // anyone can also execute the signed order directly if they have an appropriate signature
         order.salt = 3;
-        order.submissionTip = LightweightOrderOperator.Tip({
-            token: ERC20(address(0)),
-            minAmount: 0,
-            maxAmount: 0
-        });
+        order.submissionTipToken = ERC20(address(0));
 
         data = abi.encodeWithSelector(
             ICVC.call.selector,

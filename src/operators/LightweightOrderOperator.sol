@@ -35,20 +35,14 @@ contract LightweightOrderOperator {
     struct Order {
         NonCVCBatchItem[] nonCVCOperations;
         ICVC.BatchItem[] CVCOperations;
-        Tip submissionTip;
-        Tip executionTip;
+        ERC20 submissionTipToken;
+        ERC20 executionTipToken;
         uint salt;
     }
 
     struct NonCVCBatchItem {
         address targetContract;
         bytes data;
-    }
-
-    struct Tip {
-        ERC20 token;
-        uint minAmount;
-        uint maxAmount;
     }
 
     ICVC public immutable cvc;
@@ -106,7 +100,7 @@ contract LightweightOrderOperator {
         cvc.batch(order.CVCOperations);
 
         // payout the execution tip
-        _payoutTip(order.executionTip);
+        _payoutTip(order.executionTipToken);
 
         (address caller, ) = cvc.getCurrentOnBehalfOfAccount(address(0));
         emit OrderExecuted(orderHash, caller);
@@ -126,7 +120,7 @@ contract LightweightOrderOperator {
         _verifyOrder(order);
 
         // payout the submission tip
-        _payoutTip(order.submissionTip);
+        _payoutTip(order.submissionTipToken);
 
         emit OrderPending(order);
     }
@@ -170,21 +164,17 @@ contract LightweightOrderOperator {
     }
 
     /// @notice Pays out a tip
-    /// @param tip The tip to pay out
-    function _payoutTip(Tip calldata tip) internal {
-        if (address(tip.token) != address(0)) {
-            uint amount = tip.token.balanceOf(address(this));
+    /// @param tipToken The token to pay out
+    function _payoutTip(ERC20 tipToken) internal {
+        if (address(tipToken) != address(0)) {
+            uint amount = tipToken.balanceOf(address(this));
             address receiver = tipReceiver;
 
             if (amount > 0 && receiver == address(0)) {
                 revert InvalidTip();
             }
 
-            if (amount < tip.minAmount || amount > tip.maxAmount) {
-                revert InvalidTip();
-            }
-
-            tip.token.transfer(receiver, amount);
+            tipToken.transfer(receiver, amount);
         }
     }
 
