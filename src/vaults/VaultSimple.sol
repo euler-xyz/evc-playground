@@ -6,36 +6,38 @@ import "solmate/auth/Owned.sol";
 import "solmate/mixins/ERC4626.sol";
 import "solmate/utils/SafeTransferLib.sol";
 import "solmate/utils/FixedPointMathLib.sol";
-import "./CreditVaultBase.sol";
+import "./VaultBase.sol";
 
-/// @title CreditVaultSimple
-/// @dev It provides basic functionality for credit vaults.
-/// @notice In this contract, the CVC is authenticated before any action that may affect the state of the vault or an account.
-/// This is done to ensure that if it's CVC calling, the account is correctly authorized.
-/// Unlike solmate, CreditVaultSimple implementation prevents from share inflation attack by using virual assets and shares.
+/// @title VaultSimple
+/// @dev It provides basic functionality for vaults.
+/// @notice In this contract, the EVC is authenticated before any action that may affect the state of the vault or an
+/// account.
+/// This is done to ensure that if it's EVC calling, the account is correctly authorized.
+/// Unlike solmate, VaultSimple implementation prevents from share inflation attack by using virual assets and
+/// shares.
 /// Look into Open-Zeppelin documentation for more details.
 /// This contract does not take the supply cap into account when calculating max deposit and max mint values.
-contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
+contract VaultSimple is VaultBase, Owned, ERC4626 {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
-    event SupplyCapSet(uint newSupplyCap);
+    event SupplyCapSet(uint256 newSupplyCap);
 
     error SnapshotNotTaken();
     error SupplyCapExceeded();
 
-    uint public supplyCap;
+    uint256 public supplyCap;
 
     constructor(
-        ICVC _cvc,
+        IEVC _evc,
         ERC20 _asset,
         string memory _name,
         string memory _symbol
-    ) CreditVaultBase(_cvc) Owned(msg.sender) ERC4626(_asset, _name, _symbol) {}
+    ) VaultBase(_evc) Owned(msg.sender) ERC4626(_asset, _name, _symbol) {}
 
     /// @dev Sets the supply cap of the vault.
     /// @param newSupplyCap The new supply cap.
-    function setSupplyCap(uint newSupplyCap) external onlyOwner {
+    function setSupplyCap(uint256 newSupplyCap) external onlyOwner {
         supplyCap = newSupplyCap;
         emit SupplyCapSet(newSupplyCap);
     }
@@ -43,13 +45,7 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     /// @notice Takes a snapshot of the vault.
     /// @dev This function is called before any action that may affect the vault's state.
     /// @return A snapshot of the vault's state.
-    function doTakeVaultSnapshot()
-        internal
-        view
-        virtual
-        override
-        returns (bytes memory)
-    {
+    function doTakeVaultSnapshot() internal view virtual override returns (bytes memory) {
         // make total supply snapshot here and return it:
         return abi.encode(_convertToAssets(totalSupply, false));
     }
@@ -57,22 +53,16 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     /// @notice Checks the vault's status.
     /// @dev This function is called after any action that may affect the vault's state.
     /// @param oldSnapshot The snapshot of the vault's state before the action.
-    function doCheckVaultStatus(
-        bytes memory oldSnapshot
-    ) internal virtual override {
+    function doCheckVaultStatus(bytes memory oldSnapshot) internal virtual override {
         // sanity check in case the snapshot hasn't been taken
         if (oldSnapshot.length == 0) revert SnapshotNotTaken();
 
         // validate the vault state here:
-        uint initialSupply = abi.decode(oldSnapshot, (uint));
-        uint finalSupply = _convertToAssets(totalSupply, false);
+        uint256 initialSupply = abi.decode(oldSnapshot, (uint256));
+        uint256 finalSupply = _convertToAssets(totalSupply, false);
 
         // the supply cap can be implemented like this:
-        if (
-            supplyCap != 0 &&
-            finalSupply > supplyCap &&
-            finalSupply > initialSupply
-        ) {
+        if (supplyCap != 0 && finalSupply > supplyCap && finalSupply > initialSupply) {
             revert SupplyCapExceeded();
         }
 
@@ -82,18 +72,13 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
 
     /// @notice Checks the status of an account.
     /// @dev This function is called after any action that may affect the account's state.
-    function doCheckAccountStatus(
-        address,
-        address[] calldata
-    ) internal view virtual override {
+    function doCheckAccountStatus(address, address[] calldata) internal view virtual override {
         // no need to do anything here because the vault does not allow borrowing
     }
 
     /// @dev Disables a controller.
     /// @param account The account of the controller.
-    function disableController(
-        address account
-    ) external virtual override nonReentrant {
+    function disableController(address account) external virtual override nonReentrant {
         // ensure that the account does not have any liabilities before disabling controller
         releaseAccountFromControl(account);
     }
@@ -107,54 +92,42 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     /// @dev Converts assets to shares.
     /// @param assets The assets to convert.
     /// @return The converted shares.
-    function convertToShares(
-        uint256 assets
-    ) public view virtual override returns (uint256) {
+    function convertToShares(uint256 assets) public view virtual override returns (uint256) {
         return _convertToShares(assets, false);
     }
 
     /// @dev Converts shares to assets.
     /// @param shares The shares to convert.
     /// @return The converted assets.
-    function convertToAssets(
-        uint256 shares
-    ) public view virtual override returns (uint256) {
+    function convertToAssets(uint256 shares) public view virtual override returns (uint256) {
         return _convertToAssets(shares, false);
     }
 
     /// @notice Simulates the effects of depositing a certain amount of assets at the current block.
     /// @param assets The amount of assets to simulate depositing.
     /// @return The amount of shares that would be minted.
-    function previewDeposit(
-        uint256 assets
-    ) public view virtual override returns (uint256) {
+    function previewDeposit(uint256 assets) public view virtual override returns (uint256) {
         return _convertToShares(assets, false);
     }
 
     /// @notice Simulates the effects of minting a certain amount of shares at the current block.
     /// @param shares The amount of shares to simulate minting.
     /// @return The amount of assets that would be deposited.
-    function previewMint(
-        uint256 shares
-    ) public view virtual override returns (uint256) {
+    function previewMint(uint256 shares) public view virtual override returns (uint256) {
         return _convertToAssets(shares, true);
     }
 
     /// @notice Simulates the effects of withdrawing a certain amount of assets at the current block.
     /// @param assets The amount of assets to simulate withdrawing.
     /// @return The amount of shares that would be burned.
-    function previewWithdraw(
-        uint256 assets
-    ) public view virtual override returns (uint256) {
+    function previewWithdraw(uint256 assets) public view virtual override returns (uint256) {
         return _convertToShares(assets, true);
     }
 
     /// @notice Simulates the effects of redeeming a certain amount of shares at the current block.
     /// @param shares The amount of shares to simulate redeeming.
     /// @return The amount of assets that would be redeemed.
-    function previewRedeem(
-        uint256 shares
-    ) public view virtual override returns (uint256) {
+    function previewRedeem(uint256 shares) public view virtual override returns (uint256) {
         return _convertToAssets(shares, false);
     }
 
@@ -162,11 +135,8 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     /// @param spender The spender to approve.
     /// @param amount The amount to approve.
     /// @return A boolean indicating whether the approval was successful.
-    function approve(
-        address spender,
-        uint256 amount
-    ) public override returns (bool) {
-        address msgSender = CVCAuthenticate();
+    function approve(address spender, uint256 amount) public override returns (bool) {
+        address msgSender = EVCAuthenticate();
 
         allowance[msgSender][spender] = amount;
 
@@ -179,11 +149,8 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     /// @param to The recipient of the transfer.
     /// @param amount The amount shares to transfer.
     /// @return A boolean indicating whether the transfer was successful.
-    function transfer(
-        address to,
-        uint256 amount
-    ) public override returns (bool) {
-        return _transfer(CVCAuthenticate(), to, amount);
+    function transfer(address to, uint256 amount) public override returns (bool) {
+        return _transfer(EVCAuthenticate(), to, amount);
     }
 
     /// @dev Transfers a certain amount of shares from a sender to a recipient.
@@ -191,34 +158,24 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     /// @param to The recipient of the transfer.
     /// @param amount The amount of shares to transfer.
     /// @return A boolean indicating whether the transfer was successful.
-    function transferFrom(
-        address from,
-        address to,
-        uint256 amount
-    ) public override returns (bool) {
-        return _transferFrom(CVCAuthenticate(), from, to, amount);
+    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
+        return _transferFrom(EVCAuthenticate(), from, to, amount);
     }
 
     /// @dev Deposits a certain amount of assets for a receiver.
     /// @param assets The assets to deposit.
     /// @param receiver The receiver of the deposit.
     /// @return shares The shares equivalent to the deposited assets.
-    function deposit(
-        uint256 assets,
-        address receiver
-    ) public override returns (uint256 shares) {
-        return _deposit(CVCAuthenticate(), assets, receiver);
+    function deposit(uint256 assets, address receiver) public override returns (uint256 shares) {
+        return _deposit(EVCAuthenticate(), assets, receiver);
     }
 
     /// @dev Mints a certain amount of shares for a receiver.
     /// @param shares The shares to mint.
     /// @param receiver The receiver of the mint.
     /// @return assets The assets equivalent to the minted shares.
-    function mint(
-        uint256 shares,
-        address receiver
-    ) public override returns (uint256 assets) {
-        return _mint(CVCAuthenticate(), shares, receiver);
+    function mint(uint256 shares, address receiver) public override returns (uint256 assets) {
+        return _mint(EVCAuthenticate(), shares, receiver);
     }
 
     /// @dev Withdraws a certain amount of assets for a receiver.
@@ -227,12 +184,8 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     /// @param receiver The receiver of the withdrawal.
     /// @param owner The owner of the assets.
     /// @return shares The shares equivalent to the withdrawn assets.
-    function withdraw(
-        uint256 assets,
-        address receiver,
-        address owner
-    ) public override returns (uint256 shares) {
-        return _withdraw(CVCAuthenticate(), assets, receiver, owner);
+    function withdraw(uint256 assets, address receiver, address owner) public override returns (uint256 shares) {
+        return _withdraw(EVCAuthenticate(), assets, receiver, owner);
     }
 
     /// @dev Redeems a certain amount of shares for a receiver.
@@ -241,12 +194,8 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     /// @param receiver The receiver of the redemption.
     /// @param owner The owner of the shares.
     /// @return assets The assets equivalent to the redeemed shares.
-    function redeem(
-        uint256 shares,
-        address receiver,
-        address owner
-    ) public override returns (uint256 assets) {
-        return _redeem(CVCAuthenticate(), shares, receiver, owner);
+    function redeem(uint256 shares, address receiver, address owner) public override returns (uint256 assets) {
+        return _redeem(EVCAuthenticate(), shares, receiver, owner);
     }
 
     function _transfer(
@@ -275,8 +224,9 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
     ) internal virtual nonReentrantWithChecks(from) returns (bool) {
         uint256 allowed = allowance[from][msgSender]; // Saves gas for limited approvals.
 
-        if (allowed != type(uint256).max)
+        if (allowed != type(uint256).max) {
             allowance[from][msgSender] = allowed - amount;
+        }
 
         balanceOf[from] -= amount;
 
@@ -295,12 +245,7 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         address msgSender,
         uint256 assets,
         address receiver
-    )
-        internal
-        virtual
-        nonReentrantWithChecks(address(0))
-        returns (uint256 shares)
-    {
+    ) internal virtual nonReentrantWithChecks(address(0)) returns (uint256 shares) {
         // Check for rounding error since we round down in previewDeposit.
         require((shares = previewDeposit(assets)) != 0, "ZERO_SHARES");
 
@@ -316,12 +261,7 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         address msgSender,
         uint256 shares,
         address receiver
-    )
-        internal
-        virtual
-        nonReentrantWithChecks(address(0))
-        returns (uint256 assets)
-    {
+    ) internal virtual nonReentrantWithChecks(address(0)) returns (uint256 assets) {
         assets = previewMint(shares); // No need to check for rounding error, previewMint rounds up.
 
         // Need to transfer before minting or ERC777s could reenter.
@@ -343,8 +283,9 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         if (msgSender != owner) {
             uint256 allowed = allowance[owner][msgSender]; // Saves gas for limited approvals.
 
-            if (allowed != type(uint256).max)
+            if (allowed != type(uint256).max) {
                 allowance[owner][msgSender] = allowed - shares;
+            }
         }
 
         receiver = getAccountOwner(receiver == address(0) ? owner : receiver);
@@ -365,8 +306,9 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         if (msgSender != owner) {
             uint256 allowed = allowance[owner][msgSender]; // Saves gas for limited approvals.
 
-            if (allowed != type(uint256).max)
+            if (allowed != type(uint256).max) {
                 allowance[owner][msgSender] = allowed - shares;
+            }
         }
 
         // Check for rounding error since we round down in previewRedeem.
@@ -381,23 +323,15 @@ contract CreditVaultSimple is CreditVaultBase, Owned, ERC4626 {
         asset.safeTransfer(receiver, assets);
     }
 
-    function _convertToShares(
-        uint256 assets,
-        bool roundUp
-    ) internal view virtual returns (uint256) {
-        return
-            roundUp
-                ? assets.mulDivUp(totalSupply + 1, totalAssets() + 1)
-                : assets.mulDivDown(totalSupply + 1, totalAssets() + 1);
+    function _convertToShares(uint256 assets, bool roundUp) internal view virtual returns (uint256) {
+        return roundUp
+            ? assets.mulDivUp(totalSupply + 1, totalAssets() + 1)
+            : assets.mulDivDown(totalSupply + 1, totalAssets() + 1);
     }
 
-    function _convertToAssets(
-        uint256 shares,
-        bool roundUp
-    ) internal view virtual returns (uint256) {
-        return
-            roundUp
-                ? shares.mulDivUp(totalAssets() + 1, totalSupply + 1)
-                : shares.mulDivDown(totalAssets() + 1, totalSupply + 1);
+    function _convertToAssets(uint256 shares, bool roundUp) internal view virtual returns (uint256) {
+        return roundUp
+            ? shares.mulDivUp(totalAssets() + 1, totalSupply + 1)
+            : shares.mulDivDown(totalAssets() + 1, totalSupply + 1);
     }
 }

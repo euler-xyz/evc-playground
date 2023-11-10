@@ -3,21 +3,21 @@ pragma solidity ^0.8.0;
 
 import "erc4626-tests/ERC4626.test.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
-import "euler-cvc/CreditVaultConnector.sol";
-import "../../src/vaults/CreditVaultSimple.sol";
+import "euler-evc/EthereumVaultConnector.sol";
+import "../../src/vaults/VaultSimple.sol";
 
 // source:
 // https://github.com/a16z/erc4626-tests
 
 contract ERC4626StdTest is ERC4626Test {
-    ICVC _cvc_;
+    IEVC _evc_;
 
     function setUp() public override {
-        _cvc_ = new CreditVaultConnector();
+        _evc_ = new EthereumVaultConnector();
         _underlying_ = address(new MockERC20("Mock ERC20", "MERC20", 18));
         _vault_ = address(
-            new CreditVaultSimple(
-                _cvc_,
+            new VaultSimple(
+                _evc_,
                 MockERC20(_underlying_),
                 "Mock ERC4626",
                 "MERC4626"
@@ -36,10 +36,7 @@ contract ERC4626StdTest is ERC4626Test {
         super.test_maxWithdraw(init);
     }
 
-    function clamp(
-        Init memory init,
-        uint256 max
-    ) internal pure returns (Init memory) {
+    function clamp(Init memory init, uint256 max) internal pure returns (Init memory) {
         for (uint256 i = 0; i < N; i++) {
             init.share[i] = init.share[i] % max;
             init.asset[i] = init.asset[i] % max;

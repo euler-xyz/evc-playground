@@ -11,11 +11,7 @@ interface IPriceOracle {
     /// @param base The address of the base asset.
     /// @param quote The address of the quote asset.
     /// @return out The quote amount in quote asset.
-    function getQuote(
-        uint amount,
-        address base,
-        address quote
-    ) external view returns (uint out);
+    function getQuote(uint256 amount, address base, address quote) external view returns (uint256 out);
 
     /// @notice Returns the bid and ask quotes for a given amount of base asset in quote asset.
     /// @param amount The amount of base asset.
@@ -24,21 +20,17 @@ interface IPriceOracle {
     /// @return bidOut The bid quote amount in quote asset.
     /// @return askOut The ask quote amount in quote asset.
     function getQuotes(
-        uint amount,
+        uint256 amount,
         address base,
         address quote
-    ) external view returns (uint bidOut, uint askOut);
+    ) external view returns (uint256 bidOut, uint256 askOut);
 
     /// @notice Returns the tick for a given amount of base asset in quote asset.
     /// @param amount The amount of base asset.
     /// @param base The address of the base asset.
     /// @param quote The address of the quote asset.
     /// @return tick The tick value.
-    function getTick(
-        uint amount,
-        address base,
-        address quote
-    ) external view returns (uint tick);
+    function getTick(uint256 amount, address base, address quote) external view returns (uint256 tick);
 
     /// @notice Returns the bid and ask ticks for a given amount of base asset in quote asset.
     /// @param amount The amount of base asset.
@@ -47,10 +39,10 @@ interface IPriceOracle {
     /// @return bidTick The bid tick value.
     /// @return askTick The ask tick value.
     function getTicks(
-        uint amount,
+        uint256 amount,
         address base,
         address quote
-    ) external view returns (uint bidTick, uint askTick);
+    ) external view returns (uint256 bidTick, uint256 askTick);
 
     error PO_BaseUnsupported();
     error PO_QuoteUnsupported();

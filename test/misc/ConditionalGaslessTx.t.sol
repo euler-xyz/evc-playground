@@ -3,33 +3,34 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
-import "euler-cvc/interfaces/ICreditVaultConnector.sol";
-import "../../src/vaults/CreditVaultSimple.sol";
+import "euler-evc/interfaces/IEthereumVaultConnector.sol";
+import "../../src/vaults/VaultSimple.sol";
 import "../../src/utils/SimpleConditionsEnforcer.sol";
-import "../utils/CVCPermitSignerECDSA.sol";
+import "../utils/evcPermitSignerECDSA.sol";
 
 contract ConditionalGaslessTxTest is Test {
-    ICVC cvc;
+    IEVC evc;
     MockERC20 asset;
-    CreditVaultSimple vault;
+    VaultSimple vault;
     SimpleConditionsEnforcer conditionsEnforcer;
-    CVCPermitSignerECDSA permitSigner;
+    evcPermitSignerECDSA permitSigner;
 
     function setUp() public {
-        cvc = new CreditVaultConnector();
+        evc = new EthereumVaultConnector();
         asset = new MockERC20("Asset", "ASS", 18);
-        vault = new CreditVaultSimple(cvc, asset, "Vault", "VAU");
+        vault = new VaultSimple(evc, asset, "Vault", "VAU");
         conditionsEnforcer = new SimpleConditionsEnforcer();
-        permitSigner = new CVCPermitSignerECDSA(address(cvc));
+        permitSigner = new evcPermitSignerECDSA(address(evc));
     }
 
     function test_ConditionalGaslessTx() public {
-        uint alicePrivateKey = 0x12345;
+        uint256 alicePrivateKey = 0x12345;
         address alice = vm.addr(alicePrivateKey);
+        permitSigner.setPrivateKey(alicePrivateKey);
         asset.mint(alice, 100e18);
 
         vm.prank(alice);
-        asset.approve(address(vault), type(uint).max);
+        asset.approve(address(vault), type(uint256).max);
 
         // alice deposits into her sub-account 1
         address alicesSubAccount = address(uint160(alice) ^ 1);
@@ -39,59 +40,41 @@ contract ConditionalGaslessTxTest is Test {
         // alice signs the calldata that allows anyone to withdraw her sub-account deposit
         // after specified timestamp in the future. The same concept can be used for implementing
         // conditional orders (e.g. stop-loss, take-profit etc.).
-        // the signed calldata can be executed by anyone using the permit() function on the CVC
-        ICVC.BatchItem[] memory items = new ICVC.BatchItem[](2);
-        items[0] = ICVC.BatchItem({
+        // the signed calldata can be executed by anyone using the permit() function on the evc
+        IEVC.BatchItem[] memory items = new IEVC.BatchItem[](2);
+        items[0] = IEVC.BatchItem({
             targetContract: address(conditionsEnforcer),
             onBehalfOfAccount: alice,
             value: 0,
             data: abi.encodeWithSelector(
-                SimpleConditionsEnforcer.currentBlockTimestamp.selector,
-                SimpleConditionsEnforcer.ComparisonType.GE,
-                100
-            )
+                SimpleConditionsEnforcer.currentBlockTimestamp.selector, SimpleConditionsEnforcer.ComparisonType.GE, 100
+                )
         });
-        items[1] = ICVC.BatchItem({
+        items[1] = IEVC.BatchItem({
             targetContract: address(vault),
             onBehalfOfAccount: alicesSubAccount,
             value: 0,
-            data: abi.encodeWithSelector(
-                CreditVaultSimple.withdraw.selector,
-                100e18,
-                alice,
-                alicesSubAccount
-            )
+            data: abi.encodeWithSelector(VaultSimple.withdraw.selector, 100e18, alice, alicesSubAccount)
         });
 
-        bytes memory data = abi.encodeWithSelector(ICVC.batch.selector, items);
-        bytes memory signature = permitSigner.signPermit(
-            alice,
-            0,
-            1,
-            type(uint).max,
-            data,
-            alicePrivateKey
-        );
+        bytes memory data = abi.encodeWithSelector(IEVC.batch.selector, items);
+        bytes memory signature = permitSigner.signPermit(alice, 0, 1, type(uint256).max, 0, data);
 
         assertEq(asset.balanceOf(address(alice)), 0);
         assertEq(vault.maxWithdraw(alicesSubAccount), 100e18);
 
         // having the signature, anyone can execute the calldata on behalf of alice, but only after
         // the specified timestamp in the future.
-        // -- cvc.permit()
-        // ---- cvc.batch()
-        // -------- conditionsEnforcer.currentBlockTimestamp() using cvc.callInternal() to check the condition
-        // -------- vault.withdraw() using cvc.callInternal() to withdraw the funds
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                SimpleConditionsEnforcer.ConditionNotMet.selector
-            )
-        );
-        cvc.permit(alice, 0, 1, type(uint).max, data, signature);
+        // -- evc.permit()
+        // ---- evc.batch()
+        // -------- conditionsEnforcer.currentBlockTimestamp() using evc.callInternal() to check the condition
+        // -------- vault.withdraw() using evc.callInternal() to withdraw the funds
+        vm.expectRevert(abi.encodeWithSelector(SimpleConditionsEnforcer.ConditionNotMet.selector));
+        evc.permit(alice, 0, 1, type(uint256).max, 0, data, signature);
 
         // succeeds if enough time elapses
         vm.warp(100);
-        cvc.permit(alice, 0, 1, type(uint).max, data, signature);
+        evc.permit(alice, 0, 1, type(uint256).max, 0, data, signature);
 
         assertEq(asset.balanceOf(address(alice)), 100e18);
         assertEq(vault.maxWithdraw(alicesSubAccount), 0);

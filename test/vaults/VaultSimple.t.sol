@@ -4,22 +4,22 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 import "solmate/test/utils/DSTestPlus.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
-import "euler-cvc/CreditVaultConnector.sol";
-import "../../src/vaults/CreditVaultSimple.sol";
+import "euler-evc/EthereumVaultConnector.sol";
+import "../../src/vaults/VaultSimple.sol";
 
-contract CreditVaultSimpleTest is DSTestPlus {
-    ICVC cvc;
+contract VaultSimpleTest is DSTestPlus {
+    IEVC evc;
     MockERC20 underlying;
-    CreditVaultSimple vault;
+    VaultSimple vault;
 
     error NotAuthorized();
     error ControllerDisabled();
 
     function setUp() public {
-        cvc = new CreditVaultConnector();
+        evc = new EthereumVaultConnector();
         underlying = new MockERC20("Mock Token", "TKN", 18);
-        vault = new CreditVaultSimple(
-            cvc,
+        vault = new VaultSimple(
+            evc,
             underlying,
             "Mock Token Vault",
             "vTKN"
@@ -32,15 +32,11 @@ contract CreditVaultSimpleTest is DSTestPlus {
         assertEq(vault.decimals(), 18);
     }
 
-    function testMetadata(
-        address cvcAddr,
-        string calldata name,
-        string calldata symbol
-    ) public {
-        hevm.assume(cvcAddr != address(0));
+    function testMetadata(address evcAddr, string calldata name, string calldata symbol) public {
+        hevm.assume(evcAddr != address(0));
 
-        CreditVaultSimple vlt = new CreditVaultSimple(
-            ICVC(cvcAddr),
+        VaultSimple vlt = new VaultSimple(
+            IEVC(evcAddr),
             underlying,
             name,
             symbol
@@ -50,7 +46,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
         assertEq(address(vlt.asset()), address(underlying));
     }
 
-    function testSingleDepositWithdraw(uint128 amount, uint seed) public {
+    function testSingleDepositWithdraw(uint128 amount, uint256 seed) public {
         if (amount == 0) amount = 1;
 
         uint256 aliceUnderlyingAmount = amount;
@@ -61,10 +57,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
 
         hevm.prank(alice);
         underlying.approve(address(vault), aliceUnderlyingAmount);
-        assertEq(
-            underlying.allowance(alice, address(vault)),
-            aliceUnderlyingAmount
-        );
+        assertEq(underlying.allowance(alice, address(vault)), aliceUnderlyingAmount);
 
         uint256 alicePreDepositBal = underlying.balanceOf(alice);
 
@@ -73,50 +66,31 @@ contract CreditVaultSimpleTest is DSTestPlus {
         if (seed % 2 == 0) {
             aliceShareAmount = vault.deposit(aliceUnderlyingAmount, alice);
         } else {
-            cvc.call(
-                address(vault),
-                alice,
-                abi.encodeWithSelector(
-                    vault.deposit.selector,
-                    aliceUnderlyingAmount,
-                    alice
-                )
+            evc.call(
+                address(vault), alice, 0, abi.encodeWithSelector(vault.deposit.selector, aliceUnderlyingAmount, alice)
             );
             aliceShareAmount = vault.convertToShares(aliceUnderlyingAmount);
         }
 
         // Expect exchange rate to be 1:1 on initial deposit.
         assertEq(aliceUnderlyingAmount, aliceShareAmount);
-        assertEq(
-            vault.previewWithdraw(aliceShareAmount),
-            aliceUnderlyingAmount
-        );
+        assertEq(vault.previewWithdraw(aliceShareAmount), aliceUnderlyingAmount);
         assertEq(vault.previewDeposit(aliceUnderlyingAmount), aliceShareAmount);
         assertEq(vault.totalSupply(), aliceShareAmount);
         assertEq(vault.totalAssets(), aliceUnderlyingAmount);
         assertEq(vault.balanceOf(alice), aliceShareAmount);
-        assertEq(
-            vault.convertToAssets(vault.balanceOf(alice)),
-            aliceUnderlyingAmount
-        );
-        assertEq(
-            underlying.balanceOf(alice),
-            alicePreDepositBal - aliceUnderlyingAmount
-        );
+        assertEq(vault.convertToAssets(vault.balanceOf(alice)), aliceUnderlyingAmount);
+        assertEq(underlying.balanceOf(alice), alicePreDepositBal - aliceUnderlyingAmount);
 
         hevm.prank(alice);
         if (seed % 2 == 0) {
             vault.withdraw(aliceUnderlyingAmount, alice, alice);
         } else {
-            cvc.call(
+            evc.call(
                 address(vault),
                 alice,
-                abi.encodeWithSelector(
-                    vault.withdraw.selector,
-                    aliceUnderlyingAmount,
-                    alice,
-                    alice
-                )
+                0,
+                abi.encodeWithSelector(vault.withdraw.selector, aliceUnderlyingAmount, alice, alice)
             );
         }
 
@@ -126,7 +100,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
         assertEq(underlying.balanceOf(alice), alicePreDepositBal);
     }
 
-    function testSingleMintRedeem(uint128 amount, uint seed) public {
+    function testSingleMintRedeem(uint128 amount, uint256 seed) public {
         if (amount == 0) amount = 1;
 
         uint256 aliceShareAmount = amount;
@@ -146,50 +120,26 @@ contract CreditVaultSimpleTest is DSTestPlus {
         if (seed % 2 == 0) {
             aliceUnderlyingAmount = vault.mint(aliceShareAmount, alice);
         } else {
-            cvc.call(
-                address(vault),
-                alice,
-                abi.encodeWithSelector(
-                    vault.mint.selector,
-                    aliceShareAmount,
-                    alice
-                )
-            );
+            evc.call(address(vault), alice, 0, abi.encodeWithSelector(vault.mint.selector, aliceShareAmount, alice));
             aliceUnderlyingAmount = vault.convertToAssets(aliceShareAmount);
         }
 
         // Expect exchange rate to be 1:1 on initial mint.
         assertEq(aliceShareAmount, aliceUnderlyingAmount);
-        assertEq(
-            vault.previewWithdraw(aliceShareAmount),
-            aliceUnderlyingAmount
-        );
+        assertEq(vault.previewWithdraw(aliceShareAmount), aliceUnderlyingAmount);
         assertEq(vault.previewDeposit(aliceUnderlyingAmount), aliceShareAmount);
         assertEq(vault.totalSupply(), aliceShareAmount);
         assertEq(vault.totalAssets(), aliceUnderlyingAmount);
         assertEq(vault.balanceOf(alice), aliceUnderlyingAmount);
-        assertEq(
-            vault.convertToAssets(vault.balanceOf(alice)),
-            aliceUnderlyingAmount
-        );
-        assertEq(
-            underlying.balanceOf(alice),
-            alicePreDepositBal - aliceUnderlyingAmount
-        );
+        assertEq(vault.convertToAssets(vault.balanceOf(alice)), aliceUnderlyingAmount);
+        assertEq(underlying.balanceOf(alice), alicePreDepositBal - aliceUnderlyingAmount);
 
         hevm.prank(alice);
         if (seed % 2 == 0) {
             vault.redeem(aliceShareAmount, alice, alice);
         } else {
-            cvc.call(
-                address(vault),
-                alice,
-                abi.encodeWithSelector(
-                    vault.redeem.selector,
-                    aliceShareAmount,
-                    alice,
-                    alice
-                )
+            evc.call(
+                address(vault), alice, 0, abi.encodeWithSelector(vault.redeem.selector, aliceShareAmount, alice, alice)
             );
         }
 
@@ -199,7 +149,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
         assertEq(underlying.balanceOf(alice), alicePreDepositBal);
     }
 
-    function testMultipleMintDepositRedeemWithdraw(uint seed) public {
+    function testMultipleMintDepositRedeemWithdraw(uint256 seed) public {
         // Scenario:
         // A = Alice, B = Bob
         //  ________________________________________________________
@@ -276,11 +226,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
         if (seed % 2 == 0) {
             aliceUnderlyingAmount = vault.mint(2000, alice);
         } else {
-            cvc.call(
-                address(vault),
-                alice,
-                abi.encodeWithSelector(vault.mint.selector, 2000, alice)
-            );
+            evc.call(address(vault), alice, 0, abi.encodeWithSelector(vault.mint.selector, 2000, alice));
             aliceUnderlyingAmount = vault.convertToAssets(2000);
         }
 
@@ -289,14 +235,8 @@ contract CreditVaultSimpleTest is DSTestPlus {
         // Expect to have received the requested mint amount.
         assertEq(aliceShareAmount, 2000);
         assertEq(vault.balanceOf(alice), aliceShareAmount);
-        assertEq(
-            vault.convertToAssets(vault.balanceOf(alice)),
-            aliceUnderlyingAmount
-        );
-        assertEq(
-            vault.convertToShares(aliceUnderlyingAmount),
-            vault.balanceOf(alice)
-        );
+        assertEq(vault.convertToAssets(vault.balanceOf(alice)), aliceUnderlyingAmount);
+        assertEq(vault.convertToShares(aliceUnderlyingAmount), vault.balanceOf(alice));
 
         // Expect a 1:1 ratio before mutation.
         assertEq(aliceUnderlyingAmount, 2000);
@@ -311,11 +251,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
         if (seed % 2 == 0) {
             bobShareAmount = vault.deposit(4000, bob);
         } else {
-            cvc.call(
-                address(vault),
-                bob,
-                abi.encodeWithSelector(vault.deposit.selector, 4000, bob, bob)
-            );
+            evc.call(address(vault), bob, 0, abi.encodeWithSelector(vault.deposit.selector, 4000, bob, bob));
             bobShareAmount = vault.convertToShares(4000);
         }
 
@@ -324,14 +260,8 @@ contract CreditVaultSimpleTest is DSTestPlus {
         // Expect to have received the requested underlying amount.
         assertEq(bobUnderlyingAmount, 4000);
         assertEq(vault.balanceOf(bob), bobShareAmount);
-        assertEq(
-            vault.convertToAssets(vault.balanceOf(bob)),
-            bobUnderlyingAmount
-        );
-        assertEq(
-            vault.convertToShares(bobUnderlyingAmount),
-            vault.balanceOf(bob)
-        );
+        assertEq(vault.convertToAssets(vault.balanceOf(bob)), bobUnderlyingAmount);
+        assertEq(vault.convertToShares(bobUnderlyingAmount), vault.balanceOf(bob));
 
         // Expect a 1:1 ratio before mutation.
         assertEq(bobShareAmount, bobUnderlyingAmount);
@@ -339,8 +269,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
         // Sanity check.
         {
             uint256 preMutationShareBal = aliceShareAmount + bobShareAmount;
-            uint256 preMutationBal = aliceUnderlyingAmount +
-                bobUnderlyingAmount;
+            uint256 preMutationBal = aliceUnderlyingAmount + bobUnderlyingAmount;
             assertEq(vault.totalSupply(), preMutationShareBal);
             assertEq(vault.totalAssets(), preMutationBal);
             assertEq(vault.totalSupply(), 6000);
@@ -355,10 +284,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
             // Note: The assets are rounded down to the nearest integer.
             underlying.mint(address(vault), mutationUnderlyingAmount);
             assertEq(vault.totalSupply(), preMutationShareBal);
-            assertEq(
-                vault.totalAssets(),
-                preMutationBal + mutationUnderlyingAmount
-            );
+            assertEq(vault.totalAssets(), preMutationBal + mutationUnderlyingAmount);
             assertEq(vault.balanceOf(alice), aliceShareAmount);
             assertEq(
                 vault.convertToAssets(vault.balanceOf(alice)),
@@ -376,11 +302,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
         if (seed % 3 == 0) {
             vault.deposit(2000, alice);
         } else {
-            cvc.call(
-                address(vault),
-                alice,
-                abi.encodeWithSelector(vault.deposit.selector, 2000, alice)
-            );
+            evc.call(address(vault), alice, 0, abi.encodeWithSelector(vault.deposit.selector, 2000, alice));
         }
 
         assertEq(vault.totalSupply(), 7333);
@@ -396,11 +318,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
         if (seed % 3 == 0) {
             vault.mint(2000, bob);
         } else {
-            cvc.call(
-                address(vault),
-                bob,
-                abi.encodeWithSelector(vault.mint.selector, 2000, bob)
-            );
+            evc.call(address(vault), bob, 0, abi.encodeWithSelector(vault.mint.selector, 2000, bob));
         }
 
         assertEq(vault.totalSupply(), 9333);
@@ -429,16 +347,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
         if (seed % 2 == 0) {
             vault.redeem(1333, alice, alice);
         } else {
-            cvc.call(
-                address(vault),
-                alice,
-                abi.encodeWithSelector(
-                    vault.redeem.selector,
-                    1333,
-                    alice,
-                    alice
-                )
-            );
+            evc.call(address(vault), alice, 0, abi.encodeWithSelector(vault.redeem.selector, 1333, alice, alice));
         }
 
         assertEq(underlying.balanceOf(alice), 2427);
@@ -454,11 +363,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
         if (seed % 2 == 0) {
             vault.withdraw(2929, bob, bob);
         } else {
-            cvc.call(
-                address(vault),
-                bob,
-                abi.encodeWithSelector(vault.withdraw.selector, 2929, bob, bob)
-            );
+            evc.call(address(vault), bob, 0, abi.encodeWithSelector(vault.withdraw.selector, 2929, bob, bob));
         }
 
         assertEq(underlying.balanceOf(bob), 2930);
@@ -475,16 +380,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
         if (seed % 2 == 0) {
             vault.withdraw(3643, alice, alice);
         } else {
-            cvc.call(
-                address(vault),
-                alice,
-                abi.encodeWithSelector(
-                    vault.withdraw.selector,
-                    3643,
-                    alice,
-                    alice
-                )
-            );
+            evc.call(address(vault), alice, 0, abi.encodeWithSelector(vault.withdraw.selector, 3643, alice, alice));
         }
 
         assertEq(underlying.balanceOf(alice), 6070);
@@ -500,11 +396,7 @@ contract CreditVaultSimpleTest is DSTestPlus {
         if (seed % 2 == 0) {
             vault.redeem(4392, bob, bob);
         } else {
-            cvc.call(
-                address(vault),
-                bob,
-                abi.encodeWithSelector(vault.redeem.selector, 4392, bob, bob)
-            );
+            evc.call(address(vault), bob, 0, abi.encodeWithSelector(vault.redeem.selector, 4392, bob, bob));
         }
 
         assertEq(underlying.balanceOf(bob), 10930);

@@ -4,7 +4,8 @@ pragma solidity ^0.8.0;
 import "solmate/utils/SafeTransferLib.sol";
 
 /// @title TipsPiggyBank
-/// @notice This contract is used for handling tips by having a static deposit address and letting anyone withdraw the tokens to a specified receiver.
+/// @notice This contract is used for handling tips by having a static deposit address and letting anyone withdraw the
+/// tokens to a specified receiver.
 contract TipsPiggyBank {
     using SafeTransferLib for ERC20;
 

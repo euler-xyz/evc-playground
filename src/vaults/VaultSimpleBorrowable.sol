@@ -2,44 +2,42 @@
 
 pragma solidity ^0.8.0;
 
-import "./CreditVaultSimple.sol";
+import "./VaultSimple.sol";
 import "../interfaces/IERC3156FlashLender.sol";
 
-/// @title CreditVaultSimpleBorrowable
-/// @notice This contract extends CreditVaultSimple to add borrowing functionality.
-/// @notice In this contract, the CVC is authenticated before any action that may affect the state of the vault or an account.
-/// This is done to ensure that if it's CVC calling, the account is correctly authorized and the vault is enabled as a controller if needed.
+/// @title VaultSimpleBorrowable
+/// @notice This contract extends VaultSimple to add borrowing functionality.
+/// @notice In this contract, the EVC is authenticated before any action that may affect the state of the vault or an
+/// account.
+/// This is done to ensure that if it's EVC calling, the account is correctly authorized and the vault is enabled as a
+/// controller if needed.
 /// This contract does not take the account health into account when calculating max withdraw and max redeem values.
-contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
+contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
-    event BorrowCapSet(uint newBorrowCap);
+    event BorrowCapSet(uint256 newBorrowCap);
     event Borrow(address indexed caller, address indexed owner, uint256 assets);
-    event Repay(
-        address indexed caller,
-        address indexed receiver,
-        uint256 assets
-    );
+    event Repay(address indexed caller, address indexed receiver, uint256 assets);
 
     error FlashloanFailure();
     error BorrowCapExceeded();
     error AccountUnhealthy();
 
-    uint public borrowCap;
-    uint public totalBorrowed;
-    mapping(address account => uint assets) internal owed;
+    uint256 public borrowCap;
+    uint256 public totalBorrowed;
+    mapping(address account => uint256 assets) internal owed;
 
     constructor(
-        ICVC _cvc,
+        IEVC _evc,
         ERC20 _asset,
         string memory _name,
         string memory _symbol
-    ) CreditVaultSimple(_cvc, _asset, _name, _symbol) {}
+    ) VaultSimple(_evc, _asset, _name, _symbol) {}
 
     /// @notice Sets the borrow cap.
     /// @param newBorrowCap The new borrow cap.
-    function setBorrowCap(uint newBorrowCap) external onlyOwner {
+    function setBorrowCap(uint256 newBorrowCap) external onlyOwner {
         borrowCap = newBorrowCap;
         emit BorrowCapSet(newBorrowCap);
     }
@@ -47,7 +45,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
     /// @notice Returns the debt of an account.
     /// @param account The account to check.
     /// @return The debt of the account.
-    function debtOf(address account) public view virtual returns (uint) {
+    function debtOf(address account) public view virtual returns (uint256) {
         return owed[account];
     }
 
@@ -55,11 +53,9 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
     /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
     /// @param owner The owner of the assets.
     /// @return The maximum amount that can be withdrawn.
-    function maxWithdraw(
-        address owner
-    ) public view virtual override returns (uint256) {
-        uint totAssets = totalAssets();
-        uint ownerAssets = _convertToAssets(balanceOf[owner], false);
+    function maxWithdraw(address owner) public view virtual override returns (uint256) {
+        uint256 totAssets = totalAssets();
+        uint256 ownerAssets = _convertToAssets(balanceOf[owner], false);
 
         return ownerAssets > totAssets ? totAssets : ownerAssets;
     }
@@ -68,76 +64,52 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
     /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
     /// @param owner The owner of the assets.
     /// @return The maximum amount that can be redeemed.
-    function maxRedeem(
-        address owner
-    ) public view virtual override returns (uint256) {
-        uint totAssets = totalAssets();
-        uint ownerShares = balanceOf[owner];
+    function maxRedeem(address owner) public view virtual override returns (uint256) {
+        uint256 totAssets = totalAssets();
+        uint256 ownerShares = balanceOf[owner];
 
-        return
-            _convertToAssets(ownerShares, false) > totAssets
-                ? _convertToShares(totAssets, false)
-                : ownerShares;
+        return _convertToAssets(ownerShares, false) > totAssets ? _convertToShares(totAssets, false) : ownerShares;
     }
 
     /// @notice Takes a snapshot of the vault.
     /// @dev This function is called before any action that may affect the vault's state.
     /// @return A snapshot of the vault's state.
-    function doTakeVaultSnapshot()
-        internal
-        view
-        virtual
-        override
-        returns (bytes memory)
-    {
-        uint newTotalBorrowed;
+    function doTakeVaultSnapshot() internal view virtual override returns (bytes memory) {
+        uint256 newTotalBorrowed;
         if (_lastInterestUpdate() == block.timestamp) {
             newTotalBorrowed = totalBorrowed;
         } else {
-            (newTotalBorrowed, ) = _accrueInterestCalculate();
+            (newTotalBorrowed,) = _accrueInterestCalculate();
         }
 
         // make total supply and total borrows snapshot:
-        return
-            abi.encode(_convertToAssets(totalSupply, false), newTotalBorrowed);
+        return abi.encode(_convertToAssets(totalSupply, false), newTotalBorrowed);
     }
 
     /// @notice Checks the vault's status.
     /// @dev This function is called after any action that may affect the vault's state.
     /// @param oldSnapshot The snapshot of the vault's state before the action.
-    function doCheckVaultStatus(
-        bytes memory oldSnapshot
-    ) internal virtual override {
+    function doCheckVaultStatus(bytes memory oldSnapshot) internal virtual override {
         // sanity check in case the snapshot hasn't been taken
         if (oldSnapshot.length == 0) revert SnapshotNotTaken();
 
         // use the vault status hook to update the interest rate (it should happen only once per transaction).
-        // CVC.forgiveVaultStatus check should never be used for this vault, otherwise the interest rate will not be updated.
+        // EVC.forgiveVaultStatus check should never be used for this vault, otherwise the interest rate will not be
+        // updated.
         _updateInterest();
 
         // validate the vault state here:
-        (uint initialSupply, uint initialBorrowed) = abi.decode(
-            oldSnapshot,
-            (uint, uint)
-        );
-        uint finalSupply = _convertToAssets(totalSupply, false);
-        uint finalBorrowed = totalBorrowed;
+        (uint256 initialSupply, uint256 initialBorrowed) = abi.decode(oldSnapshot, (uint256, uint256));
+        uint256 finalSupply = _convertToAssets(totalSupply, false);
+        uint256 finalBorrowed = totalBorrowed;
 
         // the supply cap can be implemented like this:
-        if (
-            supplyCap != 0 &&
-            finalSupply > supplyCap &&
-            finalSupply > initialSupply
-        ) {
+        if (supplyCap != 0 && finalSupply > supplyCap && finalSupply > initialSupply) {
             revert SupplyCapExceeded();
         }
 
         // or the borrow cap can be implemented like this:
-        if (
-            borrowCap != 0 &&
-            finalBorrowed > borrowCap &&
-            finalBorrowed > initialBorrowed
-        ) {
+        if (borrowCap != 0 && finalBorrowed > borrowCap && finalBorrowed > initialBorrowed) {
             revert BorrowCapExceeded();
         }
     }
@@ -146,20 +118,17 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
     /// @dev This function is called after any action that may affect the account's state.
     /// @param account The account to check.
     /// @param collaterals The collaterals of the account.
-    function doCheckAccountStatus(
-        address account,
-        address[] calldata collaterals
-    ) internal view virtual override {
-        uint liabilityAssets = debtOf(account);
+    function doCheckAccountStatus(address account, address[] calldata collaterals) internal view virtual override {
+        uint256 liabilityAssets = debtOf(account);
 
         if (liabilityAssets == 0) return;
 
         // in this simple example, let's say that it's only possible to borrow against
         // the same asset up to 90% of its value
-        for (uint i = 0; i < collaterals.length; ++i) {
+        for (uint256 i = 0; i < collaterals.length; ++i) {
             if (collaterals[i] == address(this)) {
-                uint collateral = _convertToAssets(balanceOf[account], false);
-                uint maxLiability = (collateral * 9) / 10;
+                uint256 collateral = _convertToAssets(balanceOf[account], false);
+                uint256 maxLiability = (collateral * 9) / 10;
 
                 if (liabilityAssets <= maxLiability) {
                     return;
@@ -197,22 +166,14 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
         uint256 amount,
         bytes calldata data
     ) external nonReentrant returns (bool) {
-        uint origBalance = ERC20(token).balanceOf(address(this));
+        uint256 origBalance = ERC20(token).balanceOf(address(this));
 
         ERC20(token).safeTransfer(msg.sender, amount);
 
-        bytes32 result = receiver.onFlashLoan(
-            msg.sender,
-            token,
-            amount,
-            0,
-            data
-        );
+        bytes32 result = receiver.onFlashLoan(msg.sender, token, amount, 0, data);
 
-        if (
-            result != IERC3156FlashBorrower.onFlashLoan.selector ||
-            ERC20(token).balanceOf(address(this)) < origBalance
-        ) {
+        if (result != IERC3156FlashBorrower.onFlashLoan.selector || ERC20(token).balanceOf(address(this)) < origBalance)
+        {
             revert FlashloanFailure();
         }
 
@@ -224,7 +185,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
     /// @param assets The amount of assets to borrow.
     /// @param receiver The receiver of the assets.
     function borrow(uint256 assets, address receiver) external {
-        _borrow(CVCAuthenticateForBorrow(), assets, receiver);
+        _borrow(EVCAuthenticateForBorrow(), assets, receiver);
     }
 
     /// @notice Repays a debt.
@@ -232,7 +193,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
     /// @param assets The amount of assets to repay.
     /// @param receiver The receiver of the repayment.
     function repay(uint256 assets, address receiver) external {
-        _repay(CVCAuthenticate(), assets, receiver);
+        _repay(EVCAuthenticate(), assets, receiver);
     }
 
     /// @notice Winds up the vault.
@@ -241,11 +202,8 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
     /// @param assets The amount of assets to wind up.
     /// @param collateralReceiver The receiver of the collateral.
     /// @return shares The amount of shares minted.
-    function wind(
-        uint256 assets,
-        address collateralReceiver
-    ) external returns (uint shares) {
-        return _wind(CVCAuthenticateForBorrow(), assets, collateralReceiver);
+    function wind(uint256 assets, address collateralReceiver) external returns (uint256 shares) {
+        return _wind(EVCAuthenticateForBorrow(), assets, collateralReceiver);
     }
 
     /// @notice Unwinds the vault.
@@ -254,11 +212,8 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
     /// @param assets The amount of assets to unwind.
     /// @param debtFrom The account to repay the debt from.
     /// @return shares The amount of shares burned.
-    function unwind(
-        uint256 assets,
-        address debtFrom
-    ) external returns (uint shares) {
-        return _unwind(CVCAuthenticateForBorrow(), assets, debtFrom);
+    function unwind(uint256 assets, address debtFrom) external returns (uint256 shares) {
+        return _unwind(EVCAuthenticateForBorrow(), assets, debtFrom);
     }
 
     /// @notice Pulls debt from an account.
@@ -267,8 +222,8 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
     /// @param from The account to pull the debt from.
     /// @param assets The amount of debt to pull.
     /// @return A boolean indicating whether the operation was successful.
-    function pullDebt(address from, uint assets) external returns (bool) {
-        return _pullDebt(CVCAuthenticateForBorrow(), from, assets);
+    function pullDebt(address from, uint256 assets) external returns (bool) {
+        return _pullDebt(EVCAuthenticateForBorrow(), from, assets);
     }
 
     function _borrow(
@@ -280,9 +235,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
 
         _accrueInterest();
 
-        receiver = getAccountOwner(
-            receiver == address(0) ? msgSender : receiver
-        );
+        receiver = getAccountOwner(receiver == address(0) ? msgSender : receiver);
 
         _increaseOwed(msgSender, assets);
 
@@ -319,7 +272,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
         address msgSender,
         uint256 assets,
         address collateralReceiver
-    ) internal virtual nonReentrantWithChecks(msgSender) returns (uint shares) {
+    ) internal virtual nonReentrantWithChecks(msgSender) returns (uint256 shares) {
         _accrueInterest();
 
         require((shares = previewDeposit(assets)) != 0, "ZERO_SHARES");
@@ -336,7 +289,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
         address msgSender,
         uint256 assets,
         address debtFrom
-    ) internal virtual nonReentrantWithChecks(msgSender) returns (uint shares) {
+    ) internal virtual nonReentrantWithChecks(msgSender) returns (uint256 shares) {
         _accrueInterest();
 
         shares = previewWithdraw(assets);
@@ -356,7 +309,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
     function _pullDebt(
         address msgSender,
         address from,
-        uint assets
+        uint256 assets
     ) internal virtual nonReentrantWithChecks(msgSender) returns (bool) {
         require(assets != 0, "ZERO_AMOUNT");
         require(msgSender != from, "SELF_DEBT_PULL");
@@ -377,47 +330,39 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
     }
 
     /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
-    function _convertToShares(
-        uint256 assets,
-        bool roundUp
-    ) internal view virtual override returns (uint256) {
+    function _convertToShares(uint256 assets, bool roundUp) internal view virtual override returns (uint256) {
         uint256 assetsAndBorrows = totalAssets();
         if (_lastInterestUpdate() == block.timestamp) {
             assetsAndBorrows += totalBorrowed;
         } else {
-            (uint newTotalBorrowed, ) = _accrueInterestCalculate();
+            (uint256 newTotalBorrowed,) = _accrueInterestCalculate();
             assetsAndBorrows += newTotalBorrowed;
         }
 
-        return
-            roundUp
-                ? assets.mulDivUp(totalSupply + 1, assetsAndBorrows + 1)
-                : assets.mulDivDown(totalSupply + 1, assetsAndBorrows + 1);
+        return roundUp
+            ? assets.mulDivUp(totalSupply + 1, assetsAndBorrows + 1)
+            : assets.mulDivDown(totalSupply + 1, assetsAndBorrows + 1);
     }
 
     /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
-    function _convertToAssets(
-        uint256 shares,
-        bool roundUp
-    ) internal view virtual override returns (uint256) {
+    function _convertToAssets(uint256 shares, bool roundUp) internal view virtual override returns (uint256) {
         uint256 assetsAndBorrows = totalAssets();
         if (_lastInterestUpdate() == block.timestamp) {
             assetsAndBorrows += totalBorrowed;
         } else {
-            (uint newTotalBorrowed, ) = _accrueInterestCalculate();
+            (uint256 newTotalBorrowed,) = _accrueInterestCalculate();
             assetsAndBorrows += newTotalBorrowed;
         }
 
-        return
-            roundUp
-                ? shares.mulDivUp(assetsAndBorrows + 1, totalSupply + 1)
-                : shares.mulDivDown(assetsAndBorrows + 1, totalSupply + 1);
+        return roundUp
+            ? shares.mulDivUp(assetsAndBorrows + 1, totalSupply + 1)
+            : shares.mulDivDown(assetsAndBorrows + 1, totalSupply + 1);
     }
 
     /// @notice Increases the owed amount of an account.
     /// @param account The account.
     /// @param assets The assets.
-    function _increaseOwed(address account, uint assets) internal virtual {
+    function _increaseOwed(address account, uint256 assets) internal virtual {
         owed[account] = debtOf(account) + assets;
         totalBorrowed += assets;
     }
@@ -425,13 +370,13 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
     /// @notice Decreases the owed amount of an account.
     /// @param account The account.
     /// @param assets The assets.
-    function _decreaseOwed(address account, uint assets) internal virtual {
+    function _decreaseOwed(address account, uint256 assets) internal virtual {
         owed[account] = debtOf(account) - assets;
         totalBorrowed -= assets;
     }
 
     /// @notice Returns the last timestamp when the interest was updated.
-    function _lastInterestUpdate() internal view virtual returns (uint) {
+    function _lastInterestUpdate() internal view virtual returns (uint256) {
         return 0;
     }
 
@@ -440,12 +385,7 @@ contract CreditVaultSimpleBorrowable is CreditVaultSimple, IERC3156FlashLender {
 
     /// @notice Calculates the accrued interest.
     /// @return The total borrowed amount and the interest accumulator.
-    function _accrueInterestCalculate()
-        internal
-        view
-        virtual
-        returns (uint, uint)
-    {
+    function _accrueInterestCalculate() internal view virtual returns (uint256, uint256) {
         return (totalBorrowed, 0);
     }
 

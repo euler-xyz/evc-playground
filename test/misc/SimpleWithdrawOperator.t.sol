@@ -3,31 +3,27 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
-import "euler-cvc/CreditVaultConnector.sol";
-import "../../src/vaults/CreditVaultSimpleBorrowable.sol";
+import "euler-evc/EthereumVaultConnector.sol";
+import "../../src/vaults/VaultSimpleBorrowable.sol";
 import "../../src/operators/SimpleWithdrawOperator.sol";
 
 contract SimpleWithdrawOperatorTest is Test {
-    ICVC cvc;
+    IEVC evc;
     MockERC20 asset;
-    CreditVaultSimpleBorrowable vault;
+    VaultSimpleBorrowable vault;
     SimpleWithdrawOperator withdrawOperator;
 
     function setUp() public {
-        cvc = new CreditVaultConnector();
+        evc = new EthereumVaultConnector();
         asset = new MockERC20("Asset", "ASS", 18);
-        vault = new CreditVaultSimpleBorrowable(cvc, asset, "Vault", "VAU");
-        withdrawOperator = new SimpleWithdrawOperator(cvc);
+        vault = new VaultSimpleBorrowable(evc, asset, "Vault", "VAU");
+        withdrawOperator = new SimpleWithdrawOperator(evc);
     }
 
     function test_SimpleWithdrawOperator(address alice, address bot) public {
         vm.assume(
-            !cvc.haveCommonOwner(alice, address(0)) &&
-                alice != address(cvc) &&
-                bot != address(cvc) &&
-                !cvc.haveCommonOwner(alice, address(withdrawOperator)) &&
-                bot != address(vault) &&
-                bot != alice
+            !evc.haveCommonOwner(alice, address(0)) && alice != address(evc) && bot != address(evc)
+                && !evc.haveCommonOwner(alice, address(withdrawOperator)) && bot != address(vault) && bot != alice
         );
         address alicesSubAccount = address(uint160(alice) ^ 1);
 
@@ -35,18 +31,14 @@ contract SimpleWithdrawOperatorTest is Test {
 
         // alice deposits into her main account and a subaccount
         vm.startPrank(alice);
-        asset.approve(address(vault), type(uint).max);
+        asset.approve(address(vault), type(uint256).max);
         vault.deposit(50e18, alice);
         vault.deposit(50e18, alicesSubAccount);
 
         // for simplicity, let's ignore the fact that nobody borrows from a vault
 
         // alice authorizes the operator to act on behalf of her subaccount
-        cvc.setAccountOperator(
-            alicesSubAccount,
-            address(withdrawOperator),
-            true
-        );
+        evc.setAccountOperator(alicesSubAccount, address(withdrawOperator), true);
         vm.stopPrank();
 
         assertEq(asset.balanceOf(address(alice)), 0);
@@ -66,11 +58,7 @@ contract SimpleWithdrawOperatorTest is Test {
         // however, the bot cannot call withdrawOnBehalf() on behalf of alice's main account
         // because she didn't authorize the operator
         vm.prank(bot);
-        vm.expectRevert(
-            abi.encodeWithSelector(
-                CreditVaultConnector.CVC_NotAuthorized.selector
-            )
-        );
+        vm.expectRevert(abi.encodeWithSelector(Errors.EVC_NotAuthorized.selector));
         withdrawOperator.withdrawOnBehalf(address(vault), alice);
     }
 }

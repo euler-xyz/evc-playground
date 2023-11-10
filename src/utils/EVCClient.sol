@@ -3,64 +3,58 @@
 pragma solidity ^0.8.0;
 
 import "solmate/tokens/ERC20.sol";
-import "euler-cvc/interfaces/ICreditVaultConnector.sol";
+import "euler-evc/interfaces/IEthereumVaultConnector.sol";
 
-/// @title CVCClient
-/// @dev This contract is an abstract base contract for interacting with the Credit Vault Connector (CVC).
-/// It provides utility functions for authenticating callers in the context of the CVC,
+/// @title EVCClient
+/// @dev This contract is an abstract base contract for interacting with the Ethereum Vault Connector (EVC).
+/// It provides utility functions for authenticating callers in the context of the EVC,
 /// scheduling and forgiving status checks, and liquidating collateral shares.
-abstract contract CVCClient {
-    ICVC private immutable cvc;
+abstract contract EVCClient {
+    IEVC private immutable evc;
 
     error NotAuthorized();
     error ControllerDisabled();
     error SharesSeizureFailed();
 
-    constructor(ICVC _cvc) {
-        require(
-            address(_cvc) != address(0),
-            "CVCClient: CVC address cannot be zero"
-        );
+    constructor(IEVC _evc) {
+        require(address(_evc) != address(0), "EVCClient: EVC address cannot be zero");
 
-        cvc = _cvc;
+        evc = _evc;
     }
 
-    /// @notice Ensures that the caller is the CVC in the appropriate context.
-    modifier onlyCVCWithChecksInProgress() {
-        if (msg.sender != address(cvc) || !cvc.areChecksInProgress()) {
+    /// @notice Ensures that the caller is the EVC in the appropriate context.
+    modifier onlyEVCWithChecksInProgress() {
+        if (msg.sender != address(evc) || !evc.areChecksInProgress()) {
             revert NotAuthorized();
         }
 
         _;
     }
 
-    /// @notice Authenticates the caller in the context of the CVC.
+    /// @notice Authenticates the caller in the context of the EVC.
     /// @return The address of the account on behalf of which the operation is being executed.
-    function CVCAuthenticate() internal view returns (address) {
-        if (msg.sender == address(cvc)) {
-            (address onBehalfOfAccount, ) = cvc.getCurrentOnBehalfOfAccount(
-                address(0)
-            );
+    function EVCAuthenticate() internal view returns (address) {
+        if (msg.sender == address(evc)) {
+            (address onBehalfOfAccount,) = evc.getCurrentOnBehalfOfAccount(address(0));
             return onBehalfOfAccount;
         }
 
         return msg.sender;
     }
 
-    /// @notice Authenticates the caller for a borrow operation in the context of the CVC.
+    /// @notice Authenticates the caller for a borrow operation in the context of the EVC.
     /// @dev Ensures that the vault is enabled as a controller for the account.
     /// @return The address of the account on behalf of which the operation is being executed.
-    function CVCAuthenticateForBorrow() internal view returns (address) {
-        if (msg.sender == address(cvc)) {
-            (address onBehalfOfAccount, bool controllerEnabled) = cvc
-                .getCurrentOnBehalfOfAccount(address(this));
+    function EVCAuthenticateForBorrow() internal view returns (address) {
+        if (msg.sender == address(evc)) {
+            (address onBehalfOfAccount, bool controllerEnabled) = evc.getCurrentOnBehalfOfAccount(address(this));
 
             if (!controllerEnabled) {
                 revert ControllerDisabled();
             }
 
             return onBehalfOfAccount;
-        } else if (!cvc.isControllerEnabled(msg.sender, address(this))) {
+        } else if (!evc.isControllerEnabled(msg.sender, address(this))) {
             revert ControllerDisabled();
         }
 
@@ -68,13 +62,12 @@ abstract contract CVCClient {
     }
 
     /// @notice Retrieves the owner of an account.
-    /// @dev Use with care. If the account is not registered on the CVC yet, the account address is returned as the owner.
+    /// @dev Use with care. If the account is not registered on the EVC yet, the account address is returned as the
+    /// owner.
     /// @param account The address of the account.
     /// @return owner The address of the account owner.
-    function getAccountOwner(
-        address account
-    ) internal view returns (address owner) {
-        try cvc.getAccountOwner(account) returns (address _owner) {
+    function getAccountOwner(address account) internal view returns (address owner) {
+        try evc.getAccountOwner(account) returns (address _owner) {
             owner = _owner;
         } catch {
             owner = account;
@@ -84,68 +77,58 @@ abstract contract CVCClient {
     /// @notice Retrieves the collaterals enabled for an account.
     /// @param account The address of the account.
     /// @return An array of addresses that are enabled collaterals for the account.
-    function getCollaterals(
-        address account
-    ) internal view returns (address[] memory) {
-        return cvc.getCollaterals(account);
+    function getCollaterals(address account) internal view returns (address[] memory) {
+        return evc.getCollaterals(account);
     }
 
     /// @notice Checks whether a vault is enabled as a collateral for an account.
     /// @param account The address of the account.
     /// @param vault The address of the vault.
     /// @return A boolean value that indicates whether the vault is an enabled collateral for the account.
-    function isCollateralEnabled(
-        address account,
-        address vault
-    ) internal view returns (bool) {
-        return cvc.isCollateralEnabled(account, vault);
+    function isCollateralEnabled(address account, address vault) internal view returns (bool) {
+        return evc.isCollateralEnabled(account, vault);
     }
 
     /// @notice Retrieves the controllers enabled for an account.
     /// @param account The address of the account.
     /// @return An array of addresses that are the enabled controllers for the account.
-    function getControllers(
-        address account
-    ) internal view returns (address[] memory) {
-        return cvc.getControllers(account);
+    function getControllers(address account) internal view returns (address[] memory) {
+        return evc.getControllers(account);
     }
 
     /// @notice Checks whether a vault is enabled as a controller for an account.
     /// @param account The address of the account.
     /// @param vault The address of the vault.
     /// @return A boolean value that indicates whether the vault is an enabled controller for the account.
-    function isControllerEnabled(
-        address account,
-        address vault
-    ) internal view returns (bool) {
-        return cvc.isControllerEnabled(account, vault);
+    function isControllerEnabled(address account, address vault) internal view returns (bool) {
+        return evc.isControllerEnabled(account, vault);
     }
 
     /// @notice Releases the account from the control of the calling contract.
     /// @dev Ensure that the account does not have any liabilities before doing this.
     /// @param account The address of the account.
     function releaseAccountFromControl(address account) internal {
-        cvc.disableController(account);
+        evc.disableController(account);
     }
 
     /// @notice Schedules a status check for an account.
     /// @param account The address of the account.
     function requireAccountStatusCheck(address account) internal {
-        cvc.requireAccountStatusCheck(account);
+        evc.requireAccountStatusCheck(account);
     }
 
     /// @notice Schedules a status check for the calling vault.
     function requireVaultStatusCheck() internal {
-        cvc.requireVaultStatusCheck();
+        evc.requireVaultStatusCheck();
     }
 
     /// @notice Schedules a status check for an account and the calling vault.
     /// @param account The address of the account.
     function requireAccountAndVaultStatusCheck(address account) internal {
         if (account == address(0)) {
-            cvc.requireVaultStatusCheck();
+            evc.requireVaultStatusCheck();
         } else {
-            cvc.requireAccountAndVaultStatusCheck(account);
+            evc.requireAccountAndVaultStatusCheck(account);
         }
     }
 
@@ -153,36 +136,26 @@ abstract contract CVCClient {
     /// @dev Can only be called by the enabled controller of the account.
     /// @param account The address of the account.
     function forgiveAccountStatusCheck(address account) internal {
-        cvc.forgiveAccountStatusCheck(account);
+        evc.forgiveAccountStatusCheck(account);
     }
 
     /// @notice Checks whether the status check is deferred for a given account.
     /// @param account The address of the account.
     /// @return A boolean flag that indicates whether the status check is deferred.
-    function isAccountStatusCheckDeferred(
-        address account
-    ) internal view returns (bool) {
-        return cvc.isAccountStatusCheckDeferred(account);
+    function isAccountStatusCheckDeferred(address account) internal view returns (bool) {
+        return evc.isAccountStatusCheckDeferred(account);
     }
 
     /// @notice Liquidates a certain amount of collateral shares from a violator's vault.
-    /// @dev This function impersonates the violator and transfers the specified amount of shares from the violator's vault to the liquidator.
+    /// @dev This function impersonates the violator and transfers the specified amount of shares from the violator's
+    /// vault to the liquidator.
     /// @param vault The address of the vault from which the shares are being liquidated.
     /// @param violator The address of the violator whose shares are being liquidated.
     /// @param liquidator The address to which the liquidated shares are being transferred.
     /// @param shares The amount of shares to be liquidated.
-    function liquidateCollateralShares(
-        address vault,
-        address violator,
-        address liquidator,
-        uint shares
-    ) internal {
+    function liquidateCollateralShares(address vault, address violator, address liquidator, uint256 shares) internal {
         // Impersonate the violator to transfer shares from the violator's vault to the liquidator.
-        bytes memory result = cvc.impersonate(
-            vault,
-            violator,
-            abi.encodeCall(ERC20.transfer, (liquidator, shares))
-        );
+        bytes memory result = evc.impersonate(vault, violator, 0, abi.encodeCall(ERC20.transfer, (liquidator, shares)));
 
         if (!abi.decode(result, (bool))) {
             revert SharesSeizureFailed();

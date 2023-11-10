@@ -3,24 +3,24 @@
 pragma solidity ^0.8.0;
 
 import "solmate/tokens/ERC20.sol";
-import "euler-cvc/interfaces/ICreditVaultConnector.sol";
+import "euler-evc/interfaces/IEthereumVaultConnector.sol";
 
 /// @title LightweightOrderOperator
 /// @notice This contract is used to manage orders submitted or signed by the user.
 /// The operations that do not require any kind of authentication (i.e. condition checks)
-/// can be submitted as non-CVC operations, while the operations that require authentication
-/// (i.e. vault interactions) can be submitted as CVC operations.
+/// can be submitted as non-EVC operations, while the operations that require authentication
+/// (i.e. vault interactions) can be submitted as EVC operations.
 /// Both the order submitter and the executor can be tipped in form of the ERC20 token
 /// as per the tipReceiver value. For that, the tip amount should be transferred to this
 /// contract during:
-/// - the submission step (using signed calldata of the CVC permit functionality) in order to
+/// - the submission step (using signed calldata of the EVC permit functionality) in order to
 ///   tip the order submitter
-/// - the execution step (either while executing non-CVC or CVC operations) in order to
+/// - the execution step (either while executing non-EVC or EVC operations) in order to
 ///   tip the order executor
 /// The OrderOperator will always use the full amount of its balance at the time for the tip payout.
 /// Important: the submitter/executor must set the value of the tipReceiver variable to the address
 /// where they want to receive the tip. For safety, it should happen atomicaly during
-/// the CVC batch call, before the actual sumission/execution of the order.
+/// the EVC batch call, before the actual sumission/execution of the order.
 /// NOTE: Because the operator contract can be made to invoke any arbitrary target contract with
 /// any arbitrary calldata, it should never be given any privileges, or hold any ETH or tokens.
 /// Also, one should never approve this contract to spend their ERC20 tokens.
@@ -33,19 +33,19 @@ contract LightweightOrderOperator {
     }
 
     struct Order {
-        NonCVCBatchItem[] nonCVCOperations;
-        ICVC.BatchItem[] CVCOperations;
+        NonEVCBatchItem[] nonEVCOperations;
+        IEVC.BatchItem[] EVCOperations;
         ERC20 submissionTipToken;
         ERC20 executionTipToken;
-        uint salt;
+        uint256 salt;
     }
 
-    struct NonCVCBatchItem {
+    struct NonEVCBatchItem {
         address targetContract;
         bytes data;
     }
 
-    ICVC public immutable cvc;
+    IEVC public immutable evc;
 
     mapping(bytes32 orderHash => OrderState state) public orderLookup;
     address internal tipReceiver;
@@ -56,18 +56,18 @@ contract LightweightOrderOperator {
 
     error NotAuthorized();
     error InvalidOrderState();
-    error InvalidCVCOperations();
-    error InvalidNonCVCOperations();
+    error InvalidEVCOperations();
+    error InvalidNonEVCOperations();
     error InvalidTip();
     error EmptyError();
 
-    constructor(ICVC _cvc) {
-        cvc = _cvc;
+    constructor(IEVC _evc) {
+        evc = _evc;
     }
 
-    /// @notice Only CVC can call a function with this modifier
-    modifier onlyCVC() {
-        if (msg.sender != address(cvc)) {
+    /// @notice Only EVC can call a function with this modifier
+    modifier onlyEVC() {
+        if (msg.sender != address(evc)) {
             revert NotAuthorized();
         }
 
@@ -82,7 +82,7 @@ contract LightweightOrderOperator {
 
     /// @notice Executes an order that is either new or pending
     /// @param order The order to execute
-    function execute(Order calldata order) external onlyCVC {
+    function execute(Order calldata order) external onlyEVC {
         bytes32 orderHash = keccak256(abi.encode(order));
 
         if (orderLookup[orderHash] == OrderState.NONE) {
@@ -93,22 +93,22 @@ contract LightweightOrderOperator {
 
         orderLookup[orderHash] = OrderState.EXECUTED;
 
-        // execute non-CVC operations, i.e. check conditions
-        _batch(order.nonCVCOperations);
+        // execute non-EVC operations, i.e. check conditions
+        _batch(order.nonEVCOperations);
 
-        // execute CVC operations
-        cvc.batch(order.CVCOperations);
+        // execute EVC operations
+        evc.batch(order.EVCOperations);
 
         // payout the execution tip
         _payoutTip(order.executionTipToken);
 
-        (address caller, ) = cvc.getCurrentOnBehalfOfAccount(address(0));
+        (address caller,) = evc.getCurrentOnBehalfOfAccount(address(0));
         emit OrderExecuted(orderHash, caller);
     }
 
     /// @notice Submits an order so that it's publicly visible on-chain and can be executed by anyone
     /// @param order The order to submit
-    function submit(Order calldata order) public onlyCVC {
+    function submit(Order calldata order) public onlyEVC {
         bytes32 orderHash = keccak256(abi.encode(order));
 
         if (orderLookup[orderHash] != OrderState.NONE) {
@@ -127,7 +127,7 @@ contract LightweightOrderOperator {
 
     /// @notice Cancels an order
     /// @param order The order to cancel
-    function cancel(Order calldata order) external onlyCVC {
+    function cancel(Order calldata order) external onlyEVC {
         bytes32 orderHash = keccak256(abi.encode(order));
 
         if (orderLookup[orderHash] != OrderState.PENDING) {
@@ -136,28 +136,22 @@ contract LightweightOrderOperator {
 
         orderLookup[orderHash] = OrderState.CANCELLED;
 
-        (address onBehalfOfAccount, ) = cvc.getCurrentOnBehalfOfAccount(
-            address(0)
-        );
-        address owner = cvc.getAccountOwner(
-            order.CVCOperations[0].onBehalfOfAccount
-        );
+        (address onBehalfOfAccount,) = evc.getCurrentOnBehalfOfAccount(address(0));
+        address owner = evc.getAccountOwner(order.EVCOperations[0].onBehalfOfAccount);
 
-        if (owner != onBehalfOfAccount || cvc.isOperatorAuthenticated()) {
+        if (owner != onBehalfOfAccount || evc.isOperatorAuthenticated()) {
             revert NotAuthorized();
         }
 
         emit OrderCancelled(orderHash);
     }
 
-    /// @notice Executes a batch of non-CVC operations
+    /// @notice Executes a batch of non-EVC operations
     /// @param operations The operations to execute
-    function _batch(NonCVCBatchItem[] calldata operations) internal {
-        uint length = operations.length;
-        for (uint i; i < length; ++i) {
-            (bool success, bytes memory result) = operations[i]
-                .targetContract
-                .call(operations[i].data);
+    function _batch(NonEVCBatchItem[] calldata operations) internal {
+        uint256 length = operations.length;
+        for (uint256 i; i < length; ++i) {
+            (bool success, bytes memory result) = operations[i].targetContract.call(operations[i].data);
 
             if (!success) revertBytes(result);
         }
@@ -167,7 +161,7 @@ contract LightweightOrderOperator {
     /// @param tipToken The token to pay out
     function _payoutTip(ERC20 tipToken) internal {
         if (address(tipToken) != address(0)) {
-            uint amount = tipToken.balanceOf(address(this));
+            uint256 amount = tipToken.balanceOf(address(this));
             address receiver = tipReceiver;
 
             if (amount > 0 && receiver == address(0)) {
@@ -181,38 +175,33 @@ contract LightweightOrderOperator {
     /// @notice Verifies an order
     /// @param order The order to verify
     function _verifyOrder(Order calldata order) internal view {
-        // get the account authenticated by the CVC
-        (address onBehalfOfAccount, ) = cvc.getCurrentOnBehalfOfAccount(
-            address(0)
-        );
-        address owner = cvc.getAccountOwner(onBehalfOfAccount);
-        if (owner != onBehalfOfAccount || cvc.isOperatorAuthenticated()) {
+        // get the account authenticated by the EVC
+        (address onBehalfOfAccount,) = evc.getCurrentOnBehalfOfAccount(address(0));
+        address owner = evc.getAccountOwner(onBehalfOfAccount);
+        if (owner != onBehalfOfAccount || evc.isOperatorAuthenticated()) {
             revert NotAuthorized();
         }
 
-        // verify that the non-CVC operations contain only operations that do not involve the CVC
-        uint length = order.nonCVCOperations.length;
-        for (uint i; i < length; ++i) {
-            if (order.nonCVCOperations[i].targetContract == address(cvc)) {
-                revert InvalidNonCVCOperations();
+        // verify that the non-EVC operations contain only operations that do not involve the EVC
+        uint256 length = order.nonEVCOperations.length;
+        for (uint256 i; i < length; ++i) {
+            if (order.nonEVCOperations[i].targetContract == address(evc)) {
+                revert InvalidNonEVCOperations();
             }
         }
 
-        // verify CVC operations
-        length = order.CVCOperations.length;
+        // verify EVC operations
+        length = order.EVCOperations.length;
         if (length == 0) {
-            revert InvalidCVCOperations();
+            revert InvalidEVCOperations();
         }
 
-        // verify that the CVC operations contain only operations for the accounts belonging to the same user.
+        // verify that the EVC operations contain only operations for the accounts belonging to the same user.
         // it's critical because if a user has authorized this operator for themselves, anyone else
         // could create a batch for their accounts and execute it
-        for (uint i; i < length; ++i) {
-            if (
-                (uint160(order.CVCOperations[i].onBehalfOfAccount) | 0xff) !=
-                (uint160(onBehalfOfAccount) | 0xff)
-            ) {
-                revert InvalidCVCOperations();
+        for (uint256 i; i < length; ++i) {
+            if ((uint160(order.EVCOperations[i].onBehalfOfAccount) | 0xff) != (uint160(onBehalfOfAccount) | 0xff)) {
+                revert InvalidEVCOperations();
             }
         }
     }

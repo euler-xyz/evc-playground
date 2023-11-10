@@ -5,9 +5,9 @@ import "solmate/tokens/ERC20.sol";
 import "../../src/interfaces/IPriceOracle.sol";
 
 contract PriceOracleMock is IPriceOracle {
-    mapping(address base => mapping(address quote => uint)) internal quotes;
+    mapping(address base => mapping(address quote => uint256)) internal quotes;
 
-    function setQuote(address base, address quote, uint quoteValue) external {
+    function setQuote(address base, address quote, uint256 quoteValue) external {
         quotes[base][quote] = quoteValue;
     }
 
@@ -15,33 +15,24 @@ contract PriceOracleMock is IPriceOracle {
         return "PriceOracleMock";
     }
 
-    function getQuote(
-        uint amount,
-        address base,
-        address quote
-    ) external view returns (uint out) {
+    function getQuote(uint256 amount, address base, address quote) external view returns (uint256 out) {
         return (quotes[base][quote] * amount) / 10 ** ERC20(base).decimals();
     }
 
     function getQuotes(
-        uint amount,
+        uint256 amount,
         address base,
         address quote
-    ) external view returns (uint bidOut, uint askOut) {
-        uint out = (quotes[base][quote] * amount) /
-            10 ** ERC20(base).decimals();
+    ) external view returns (uint256 bidOut, uint256 askOut) {
+        uint256 out = (quotes[base][quote] * amount) / 10 ** ERC20(base).decimals();
         return (out, out);
     }
 
-    function getTick(uint, address, address) external pure returns (uint) {
+    function getTick(uint256, address, address) external pure returns (uint256) {
         return 0;
     }
 
-    function getTicks(
-        uint,
-        address,
-        address
-    ) external pure returns (uint, uint) {
+    function getTicks(uint256, address, address) external pure returns (uint256, uint256) {
         return (0, 0);
     }
 }
