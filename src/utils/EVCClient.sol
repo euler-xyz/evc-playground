@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "solmate/tokens/ERC20.sol";
-import "euler-evc/interfaces/IEthereumVaultConnector.sol";
+import "evc/interfaces/IEthereumVaultConnector.sol";
 
 /// @title EVCClient
 /// @dev This contract is an abstract base contract for interacting with the Ethereum Vault Connector (EVC).
@@ -31,30 +31,50 @@ abstract contract EVCClient {
         _;
     }
 
-    /// @notice Authenticates the caller in the context of the EVC.
-    /// @return The address of the account on behalf of which the operation is being executed.
-    function EVCAuthenticate() internal view returns (address) {
+    /// @notice Ensures that the caller is the EVC by using the EVC callback functionality if necessary.
+    modifier routedThroughEVC() {
         if (msg.sender == address(evc)) {
-            (address onBehalfOfAccount,) = evc.getCurrentOnBehalfOfAccount(address(0));
-            return onBehalfOfAccount;
-        }
+            _;
+        } else {
+            bytes memory result = evc.callback(msg.sender, 0, msg.data);
 
-        return msg.sender;
+            assembly {
+                return(add(32, result), mload(result))
+            }
+        }
     }
 
-    /// @notice Authenticates the caller for a borrow operation in the context of the EVC.
-    /// @dev Ensures that the vault is enabled as a controller for the account.
-    /// @return The address of the account on behalf of which the operation is being executed.
-    function EVCAuthenticateForBorrow() internal view returns (address) {
+    /// @notice Ensures that the caller is the EVC by using the EVC callback functionality if necessary.
+    /// @dev This modifier is used for payable functions because it forwards the value to the EVC.
+    modifier routedThroughEVCPayable() {
         if (msg.sender == address(evc)) {
-            (address onBehalfOfAccount, bool controllerEnabled) = evc.getCurrentOnBehalfOfAccount(address(this));
+            _;
+        } else {
+            bytes memory result = evc.callback{value: msg.value}(msg.sender, msg.value, msg.data);
 
-            if (!controllerEnabled) {
+            assembly {
+                return(add(32, result), mload(result))
+            }
+        }
+    }
+
+    /// @notice Authenticates the caller in the context of the EVC.
+    /// @param checkController A boolean flag that indicates whether is should be checked if the vault is enabled as a
+    /// controller for the account on behalf of which the operation is being executed.
+    /// @return The address of the account on behalf of which the operation is being executed.
+    function EVCAuthenticate(bool checkController) internal view returns (address) {
+        if (msg.sender == address(evc)) {
+            (address onBehalfOfAccount, bool controllerEnabled) =
+                evc.getCurrentOnBehalfOfAccount(checkController ? address(this) : address(0));
+
+            if (checkController && !controllerEnabled) {
                 revert ControllerDisabled();
             }
 
             return onBehalfOfAccount;
-        } else if (!evc.isControllerEnabled(msg.sender, address(this))) {
+        }
+
+        if (checkController && !evc.isControllerEnabled(msg.sender, address(this))) {
             revert ControllerDisabled();
         }
 

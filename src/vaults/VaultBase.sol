@@ -2,54 +2,18 @@
 
 pragma solidity ^0.8.0;
 
-import "euler-evc/interfaces/IVault.sol";
+import "evc/interfaces/IVault.sol";
 import "../utils/EVCClient.sol";
 
 /// @title VaultBase
 /// @dev This contract is an abstract base contract for Vaults.
-/// It provides standard modifiers for reentrancy protection and account/vault
-/// status checks scheduling. It declares functions that must be defined in the child
-/// contract in order to correctly implement controller release, vault snapshotting and
-/// account/vaults status checks.
+/// It declares functions that must be defined in the child contract in order to
+/// correctly implement the controller release, vault status snapshotting and account/vaults
+/// status checks.
 abstract contract VaultBase is IVault, EVCClient {
-    uint256 internal constant REENTRANCY_GUARD__UNLOCKED = 1;
-    uint256 internal constant REENTRANCY_GUARD__LOCKED = 2;
-
-    uint256 private reentrancyGuard;
     bytes private snapshot;
 
-    error Reentrancy();
-
-    constructor(IEVC _evc) EVCClient(_evc) {
-        reentrancyGuard = REENTRANCY_GUARD__UNLOCKED;
-    }
-
-    /// @notice Modifier to prevent reentrant calls
-    modifier nonReentrant() {
-        if (reentrancyGuard != REENTRANCY_GUARD__UNLOCKED) {
-            revert Reentrancy();
-        }
-
-        reentrancyGuard = REENTRANCY_GUARD__LOCKED;
-        _;
-        reentrancyGuard = REENTRANCY_GUARD__UNLOCKED;
-    }
-
-    /// @notice Modifier to prevent reentrant calls and perform status checks
-    /// @dev A vault snapshot is taken before the operation is executed.
-    modifier nonReentrantWithChecks(address account) {
-        if (reentrancyGuard != REENTRANCY_GUARD__UNLOCKED) {
-            revert Reentrancy();
-        }
-
-        reentrancyGuard = REENTRANCY_GUARD__LOCKED;
-        takeVaultSnapshot();
-
-        _;
-
-        reentrancyGuard = REENTRANCY_GUARD__UNLOCKED;
-        requireAccountAndVaultStatusCheck(account);
-    }
+    constructor(IEVC _evc) EVCClient(_evc) {}
 
     /// @notice Takes a snapshot of the vault state
     function takeVaultSnapshot() internal {
@@ -80,7 +44,7 @@ abstract contract VaultBase is IVault, EVCClient {
 
     /// @notice Takes a snapshot of the vault state
     /// @dev Must be overridden by child contracts
-    function doTakeVaultSnapshot() internal view virtual returns (bytes memory snapshot);
+    function doTakeVaultSnapshot() internal virtual returns (bytes memory snapshot);
 
     /// @notice Checks the vault status
     /// @dev Must be overridden by child contracts

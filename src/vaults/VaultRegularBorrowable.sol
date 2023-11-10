@@ -93,13 +93,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
 
         if (debt == 0) return 0;
 
-        uint256 currentInterestAccumulator;
-        if (lastInterestUpdate == block.timestamp) {
-            currentInterestAccumulator = interestAccumulator;
-        } else {
-            (, currentInterestAccumulator) = _accrueInterestCalculate();
-        }
-
+        (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
         return (debt * currentInterestAccumulator) / userInterestAccumulator[account];
     }
 
@@ -120,17 +114,14 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     /// @param violator The violator account.
     /// @param collateral The collateral of the violator.
     /// @param repayAssets The assets to repay.
-    function liquidate(address violator, address collateral, uint256 repayAssets) external {
-        _liquidate(EVCAuthenticateForBorrow(), violator, collateral, repayAssets);
-    }
-
-    function _liquidate(
-        address msgSender,
+    function liquidate(
         address violator,
         address collateral,
         uint256 repayAssets
-    ) internal nonReentrantWithChecks(msgSender) {
-        _accrueInterest();
+    ) external routedThroughEVC nonReentrant {
+        address msgSender = EVCAuthenticate(true);
+
+        takeVaultSnapshot();
 
         if (msgSender == violator) {
             revert SelfLiquidation();
@@ -255,6 +246,8 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         if (debtOf(violator) == 0) {
             releaseAccountFromControl(violator);
         }
+
+        requireAccountAndVaultStatusCheck(msgSender);
     }
 
     /// @notice Calculates the liability and collateral of an account.
@@ -315,34 +308,43 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     }
 
     /// @notice Accrues interest.
-    function _accrueInterest() internal virtual override {
-        if (lastInterestUpdate == block.timestamp) return;
+    function _accrueInterest() internal virtual override returns (uint256, uint256) {
+        (uint256 currentTotalBorrowed, uint256 currentInterestAccumulator, bool shouldUpdate) =
+            _accrueInterestCalculate();
 
-        (totalBorrowed, interestAccumulator) = _accrueInterestCalculate();
-        lastInterestUpdate = block.timestamp;
+        if (shouldUpdate) {
+            totalBorrowed = currentTotalBorrowed;
+            interestAccumulator = currentInterestAccumulator;
+            lastInterestUpdate = block.timestamp;
+        }
+
+        return (currentTotalBorrowed, currentInterestAccumulator);
     }
 
     /// @notice Calculates the accrued interest.
-    /// @return The total borrowed amount and the interest accumulator.
-    function _accrueInterestCalculate() internal view virtual override returns (uint256, uint256) {
+    /// @return The total borrowed amount, the interest accumulator and a boolean value that indicates whether the data
+    /// should be updated.
+    function _accrueInterestCalculate() internal view virtual override returns (uint256, uint256, bool) {
         uint256 timeElapsed = block.timestamp - lastInterestUpdate;
+        uint256 oldTotalBorrowed = totalBorrowed;
         uint256 oldInterestAccumulator = interestAccumulator;
+
+        if (timeElapsed == 0) {
+            return (oldTotalBorrowed, oldInterestAccumulator, false);
+        }
 
         uint256 newInterestAccumulator = (
             FixedPointMathLib.rpow(uint256(int256(interestRate) + int256(ONE)), timeElapsed, ONE)
                 * oldInterestAccumulator
         ) / ONE;
 
-        uint256 newTotalBorrowed = (totalBorrowed * newInterestAccumulator) / oldInterestAccumulator;
+        uint256 newTotalBorrowed = (oldTotalBorrowed * newInterestAccumulator) / oldInterestAccumulator;
 
-        return (newTotalBorrowed, newInterestAccumulator);
+        return (newTotalBorrowed, newInterestAccumulator, true);
     }
 
     /// @notice Updates the interest rate.
     function _updateInterest() internal virtual override {
-        // accrue interest just in case it hasn't been accrued yet in this block
-        _accrueInterest();
-
         uint256 borrowed = totalBorrowed;
         uint256 poolAssets = totalAssets() + borrowed;
 

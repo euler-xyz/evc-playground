@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "solmate/utils/SafeTransferLib.sol";
-import "euler-evc/interfaces/IEthereumVaultConnector.sol";
+import "evc/interfaces/IEthereumVaultConnector.sol";
 import "../vaults/VaultSimpleBorrowable.sol";
 
 /// @title SimpleWithdrawOperator

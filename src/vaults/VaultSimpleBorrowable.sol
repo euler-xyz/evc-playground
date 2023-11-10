@@ -74,16 +74,11 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @notice Takes a snapshot of the vault.
     /// @dev This function is called before any action that may affect the vault's state.
     /// @return A snapshot of the vault's state.
-    function doTakeVaultSnapshot() internal view virtual override returns (bytes memory) {
-        uint256 newTotalBorrowed;
-        if (_lastInterestUpdate() == block.timestamp) {
-            newTotalBorrowed = totalBorrowed;
-        } else {
-            (newTotalBorrowed,) = _accrueInterestCalculate();
-        }
+    function doTakeVaultSnapshot() internal virtual override returns (bytes memory) {
+        (uint256 currentTotalBorrowed,) = _accrueInterest();
 
         // make total supply and total borrows snapshot:
-        return abi.encode(_convertToAssets(totalSupply, false), newTotalBorrowed);
+        return abi.encode(_convertToAssets(totalSupply, false), currentTotalBorrowed);
     }
 
     /// @notice Checks the vault's status.
@@ -168,7 +163,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     ) external nonReentrant returns (bool) {
         uint256 origBalance = ERC20(token).balanceOf(address(this));
 
-        ERC20(token).safeTransfer(msg.sender, amount);
+        ERC20(token).safeTransfer(address(receiver), amount);
 
         bytes32 result = receiver.onFlashLoan(msg.sender, token, amount, 0, data);
 
@@ -184,56 +179,12 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @dev This function transfers the specified amount of assets to the receiver.
     /// @param assets The amount of assets to borrow.
     /// @param receiver The receiver of the assets.
-    function borrow(uint256 assets, address receiver) external {
-        _borrow(EVCAuthenticateForBorrow(), assets, receiver);
-    }
+    function borrow(uint256 assets, address receiver) external routedThroughEVC nonReentrant {
+        address msgSender = EVCAuthenticate(true);
 
-    /// @notice Repays a debt.
-    /// @dev This function transfers the specified amount of assets from the caller to the vault.
-    /// @param assets The amount of assets to repay.
-    /// @param receiver The receiver of the repayment.
-    function repay(uint256 assets, address receiver) external {
-        _repay(EVCAuthenticate(), assets, receiver);
-    }
+        takeVaultSnapshot();
 
-    /// @notice Winds up the vault.
-    /// @dev This function deposits assets into the vault and borrows the same amount.
-    /// @dev Despite the lack of asset transfers, this function emits Deposit and Borrow events.
-    /// @param assets The amount of assets to wind up.
-    /// @param collateralReceiver The receiver of the collateral.
-    /// @return shares The amount of shares minted.
-    function wind(uint256 assets, address collateralReceiver) external returns (uint256 shares) {
-        return _wind(EVCAuthenticateForBorrow(), assets, collateralReceiver);
-    }
-
-    /// @notice Unwinds the vault.
-    /// @dev This function repays a debt and withdraws the same amount of assets.
-    /// @dev Despite the lack of asset transfers, this function emits Repay and Withdraw events.
-    /// @param assets The amount of assets to unwind.
-    /// @param debtFrom The account to repay the debt from.
-    /// @return shares The amount of shares burned.
-    function unwind(uint256 assets, address debtFrom) external returns (uint256 shares) {
-        return _unwind(EVCAuthenticateForBorrow(), assets, debtFrom);
-    }
-
-    /// @notice Pulls debt from an account.
-    /// @dev This function decreases the debt of one account and increases the debt of another.
-    /// @dev Despite the lack of asset transfers, this function emits Repay and Borrow events.
-    /// @param from The account to pull the debt from.
-    /// @param assets The amount of debt to pull.
-    /// @return A boolean indicating whether the operation was successful.
-    function pullDebt(address from, uint256 assets) external returns (bool) {
-        return _pullDebt(EVCAuthenticateForBorrow(), from, assets);
-    }
-
-    function _borrow(
-        address msgSender,
-        uint256 assets,
-        address receiver
-    ) internal virtual nonReentrantWithChecks(msgSender) {
         require(assets != 0, "ZERO_ASSETS");
-
-        _accrueInterest();
 
         receiver = getAccountOwner(receiver == address(0) ? msgSender : receiver);
 
@@ -242,20 +193,24 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         emit Borrow(msgSender, receiver, assets);
 
         asset.safeTransfer(receiver, assets);
+
+        requireAccountAndVaultStatusCheck(msgSender);
     }
 
-    function _repay(
-        address msgSender,
-        uint256 assets,
-        address receiver
-    ) internal virtual nonReentrantWithChecks(address(0)) {
+    /// @notice Repays a debt.
+    /// @dev This function transfers the specified amount of assets from the caller to the vault.
+    /// @param assets The amount of assets to repay.
+    /// @param receiver The receiver of the repayment.
+    function repay(uint256 assets, address receiver) external routedThroughEVC nonReentrant {
+        address msgSender = EVCAuthenticate(false);
+
+        takeVaultSnapshot();
+
         require(assets != 0, "ZERO_ASSETS");
 
         if (!isControllerEnabled(receiver, address(this))) {
             revert ControllerDisabled();
         }
-
-        _accrueInterest();
 
         asset.safeTransferFrom(msgSender, address(this), assets);
 
@@ -266,14 +221,23 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         if (debtOf(receiver) == 0) {
             releaseAccountFromControl(receiver);
         }
+
+        requireAccountAndVaultStatusCheck(address(0));
     }
 
-    function _wind(
-        address msgSender,
+    /// @notice Winds up the vault.
+    /// @dev This function deposits assets into the vault and borrows the same amount.
+    /// @dev Despite the lack of asset transfers, this function emits Deposit and Borrow events.
+    /// @param assets The amount of assets to wind up.
+    /// @param collateralReceiver The receiver of the collateral.
+    /// @return shares The amount of shares minted.
+    function wind(
         uint256 assets,
         address collateralReceiver
-    ) internal virtual nonReentrantWithChecks(msgSender) returns (uint256 shares) {
-        _accrueInterest();
+    ) external routedThroughEVC nonReentrant returns (uint256 shares) {
+        address msgSender = EVCAuthenticate(true);
+
+        takeVaultSnapshot();
 
         require((shares = previewDeposit(assets)) != 0, "ZERO_SHARES");
 
@@ -283,14 +247,20 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
 
         emit Deposit(msgSender, collateralReceiver, assets, shares);
         emit Borrow(msgSender, msgSender, assets);
+
+        requireAccountAndVaultStatusCheck(msgSender);
     }
 
-    function _unwind(
-        address msgSender,
-        uint256 assets,
-        address debtFrom
-    ) internal virtual nonReentrantWithChecks(msgSender) returns (uint256 shares) {
-        _accrueInterest();
+    /// @notice Unwinds the vault.
+    /// @dev This function repays a debt and withdraws the same amount of assets.
+    /// @dev Despite the lack of asset transfers, this function emits Repay and Withdraw events.
+    /// @param assets The amount of assets to unwind.
+    /// @param debtFrom The account to repay the debt from.
+    /// @return shares The amount of shares burned.
+    function unwind(uint256 assets, address debtFrom) external routedThroughEVC nonReentrant returns (uint256 shares) {
+        address msgSender = EVCAuthenticate(true);
+
+        takeVaultSnapshot();
 
         shares = previewWithdraw(assets);
 
@@ -304,17 +274,23 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         if (debtOf(debtFrom) == 0) {
             releaseAccountFromControl(debtFrom);
         }
+
+        requireAccountAndVaultStatusCheck(msgSender);
     }
 
-    function _pullDebt(
-        address msgSender,
-        address from,
-        uint256 assets
-    ) internal virtual nonReentrantWithChecks(msgSender) returns (bool) {
+    /// @notice Pulls debt from an account.
+    /// @dev This function decreases the debt of one account and increases the debt of another.
+    /// @dev Despite the lack of asset transfers, this function emits Repay and Borrow events.
+    /// @param from The account to pull the debt from.
+    /// @param assets The amount of debt to pull.
+    /// @return A boolean indicating whether the operation was successful.
+    function pullDebt(address from, uint256 assets) external routedThroughEVC nonReentrant returns (bool) {
+        address msgSender = EVCAuthenticate(true);
+
+        takeVaultSnapshot();
+
         require(assets != 0, "ZERO_AMOUNT");
         require(msgSender != from, "SELF_DEBT_PULL");
-
-        _accrueInterest();
 
         _decreaseOwed(from, assets);
         _increaseOwed(msgSender, assets);
@@ -326,37 +302,27 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
             releaseAccountFromControl(from);
         }
 
+        requireAccountAndVaultStatusCheck(msgSender);
+
         return true;
     }
 
     /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
     function _convertToShares(uint256 assets, bool roundUp) internal view virtual override returns (uint256) {
-        uint256 assetsAndBorrows = totalAssets();
-        if (_lastInterestUpdate() == block.timestamp) {
-            assetsAndBorrows += totalBorrowed;
-        } else {
-            (uint256 newTotalBorrowed,) = _accrueInterestCalculate();
-            assetsAndBorrows += newTotalBorrowed;
-        }
+        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
 
         return roundUp
-            ? assets.mulDivUp(totalSupply + 1, assetsAndBorrows + 1)
-            : assets.mulDivDown(totalSupply + 1, assetsAndBorrows + 1);
+            ? assets.mulDivUp(totalSupply + 1, totalAssets() + currentTotalBorrowed + 1)
+            : assets.mulDivDown(totalSupply + 1, totalAssets() + currentTotalBorrowed + 1);
     }
 
     /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
     function _convertToAssets(uint256 shares, bool roundUp) internal view virtual override returns (uint256) {
-        uint256 assetsAndBorrows = totalAssets();
-        if (_lastInterestUpdate() == block.timestamp) {
-            assetsAndBorrows += totalBorrowed;
-        } else {
-            (uint256 newTotalBorrowed,) = _accrueInterestCalculate();
-            assetsAndBorrows += newTotalBorrowed;
-        }
+        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
 
         return roundUp
-            ? shares.mulDivUp(assetsAndBorrows + 1, totalSupply + 1)
-            : shares.mulDivDown(assetsAndBorrows + 1, totalSupply + 1);
+            ? shares.mulDivUp(totalAssets() + currentTotalBorrowed + 1, totalSupply + 1)
+            : shares.mulDivDown(totalAssets() + currentTotalBorrowed + 1, totalSupply + 1);
     }
 
     /// @notice Increases the owed amount of an account.
@@ -381,12 +347,15 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @notice Accrues interest.
-    function _accrueInterest() internal virtual {}
+    function _accrueInterest() internal virtual returns (uint256, uint256) {
+        (uint256 currentTotalBorrowed, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
+        return (currentTotalBorrowed, currentInterestAccumulator);
+    }
 
     /// @notice Calculates the accrued interest.
     /// @return The total borrowed amount and the interest accumulator.
-    function _accrueInterestCalculate() internal view virtual returns (uint256, uint256) {
-        return (totalBorrowed, 0);
+    function _accrueInterestCalculate() internal view virtual returns (uint256, uint256, bool) {
+        return (totalBorrowed, 0, false);
     }
 
     /// @notice Updates the interest rate.

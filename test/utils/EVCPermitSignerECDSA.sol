@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "forge-std/Test.sol";
 import "openzeppelin/utils/cryptography/MessageHashUtils.sol";
 import "openzeppelin/utils/ShortStrings.sol";
-import "euler-evc/EthereumVaultConnector.sol";
+import "evc/EthereumVaultConnector.sol";
 
 // This contract is used only for testing purposes.
 // It's a utility contract that helps to sign permit message for the evc contract using ECDSA.

@@ -3,9 +3,9 @@
 
 ## Ethereum Vault Connector (EVC) 
 
-The Ethereum Vault Connector (EVC) is an attempt to distill the core functionality required for a lending market into a foundational layer that can be used as a base building block for many diverse protocols. The EVC is primarily a mediator between Vaults, which are contracts that implement the ERC-4626 interface and contain a small amount of additional logic for interfacing with other vaults.
+The Ethereum Vault Connector (EVC) is a foundational layer designed to facilitate the core functionality required for a lending market. It serves as a base building block for various protocols, providing a robust and flexible framework for developers to build upon. The EVC primarily mediates between vaults, contracts that implement the ERC-4626 interface and contain additional logic for interfacing with other vaults. The EVC not only provides a common base ecosystem but also reduces complexity in the core lending/borrowing contracts, allowing them to focus on their differentiating factors.
 
-For more information about the EVC refer to the [EVC WHITEPAPER](https://github.com/euler-xyz/euler-evc/blob/master/docs/whitepaper.md) and the [EVC SPECS](https://github.com/euler-xyz/euler-evc/blob/master/docs/specs.md).
+For more information about the EVC refer to the [EVC WHITEPAPER](https://github.com/euler-xyz/ethereum-vault-connector/blob/master/docs/whitepaper.md) and the [EVC SPECS](https://github.com/euler-xyz/ethereum-vault-connector/blob/master/docs/specs.md).
 
 
 ## EVC Playground
@@ -96,7 +96,7 @@ Areas of experimentation for permits and operators:
 To install EVC Playground in a [**Foundry**](https://github.com/foundry-rs/foundry) project:
 
 ```sh
-forge install euler-xyz/euler-evc-playground
+forge install euler-xyz/evc-playground
 ```
 
 ## Usage
@@ -120,7 +120,7 @@ foundryup
 To clone the repo and install dependencies:
 
 ```sh
-git clone https://github.com/euler-xyz/euler-evc-playground.git && cd euler-evc-playground && yarn
+git clone https://github.com/euler-xyz/evc-playground.git && cd evc-playground && yarn
 ```
 
 ## Testing

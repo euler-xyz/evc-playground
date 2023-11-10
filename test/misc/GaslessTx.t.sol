@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
-import "euler-evc/interfaces/IEthereumVaultConnector.sol";
+import "evc/interfaces/IEthereumVaultConnector.sol";
 import "../../src/vaults/VaultSimple.sol";
 import "../../src/utils/TipsPiggyBank.sol";
 import "../utils/evcPermitSignerECDSA.sol";

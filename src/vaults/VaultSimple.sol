@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+import "solmate/utils/ReentrancyGuard.sol";
 import "solmate/auth/Owned.sol";
 import "solmate/mixins/ERC4626.sol";
 import "solmate/utils/SafeTransferLib.sol";
@@ -17,7 +18,7 @@ import "./VaultBase.sol";
 /// shares.
 /// Look into Open-Zeppelin documentation for more details.
 /// This contract does not take the supply cap into account when calculating max deposit and max mint values.
-contract VaultSimple is VaultBase, Owned, ERC4626 {
+contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
@@ -45,7 +46,7 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
     /// @notice Takes a snapshot of the vault.
     /// @dev This function is called before any action that may affect the vault's state.
     /// @return A snapshot of the vault's state.
-    function doTakeVaultSnapshot() internal view virtual override returns (bytes memory) {
+    function doTakeVaultSnapshot() internal virtual override returns (bytes memory) {
         // make total supply snapshot here and return it:
         return abi.encode(_convertToAssets(totalSupply, false));
     }
@@ -136,7 +137,7 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
     /// @param amount The amount to approve.
     /// @return A boolean indicating whether the approval was successful.
     function approve(address spender, uint256 amount) public override returns (bool) {
-        address msgSender = EVCAuthenticate();
+        address msgSender = EVCAuthenticate(false);
 
         allowance[msgSender][spender] = amount;
 
@@ -149,60 +150,11 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
     /// @param to The recipient of the transfer.
     /// @param amount The amount shares to transfer.
     /// @return A boolean indicating whether the transfer was successful.
-    function transfer(address to, uint256 amount) public override returns (bool) {
-        return _transfer(EVCAuthenticate(), to, amount);
-    }
+    function transfer(address to, uint256 amount) public override routedThroughEVC nonReentrant returns (bool) {
+        address msgSender = EVCAuthenticate(false);
 
-    /// @dev Transfers a certain amount of shares from a sender to a recipient.
-    /// @param from The sender of the transfer.
-    /// @param to The recipient of the transfer.
-    /// @param amount The amount of shares to transfer.
-    /// @return A boolean indicating whether the transfer was successful.
-    function transferFrom(address from, address to, uint256 amount) public override returns (bool) {
-        return _transferFrom(EVCAuthenticate(), from, to, amount);
-    }
+        takeVaultSnapshot();
 
-    /// @dev Deposits a certain amount of assets for a receiver.
-    /// @param assets The assets to deposit.
-    /// @param receiver The receiver of the deposit.
-    /// @return shares The shares equivalent to the deposited assets.
-    function deposit(uint256 assets, address receiver) public override returns (uint256 shares) {
-        return _deposit(EVCAuthenticate(), assets, receiver);
-    }
-
-    /// @dev Mints a certain amount of shares for a receiver.
-    /// @param shares The shares to mint.
-    /// @param receiver The receiver of the mint.
-    /// @return assets The assets equivalent to the minted shares.
-    function mint(uint256 shares, address receiver) public override returns (uint256 assets) {
-        return _mint(EVCAuthenticate(), shares, receiver);
-    }
-
-    /// @dev Withdraws a certain amount of assets for a receiver.
-    /// @dev If address(0) passed as receiver, the owner of the shares will receive the assets.
-    /// @param assets The assets to withdraw.
-    /// @param receiver The receiver of the withdrawal.
-    /// @param owner The owner of the assets.
-    /// @return shares The shares equivalent to the withdrawn assets.
-    function withdraw(uint256 assets, address receiver, address owner) public override returns (uint256 shares) {
-        return _withdraw(EVCAuthenticate(), assets, receiver, owner);
-    }
-
-    /// @dev Redeems a certain amount of shares for a receiver.
-    /// @dev If address(0) passed as receiver, the owner of the shares will receive the assets.
-    /// @param shares The shares to redeem.
-    /// @param receiver The receiver of the redemption.
-    /// @param owner The owner of the shares.
-    /// @return assets The assets equivalent to the redeemed shares.
-    function redeem(uint256 shares, address receiver, address owner) public override returns (uint256 assets) {
-        return _redeem(EVCAuthenticate(), shares, receiver, owner);
-    }
-
-    function _transfer(
-        address msgSender,
-        address to,
-        uint256 amount
-    ) internal virtual nonReentrantWithChecks(msgSender) returns (bool) {
         balanceOf[msgSender] -= amount;
 
         // Cannot overflow because the sum of all user
@@ -213,15 +165,25 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
 
         emit Transfer(msgSender, to, amount);
 
+        requireAccountAndVaultStatusCheck(msgSender);
+
         return true;
     }
 
-    function _transferFrom(
-        address msgSender,
+    /// @dev Transfers a certain amount of shares from a sender to a recipient.
+    /// @param from The sender of the transfer.
+    /// @param to The recipient of the transfer.
+    /// @param amount The amount of shares to transfer.
+    /// @return A boolean indicating whether the transfer was successful.
+    function transferFrom(
         address from,
         address to,
         uint256 amount
-    ) internal virtual nonReentrantWithChecks(from) returns (bool) {
+    ) public override routedThroughEVC nonReentrant returns (bool) {
+        address msgSender = EVCAuthenticate(false);
+
+        takeVaultSnapshot();
+
         uint256 allowed = allowance[from][msgSender]; // Saves gas for limited approvals.
 
         if (allowed != type(uint256).max) {
@@ -238,14 +200,23 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
 
         emit Transfer(from, to, amount);
 
+        requireAccountAndVaultStatusCheck(from);
+
         return true;
     }
 
-    function _deposit(
-        address msgSender,
+    /// @dev Deposits a certain amount of assets for a receiver.
+    /// @param assets The assets to deposit.
+    /// @param receiver The receiver of the deposit.
+    /// @return shares The shares equivalent to the deposited assets.
+    function deposit(
         uint256 assets,
         address receiver
-    ) internal virtual nonReentrantWithChecks(address(0)) returns (uint256 shares) {
+    ) public override routedThroughEVC nonReentrant returns (uint256 shares) {
+        address msgSender = EVCAuthenticate(false);
+
+        takeVaultSnapshot();
+
         // Check for rounding error since we round down in previewDeposit.
         require((shares = previewDeposit(assets)) != 0, "ZERO_SHARES");
 
@@ -255,13 +226,22 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
         _mint(receiver, shares);
 
         emit Deposit(msgSender, receiver, assets, shares);
+
+        requireAccountAndVaultStatusCheck(address(0));
     }
 
-    function _mint(
-        address msgSender,
+    /// @dev Mints a certain amount of shares for a receiver.
+    /// @param shares The shares to mint.
+    /// @param receiver The receiver of the mint.
+    /// @return assets The assets equivalent to the minted shares.
+    function mint(
         uint256 shares,
         address receiver
-    ) internal virtual nonReentrantWithChecks(address(0)) returns (uint256 assets) {
+    ) public override routedThroughEVC nonReentrant returns (uint256 assets) {
+        address msgSender = EVCAuthenticate(false);
+
+        takeVaultSnapshot();
+
         assets = previewMint(shares); // No need to check for rounding error, previewMint rounds up.
 
         // Need to transfer before minting or ERC777s could reenter.
@@ -270,14 +250,25 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
         _mint(receiver, shares);
 
         emit Deposit(msgSender, receiver, assets, shares);
+
+        requireAccountAndVaultStatusCheck(address(0));
     }
 
-    function _withdraw(
-        address msgSender,
+    /// @dev Withdraws a certain amount of assets for a receiver.
+    /// @dev If address(0) passed as receiver, the owner of the shares will receive the assets.
+    /// @param assets The assets to withdraw.
+    /// @param receiver The receiver of the withdrawal.
+    /// @param owner The owner of the assets.
+    /// @return shares The shares equivalent to the withdrawn assets.
+    function withdraw(
         uint256 assets,
         address receiver,
         address owner
-    ) internal virtual nonReentrantWithChecks(owner) returns (uint256 shares) {
+    ) public override routedThroughEVC nonReentrant returns (uint256 shares) {
+        address msgSender = EVCAuthenticate(false);
+
+        takeVaultSnapshot();
+
         shares = previewWithdraw(assets); // No need to check for rounding error, previewWithdraw rounds up.
 
         if (msgSender != owner) {
@@ -295,14 +286,25 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
         emit Withdraw(msgSender, receiver, owner, assets, shares);
 
         asset.safeTransfer(receiver, assets);
+
+        requireAccountAndVaultStatusCheck(owner);
     }
 
-    function _redeem(
-        address msgSender,
+    /// @dev Redeems a certain amount of shares for a receiver.
+    /// @dev If address(0) passed as receiver, the owner of the shares will receive the assets.
+    /// @param shares The shares to redeem.
+    /// @param receiver The receiver of the redemption.
+    /// @param owner The owner of the shares.
+    /// @return assets The assets equivalent to the redeemed shares.
+    function redeem(
         uint256 shares,
         address receiver,
         address owner
-    ) internal virtual nonReentrantWithChecks(owner) returns (uint256 assets) {
+    ) public override routedThroughEVC nonReentrant returns (uint256 assets) {
+        address msgSender = EVCAuthenticate(false);
+
+        takeVaultSnapshot();
+
         if (msgSender != owner) {
             uint256 allowed = allowance[owner][msgSender]; // Saves gas for limited approvals.
 
@@ -321,6 +323,8 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
         emit Withdraw(msgSender, receiver, owner, assets, shares);
 
         asset.safeTransfer(receiver, assets);
+
+        requireAccountAndVaultStatusCheck(owner);
     }
 
     function _convertToShares(uint256 assets, bool roundUp) internal view virtual returns (uint256) {

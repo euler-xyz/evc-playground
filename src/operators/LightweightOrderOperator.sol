@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 import "solmate/tokens/ERC20.sol";
-import "euler-evc/interfaces/IEthereumVaultConnector.sol";
+import "evc/interfaces/IEthereumVaultConnector.sol";
 
 /// @title LightweightOrderOperator
 /// @notice This contract is used to manage orders submitted or signed by the user.
