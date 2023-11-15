@@ -39,6 +39,8 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     /// @dev Sets the supply cap of the vault.
     /// @param newSupplyCap The new supply cap.
     function setSupplyCap(uint256 newSupplyCap) external onlyOwner {
+        if (newSupplyCap < supplyCap) revert();
+        
         supplyCap = newSupplyCap;
         emit SupplyCapSet(newSupplyCap);
     }
