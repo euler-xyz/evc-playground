@@ -53,22 +53,13 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
 
     /// @notice Checks the vault's status.
     /// @dev This function is called after any action that may affect the vault's state.
-    /// @param oldSnapshot The snapshot of the vault's state before the action.
-    function doCheckVaultStatus(bytes memory oldSnapshot) internal virtual override {
-        // sanity check in case the snapshot hasn't been taken
-        if (oldSnapshot.length == 0) revert SnapshotNotTaken();
-
-        // validate the vault state here:
-        uint256 initialSupply = abi.decode(oldSnapshot, (uint256));
+    function doCheckVaultStatus(bytes memory /*oldSnapshot*/) internal virtual override {
         uint256 finalSupply = _convertToAssets(totalSupply, false);
 
         // the supply cap can be implemented like this:
-        if (supplyCap != 0 && finalSupply > supplyCap && finalSupply > initialSupply) {
+        if (supplyCap != 0 && finalSupply > supplyCap) {
             revert SupplyCapExceeded();
         }
-
-        // example: if 90% of the assets were withdrawn, revert the transaction
-        //require(finalSupply >= initialSupply / 10, "withdrawal too large");
     }
 
     /// @notice Checks the status of an account.
