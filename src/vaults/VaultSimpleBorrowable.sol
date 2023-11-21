@@ -361,6 +361,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @notice Accrues interest.
+    /// @return The current values of total borrowed and interest accumulator.
     function _accrueInterest() internal virtual returns (uint256, uint256) {
         (uint256 currentTotalBorrowed, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
         return (currentTotalBorrowed, currentInterestAccumulator);

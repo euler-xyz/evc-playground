@@ -308,6 +308,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     }
 
     /// @notice Accrues interest.
+    /// @return The current values of total borrowed and interest accumulator.
     function _accrueInterest() internal virtual override returns (uint256, uint256) {
         (uint256 currentTotalBorrowed, uint256 currentInterestAccumulator, bool shouldUpdate) =
             _accrueInterestCalculate();
