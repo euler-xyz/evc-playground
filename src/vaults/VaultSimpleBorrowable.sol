@@ -8,10 +8,9 @@ import "../interfaces/IERC3156FlashLender.sol";
 /// @title VaultSimpleBorrowable
 /// @notice This contract extends VaultSimple to add borrowing functionality.
 /// @notice In this contract, the EVC is authenticated before any action that may affect the state of the vault or an
-/// account.
-/// This is done to ensure that if it's EVC calling, the account is correctly authorized and the vault is enabled as a
-/// controller if needed.
-/// This contract does not take the account health into account when calculating max withdraw and max redeem values.
+/// account. This is done to ensure that if it's EVC calling, the account is correctly authorized and the vault is
+/// enabled as a controller if needed. This contract does not take the account health into account when calculating max
+/// withdraw and max redeem values.
 contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
