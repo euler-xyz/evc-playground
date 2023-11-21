@@ -180,7 +180,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         bytes32 result = receiver.onFlashLoan(msg.sender, token, amount, fee, data);
 
         if (
-            result != IERC3156FlashBorrower.onFlashLoan.selector
+            result != keccak256("ERC3156FlashBorrower.onFlashLoan")
                 || ERC20(token).balanceOf(address(this)) < origBalance + fee
         ) {
             revert FlashloanFailure();
