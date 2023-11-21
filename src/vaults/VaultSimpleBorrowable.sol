@@ -358,7 +358,8 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @notice Calculates the accrued interest.
-    /// @return The total borrowed amount and the interest accumulator.
+    /// @return The total borrowed amount, the interest accumulator and a boolean value that indicates whether the data
+    /// should be updated.
     function _accrueInterestCalculate() internal view virtual returns (uint256, uint256, bool) {
         return (totalBorrowed, 0, false);
     }
