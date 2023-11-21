@@ -146,12 +146,12 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @inheritdoc IERC3156FlashLender
-    function maxFlashLoan(address token) external view returns (uint256) {
+    function maxFlashLoan(address token) public view returns (uint256) {
         return token == address(asset) ? asset.balanceOf(address(this)) : 0;
     }
 
     /// @inheritdoc IERC3156FlashLender
-    function flashFee(address token, uint256) external view returns (uint256) {
+    function flashFee(address token, uint256) public view returns (uint256) {
         if (token == address(asset)) {
             return 0;
         } else {
@@ -166,14 +166,23 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         uint256 amount,
         bytes calldata data
     ) external nonReentrant returns (bool) {
+        if (token != address(asset)) {
+            revert FlashloanNotSupported();
+        } else if (maxFlashLoan(token) < amount) {
+            revert FlashloanFailure();
+        }
+
         uint256 origBalance = ERC20(token).balanceOf(address(this));
 
         ERC20(token).safeTransfer(address(receiver), amount);
 
-        bytes32 result = receiver.onFlashLoan(msg.sender, token, amount, 0, data);
+        uint256 fee = flashFee(token, amount);
+        bytes32 result = receiver.onFlashLoan(msg.sender, token, amount, fee, data);
 
-        if (result != IERC3156FlashBorrower.onFlashLoan.selector || ERC20(token).balanceOf(address(this)) < origBalance)
-        {
+        if (
+            result != IERC3156FlashBorrower.onFlashLoan.selector
+                || ERC20(token).balanceOf(address(this)) < origBalance + fee
+        ) {
             revert FlashloanFailure();
         }
 
