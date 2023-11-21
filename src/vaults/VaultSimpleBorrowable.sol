@@ -21,6 +21,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     event Repay(address indexed caller, address indexed receiver, uint256 assets);
 
     error FlashloanFailure();
+    error FlashloanNotSupported();
     error BorrowCapExceeded();
     error AccountUnhealthy();
 
@@ -150,8 +151,12 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @inheritdoc IERC3156FlashLender
-    function flashFee(address, uint256) external pure returns (uint256) {
-        return 0;
+    function flashFee(address token, uint256) external view returns (uint256) {
+        if (token == address(asset)) {
+            return 0;
+        } else {
+            revert FlashloanNotSupported();
+        }
     }
 
     /// @inheritdoc IERC3156FlashLender
