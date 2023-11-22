@@ -309,6 +309,10 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         require(assets != 0, "ZERO_AMOUNT");
         require(msgSender != from, "SELF_DEBT_PULL");
 
+        if (!isControllerEnabled(from, address(this))) {
+            revert ControllerDisabled();
+        }
+
         _decreaseOwed(from, assets);
         _increaseOwed(msgSender, assets);
 
