@@ -360,13 +360,19 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @notice Accrues interest.
+    /// @dev Because this contract does not implement the interest accrual, this function does not need to update the
+    /// state, but only returns the current value of total borrows and 0 for the interest accumulator. This function is
+    /// needed so that it can be overriden by child contracts without a need to override other functions which use it.
     /// @return The current values of total borrowed and interest accumulator.
     function _accrueInterest() internal virtual returns (uint256, uint256) {
-        (uint256 currentTotalBorrowed, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
-        return (currentTotalBorrowed, currentInterestAccumulator);
+        return (totalBorrowed, 0);
     }
 
     /// @notice Calculates the accrued interest.
+    /// @dev Because this contract does not implement the interest accrual, this function does not need to calculate the
+    /// interest, but only returns the current value of total borrows, 0 for the interest accumulator and false for the
+    /// update flag. This function is needed so that it can be overriden by child contracts without a need to override
+    /// other functions which use it.
     /// @return The total borrowed amount, the interest accumulator and a boolean value that indicates whether the data
     /// should be updated.
     function _accrueInterestCalculate() internal view virtual returns (uint256, uint256, bool) {
