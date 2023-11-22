@@ -127,6 +127,10 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
             revert SelfLiquidation();
         }
 
+        if (repayAssets == 0) {
+            revert RepayAssetsInsufficient();
+        }
+
         // due to later violator's account check forgiveness,
         // the violator's account must be fully settled when liquidating
         if (isAccountStatusCheckDeferred(violator)) {
@@ -144,10 +148,6 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         uint256 cf = collateralFactor[ERC4626(collateral)];
         if (cf == 0) {
             revert CollateralDisabled();
-        }
-
-        if (repayAssets == 0) {
-            revert RepayAssetsInsufficient();
         }
 
         uint256 seizeShares;
