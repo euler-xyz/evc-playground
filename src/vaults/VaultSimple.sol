@@ -253,7 +253,6 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     }
 
     /// @dev Withdraws a certain amount of assets for a receiver.
-    /// @dev If address(0) passed as receiver, the owner of the shares will receive the assets.
     /// @param assets The assets to withdraw.
     /// @param receiver The receiver of the withdrawal.
     /// @param owner The owner of the assets.
@@ -277,7 +276,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
             }
         }
 
-        receiver = getAccountOwner(receiver == address(0) ? owner : receiver);
+        receiver = getAccountOwner(receiver);
 
         _burn(owner, shares);
 
@@ -289,7 +288,6 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     }
 
     /// @dev Redeems a certain amount of shares for a receiver.
-    /// @dev If address(0) passed as receiver, the owner of the shares will receive the assets.
     /// @param shares The shares to redeem.
     /// @param receiver The receiver of the redemption.
     /// @param owner The owner of the shares.
@@ -314,7 +312,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         // Check for rounding error since we round down in previewRedeem.
         require((assets = previewRedeem(shares)) != 0, "ZERO_ASSETS");
 
-        receiver = getAccountOwner(receiver == address(0) ? owner : receiver);
+        receiver = getAccountOwner(receiver);
 
         _burn(owner, shares);
 

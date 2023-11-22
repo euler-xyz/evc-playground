@@ -194,7 +194,6 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @notice Borrows assets.
-    /// @dev This function transfers the specified amount of assets to the receiver.
     /// @param assets The amount of assets to borrow.
     /// @param receiver The receiver of the assets.
     function borrow(uint256 assets, address receiver) external routedThroughEVC nonReentrant {
@@ -204,7 +203,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
 
         require(assets != 0, "ZERO_ASSETS");
 
-        receiver = getAccountOwner(receiver == address(0) ? msgSender : receiver);
+        receiver = getAccountOwner(receiver);
 
         _increaseOwed(msgSender, assets);
 
