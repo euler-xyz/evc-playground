@@ -12,12 +12,10 @@ import "./VaultBase.sol";
 /// @title VaultSimple
 /// @dev It provides basic functionality for vaults.
 /// @notice In this contract, the EVC is authenticated before any action that may affect the state of the vault or an
-/// account.
-/// This is done to ensure that if it's EVC calling, the account is correctly authorized.
-/// Unlike solmate, VaultSimple implementation prevents from share inflation attack by using virtual assets and
-/// shares.
-/// Look into Open-Zeppelin documentation for more details.
-/// This contract does not take the supply cap into account when calculating max deposit and max mint values.
+/// account. This is done to ensure that if it's EVC calling, the account is correctly authorized. Unlike solmate,
+/// VaultSimple implementation prevents from share inflation attack by using virtual assets and shares. Look into
+/// Open-Zeppelin documentation for more details. This contract does not take the supply cap into account when
+/// calculating max deposit and max mint values.
 contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;

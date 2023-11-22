@@ -302,12 +302,8 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         userInterestAccumulator[account] = interestAccumulator;
     }
 
-    /// @notice Returns the last timestamp when the interest was updated.
-    function _lastInterestUpdate() internal view virtual override returns (uint256) {
-        return lastInterestUpdate;
-    }
-
     /// @notice Accrues interest.
+    /// @return The current values of total borrowed and interest accumulator.
     function _accrueInterest() internal virtual override returns (uint256, uint256) {
         (uint256 currentTotalBorrowed, uint256 currentInterestAccumulator, bool shouldUpdate) =
             _accrueInterestCalculate();

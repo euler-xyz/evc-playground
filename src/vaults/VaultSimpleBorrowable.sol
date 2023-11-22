@@ -8,10 +8,10 @@ import "../interfaces/IERC3156FlashLender.sol";
 /// @title VaultSimpleBorrowable
 /// @notice This contract extends VaultSimple to add borrowing functionality.
 /// @notice In this contract, the EVC is authenticated before any action that may affect the state of the vault or an
-/// account.
-/// This is done to ensure that if it's EVC calling, the account is correctly authorized and the vault is enabled as a
-/// controller if needed.
-/// This contract does not take the account health into account when calculating max withdraw and max redeem values.
+/// account. This is done to ensure that if it's EVC calling, the account is correctly authorized and the vault is
+/// enabled as a controller if needed. This contract does not take the account health into account when calculating max
+/// withdraw and max redeem values. This contract does not implement the interest accrual hence it returns raw values of
+/// total borrows and 0 for the interest accumulator in the interest accrual-related functions.
 contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -21,6 +21,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     event Repay(address indexed caller, address indexed receiver, uint256 assets);
 
     error FlashloanFailure();
+    error FlashloanNotSupported();
     error BorrowCapExceeded();
     error AccountUnhealthy();
 
@@ -145,13 +146,17 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @inheritdoc IERC3156FlashLender
-    function maxFlashLoan(address token) external view returns (uint256) {
+    function maxFlashLoan(address token) public view returns (uint256) {
         return token == address(asset) ? asset.balanceOf(address(this)) : 0;
     }
 
     /// @inheritdoc IERC3156FlashLender
-    function flashFee(address, uint256) external pure returns (uint256) {
-        return 0;
+    function flashFee(address token, uint256) public view returns (uint256) {
+        if (token == address(asset)) {
+            return 0;
+        } else {
+            revert FlashloanNotSupported();
+        }
     }
 
     /// @inheritdoc IERC3156FlashLender
@@ -161,14 +166,23 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         uint256 amount,
         bytes calldata data
     ) external nonReentrant returns (bool) {
+        if (token != address(asset)) {
+            revert FlashloanNotSupported();
+        } else if (maxFlashLoan(token) < amount) {
+            revert FlashloanFailure();
+        }
+
         uint256 origBalance = ERC20(token).balanceOf(address(this));
 
         ERC20(token).safeTransfer(address(receiver), amount);
 
-        bytes32 result = receiver.onFlashLoan(msg.sender, token, amount, 0, data);
+        uint256 fee = flashFee(token, amount);
+        bytes32 result = receiver.onFlashLoan(msg.sender, token, amount, fee, data);
 
-        if (result != IERC3156FlashBorrower.onFlashLoan.selector || ERC20(token).balanceOf(address(this)) < origBalance)
-        {
+        if (
+            result != keccak256("ERC3156FlashBorrower.onFlashLoan")
+                || ERC20(token).balanceOf(address(this)) < origBalance + fee
+        ) {
             revert FlashloanFailure();
         }
 
@@ -341,19 +355,22 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         totalBorrowed -= assets;
     }
 
-    /// @notice Returns the last timestamp when the interest was updated.
-    function _lastInterestUpdate() internal view virtual returns (uint256) {
-        return 0;
-    }
-
     /// @notice Accrues interest.
+    /// @dev Because this contract does not implement the interest accrual, this function does not need to update the
+    /// state, but only returns the current value of total borrows and 0 for the interest accumulator. This function is
+    /// needed so that it can be overriden by child contracts without a need to override other functions which use it.
+    /// @return The current values of total borrowed and interest accumulator.
     function _accrueInterest() internal virtual returns (uint256, uint256) {
-        (uint256 currentTotalBorrowed, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
-        return (currentTotalBorrowed, currentInterestAccumulator);
+        return (totalBorrowed, 0);
     }
 
     /// @notice Calculates the accrued interest.
-    /// @return The total borrowed amount and the interest accumulator.
+    /// @dev Because this contract does not implement the interest accrual, this function does not need to calculate the
+    /// interest, but only returns the current value of total borrows, 0 for the interest accumulator and false for the
+    /// update flag. This function is needed so that it can be overriden by child contracts without a need to override
+    /// other functions which use it.
+    /// @return The total borrowed amount, the interest accumulator and a boolean value that indicates whether the data
+    /// should be updated.
     function _accrueInterestCalculate() internal view virtual returns (uint256, uint256, bool) {
         return (totalBorrowed, 0, false);
     }
