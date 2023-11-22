@@ -85,7 +85,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     }
 
     /// @notice Returns the debt of an account.
-    /// @dev This function is overriden to take into account the interest rate accrual.
+    /// @dev This function is overridden to take into account the interest rate accrual.
     /// @param account The account.
     /// @return The debt of the account.
     function debtOf(address account) public view virtual override returns (uint256) {
@@ -225,7 +225,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
             // checks during the violator impersonation
             liquidateCollateralShares(collateral, violator, msgSender, seizeShares);
 
-            // there's a possiblity that the liquidation does not bring the violator back to
+            // there's a possibility that the liquidation does not bring the violator back to
             // a healthy state or the liquidator chooses not to repay enough to bring the violator
             // back to health. hence, the account status check that is scheduled during the
             // impersonation may fail reverting the liquidation. hence, as a controller, we
@@ -285,7 +285,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     }
 
     /// @notice Increases the owed amount of an account.
-    /// @dev This function is overriden to snaphot the interest accumulator for the account.
+    /// @dev This function is overridden to snapshot the interest accumulator for the account.
     /// @param account The account.
     /// @param assets The assets.
     function _increaseOwed(address account, uint256 assets) internal virtual override {
@@ -294,7 +294,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     }
 
     /// @notice Decreases the owed amount of an account.
-    /// @dev This function is overriden to snaphot the interest accumulator for the account.
+    /// @dev This function is overridden to snapshot the interest accumulator for the account.
     /// @param account The account.
     /// @param assets The assets.
     function _decreaseOwed(address account, uint256 assets) internal virtual override {
