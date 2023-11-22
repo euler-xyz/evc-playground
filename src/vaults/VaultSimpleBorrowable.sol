@@ -73,7 +73,9 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @notice Takes a snapshot of the vault.
-    /// @dev This function is called before any action that may affect the vault's state.
+    /// @dev This function is called before any action that may affect the vault's state. Considering that and the fact
+    /// that this function is only called once per the EVC checks deferred context, it can be also used to accrue
+    /// interest.
     /// @return A snapshot of the vault's state.
     function doTakeVaultSnapshot() internal virtual override returns (bytes memory) {
         (uint256 currentTotalBorrowed,) = _accrueInterest();
@@ -83,7 +85,9 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @notice Checks the vault's status.
-    /// @dev This function is called after any action that may affect the vault's state.
+    /// @dev This function is called after any action that may affect the vault's state. Considering that and the fact
+    /// that this function is only called once per the EVC checks deferred context, it can be also used to update the
+    /// interest rate.
     /// @param oldSnapshot The snapshot of the vault's state before the action.
     function doCheckVaultStatus(bytes memory oldSnapshot) internal virtual override {
         // sanity check in case the snapshot hasn't been taken
