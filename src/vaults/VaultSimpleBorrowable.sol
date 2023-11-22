@@ -10,7 +10,8 @@ import "../interfaces/IERC3156FlashLender.sol";
 /// @notice In this contract, the EVC is authenticated before any action that may affect the state of the vault or an
 /// account. This is done to ensure that if it's EVC calling, the account is correctly authorized and the vault is
 /// enabled as a controller if needed. This contract does not take the account health into account when calculating max
-/// withdraw and max redeem values.
+/// withdraw and max redeem values. This contract does not implement the interest accrual hence it returns raw values of
+/// total borrows and 0 for the interest accumulator in the interest accrual-related functions.
 contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -352,11 +353,6 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     function _decreaseOwed(address account, uint256 assets) internal virtual {
         owed[account] = debtOf(account) - assets;
         totalBorrowed -= assets;
-    }
-
-    /// @notice Returns the last timestamp when the interest was updated.
-    function _lastInterestUpdate() internal view virtual returns (uint256) {
-        return 0;
     }
 
     /// @notice Accrues interest.
