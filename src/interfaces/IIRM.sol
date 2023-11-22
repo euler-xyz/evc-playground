@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 
 interface IIRM {
-    /// @notice Compute the interest rate for a given vault, asset and utilisation.
+    /// @notice Computes the interest rate for a given vault, asset and utilisation.
     /// @param vault The address of the vault.
     /// @param asset The address of the asset.
     /// @param utilisation The utilisation rate.
