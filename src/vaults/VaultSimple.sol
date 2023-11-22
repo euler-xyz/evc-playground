@@ -14,7 +14,7 @@ import "./VaultBase.sol";
 /// @notice In this contract, the EVC is authenticated before any action that may affect the state of the vault or an
 /// account.
 /// This is done to ensure that if it's EVC calling, the account is correctly authorized.
-/// Unlike solmate, VaultSimple implementation prevents from share inflation attack by using virual assets and
+/// Unlike solmate, VaultSimple implementation prevents from share inflation attack by using virtual assets and
 /// shares.
 /// Look into Open-Zeppelin documentation for more details.
 /// This contract does not take the supply cap into account when calculating max deposit and max mint values.

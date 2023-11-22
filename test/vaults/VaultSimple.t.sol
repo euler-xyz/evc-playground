@@ -313,7 +313,7 @@ contract VaultSimpleTest is DSTestPlus {
 
         // 5. Bob mints 2000 shares
         // NOTE: Bob's assets spent got rounded up
-        // NOTE: Alices's vault assets got rounded up
+        // NOTE: Alice's vault assets got rounded up
         hevm.prank(bob);
         if (seed % 3 == 0) {
             vault.mint(2000, bob);
