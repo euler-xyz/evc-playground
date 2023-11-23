@@ -163,6 +163,9 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
 
         emit Transfer(msgSender, to, amount);
 
+        // despite the fact that the vault status check might not be needed for shares transfer with current logic, it's
+        // added here so that if anyone changes the snapshot/vault status check mechanisms in the inheriting contracts,
+        // they will not forget to add the vault status check here
         requireAccountAndVaultStatusCheck(msgSender);
 
         return true;
@@ -198,6 +201,9 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
 
         emit Transfer(from, to, amount);
 
+        // despite the fact that the vault status check might not be needed for shares transfer with current logic, it's
+        // added here so that if anyone changes the snapshot/vault status check mechanisms in the inheriting contracts,
+        // they will not forget to add the vault status check here
         requireAccountAndVaultStatusCheck(from);
 
         return true;
