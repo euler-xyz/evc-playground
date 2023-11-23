@@ -19,8 +19,8 @@ import "evc/interfaces/IEthereumVaultConnector.sol";
 ///   tip the order executor
 /// The OrderOperator will always use the full amount of its balance at the time for the tip payout.
 /// Important: the submitter/executor must set the value of the tipReceiver variable to the address
-/// where they want to receive the tip. For safety, it should happen atomicaly during
-/// the EVC batch call, before the actual sumission/execution of the order.
+/// where they want to receive the tip. For safety, it should happen atomically during
+/// the EVC batch call, before the actual submission/execution of the order.
 /// NOTE: Because the operator contract can be made to invoke any arbitrary target contract with
 /// any arbitrary calldata, it should never be given any privileges, or hold any ETH or tokens.
 /// Also, one should never approve this contract to spend their ERC20 tokens.

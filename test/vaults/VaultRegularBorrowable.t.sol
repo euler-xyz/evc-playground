@@ -206,7 +206,7 @@ contract VaultRegularBorrowableTest is Test {
         assertEq(liabilityVault.debtOf(alice), 6e18); // alices's debt increased to 6 LA due to liquidation (she took on
             // bob's debt)
         assertEq(liabilityVault.maxWithdraw(alice), 15e18 + 2.680982126514837395e18); // alice's ability to withdraw LA
-            // did't change
+            // didn't change
         assertEq(collateralVault1.maxWithdraw(alice), 0); // alices's CA1 deposit stays unchanged
         assertEq(collateralVault2.maxWithdraw(alice), 6.18e6); // alices's CA2 deposit increased by 6.18 CA2 due to
             // liquidation (she took on bob's collateral)

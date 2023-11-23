@@ -51,7 +51,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @notice Returns the maximum amount that can be withdrawn by an owner.
-    /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
+    /// @dev This function is overridden to take into account the fact that some of the assets may be borrowed.
     /// @param owner The owner of the assets.
     /// @return The maximum amount that can be withdrawn.
     function maxWithdraw(address owner) public view virtual override returns (uint256) {
@@ -62,7 +62,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @notice Returns the maximum amount that can be redeemed by an owner.
-    /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
+    /// @dev This function is overridden to take into account the fact that some of the assets may be borrowed.
     /// @param owner The owner of the assets.
     /// @return The maximum amount that can be redeemed.
     function maxRedeem(address owner) public view virtual override returns (uint256) {
@@ -328,7 +328,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         return true;
     }
 
-    /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
+    /// @dev This function is overridden to take into account the fact that some of the assets may be borrowed.
     function _convertToShares(uint256 assets, bool roundUp) internal view virtual override returns (uint256) {
         (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
 
@@ -337,7 +337,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
             : assets.mulDivDown(totalSupply + 1, totalAssets() + currentTotalBorrowed + 1);
     }
 
-    /// @dev This function is overriden to take into account the fact that some of the assets may be borrowed.
+    /// @dev This function is overridden to take into account the fact that some of the assets may be borrowed.
     function _convertToAssets(uint256 shares, bool roundUp) internal view virtual override returns (uint256) {
         (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
 
