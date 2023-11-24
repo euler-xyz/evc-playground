@@ -221,13 +221,14 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     function repay(uint256 assets, address receiver) external routedThroughEVC nonReentrant {
         address msgSender = EVCAuthenticate(false);
 
-        takeVaultSnapshot();
-
-        require(assets != 0, "ZERO_ASSETS");
-
+        // sanity check: the receiver must be under control of the EVC
         if (!isControllerEnabled(receiver, address(this))) {
             revert ControllerDisabled();
         }
+
+        takeVaultSnapshot();
+
+        require(assets != 0, "ZERO_ASSETS");
 
         asset.safeTransferFrom(msgSender, address(this), assets);
 
@@ -277,6 +278,11 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     function unwind(uint256 assets, address debtFrom) external routedThroughEVC nonReentrant returns (uint256 shares) {
         address msgSender = EVCAuthenticate(true);
 
+        // sanity check: the account from which the debt is pulled must be under control of the EVC
+        if (!isControllerEnabled(debtFrom, address(this))) {
+            revert ControllerDisabled();
+        }
+
         takeVaultSnapshot();
 
         shares = previewWithdraw(assets);
@@ -304,14 +310,15 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     function pullDebt(address from, uint256 assets) external routedThroughEVC nonReentrant returns (bool) {
         address msgSender = EVCAuthenticate(true);
 
+        // sanity check: the account from which the debt is pulled must be under control of the EVC
+        if (!isControllerEnabled(from, address(this))) {
+            revert ControllerDisabled();
+        }
+
         takeVaultSnapshot();
 
         require(assets != 0, "ZERO_AMOUNT");
         require(msgSender != from, "SELF_DEBT_PULL");
-
-        if (!isControllerEnabled(from, address(this))) {
-            revert ControllerDisabled();
-        }
 
         _decreaseOwed(from, assets);
         _increaseOwed(msgSender, assets);
