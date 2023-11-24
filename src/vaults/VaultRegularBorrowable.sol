@@ -346,7 +346,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
 
         uint32 utilisation;
         if (poolAssets != 0) {
-            utilisation = uint32((borrowed * type(uint32).max * 1e18) / poolAssets / 1e18);
+            utilisation = uint32((borrowed * type(uint32).max) / poolAssets);
         }
 
         interestRate = irm.computeInterestRate(address(this), address(asset), utilisation);
