@@ -120,7 +120,7 @@ contract VaultSimpleBorrowableTest is Test {
             data: abi.encodeWithSelector(VaultSimpleBorrowable.borrow.selector, (amount * 9) / 10 + 1, alice)
         });
 
-         // it will revert because of the borrow amount being too high
+        // it will revert because of the borrow amount being too high
         vm.prank(alice);
         vm.expectRevert(abi.encodeWithSelector(VaultSimpleBorrowable.AccountUnhealthy.selector));
         evc.batch(items);

@@ -142,7 +142,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @notice Disables the controller for an account.
     /// @dev The controller is only disabled if the account has no debt.
     /// @param account The account to disable the controller for.
-    function disableController(address account) external override nonReentrant {
+    function disableController(address account) external virtual override nonReentrant {
         // ensure that the account does not have any liabilities before disabling controller
         if (debtOf(account) == 0) {
             releaseAccountFromControl(account);

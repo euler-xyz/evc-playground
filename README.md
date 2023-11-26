@@ -53,6 +53,8 @@ The `VaultSimpleBorrowable` contract is a simple vault that extents the `VaultSi
 
 The `VaultRegularBorrowable` contract is a vault that extends the `VaultSimpleBorrowable` functionality by adding recognized collaterals, price oracle integration and interest accrual. It implements a simple liquidation pattern that showcases the EVC's `impersonate` functionality that is used in order to seize violator's collateral shares.
 
+The `VaultBorrowableWETH` contract is a vault that extends the `VaultRegularBorrowable` functionality by adding a special function for handling ETH deposits into a WETH vault. It showcases EVC `callback` functionality for a `payable` function.
+
 Areas of experimentation for vaults:
 1. Real World Assets (RWA) lending
 1. NFT lending

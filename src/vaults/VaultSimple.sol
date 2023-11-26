@@ -84,7 +84,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
 
     /// @dev Returns the total assets of the vault.
     /// @return The total assets.
-    function totalAssets() public view override returns (uint256) {
+    function totalAssets() public view virtual override returns (uint256) {
         return asset.balanceOf(address(this));
     }
 
@@ -134,7 +134,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     /// @param spender The spender to approve.
     /// @param amount The amount to approve.
     /// @return A boolean indicating whether the approval was successful.
-    function approve(address spender, uint256 amount) public override returns (bool) {
+    function approve(address spender, uint256 amount) public virtual override returns (bool) {
         address msgSender = EVCAuthenticate(false);
 
         allowance[msgSender][spender] = amount;
@@ -148,7 +148,10 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     /// @param to The recipient of the transfer.
     /// @param amount The amount shares to transfer.
     /// @return A boolean indicating whether the transfer was successful.
-    function transfer(address to, uint256 amount) public override routedThroughEVC nonReentrant returns (bool) {
+    function transfer(
+        address to,
+        uint256 amount
+    ) public virtual override routedThroughEVC nonReentrant returns (bool) {
         address msgSender = EVCAuthenticate(false);
 
         takeVaultSnapshot();
@@ -180,7 +183,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         address from,
         address to,
         uint256 amount
-    ) public override routedThroughEVC nonReentrant returns (bool) {
+    ) public virtual override routedThroughEVC nonReentrant returns (bool) {
         address msgSender = EVCAuthenticate(false);
 
         takeVaultSnapshot();
@@ -216,7 +219,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     function deposit(
         uint256 assets,
         address receiver
-    ) public override routedThroughEVC nonReentrant returns (uint256 shares) {
+    ) public virtual override routedThroughEVC nonReentrant returns (uint256 shares) {
         address msgSender = EVCAuthenticate(false);
 
         takeVaultSnapshot();
@@ -241,7 +244,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     function mint(
         uint256 shares,
         address receiver
-    ) public override routedThroughEVC nonReentrant returns (uint256 assets) {
+    ) public virtual override routedThroughEVC nonReentrant returns (uint256 assets) {
         address msgSender = EVCAuthenticate(false);
 
         takeVaultSnapshot();
@@ -267,7 +270,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         uint256 assets,
         address receiver,
         address owner
-    ) public override routedThroughEVC nonReentrant returns (uint256 shares) {
+    ) public virtual override routedThroughEVC nonReentrant returns (uint256 shares) {
         address msgSender = EVCAuthenticate(false);
 
         takeVaultSnapshot();
@@ -302,7 +305,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         uint256 shares,
         address receiver,
         address owner
-    ) public override routedThroughEVC nonReentrant returns (uint256 assets) {
+    ) public virtual override routedThroughEVC nonReentrant returns (uint256 assets) {
         address msgSender = EVCAuthenticate(false);
 
         takeVaultSnapshot();
