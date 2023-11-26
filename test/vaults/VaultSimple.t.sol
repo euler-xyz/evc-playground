@@ -313,7 +313,7 @@ contract VaultSimpleTest is DSTestPlus {
 
         // 5. Bob mints 2000 shares
         // NOTE: Bob's assets spent got rounded up
-        // NOTE: Alices's vault assets got rounded up
+        // NOTE: Alice's vault assets got rounded up
         hevm.prank(bob);
         if (seed % 3 == 0) {
             vault.mint(2000, bob);
@@ -491,14 +491,14 @@ contract VaultSimpleTest is DSTestPlus {
         assertEq(vault.balanceOf(bob), 1e18);
         assertEq(underlying.balanceOf(alice), 0);
 
-        // bob mint 1e18 for alice
+        // bob mints 1e18 for alice
         hevm.prank(bob);
         vault.mint(1e18, alice);
         assertEq(vault.balanceOf(alice), 1e18);
         assertEq(vault.balanceOf(bob), 1e18);
         assertEq(underlying.balanceOf(bob), 0);
 
-        // alice redeem 1e18 for bob
+        // alice redeems 1e18 for bob
         hevm.prank(alice);
         vault.redeem(1e18, bob, alice);
 
@@ -506,7 +506,7 @@ contract VaultSimpleTest is DSTestPlus {
         assertEq(vault.balanceOf(bob), 1e18);
         assertEq(underlying.balanceOf(bob), 1e18);
 
-        // bob withdraw 1e18 for alice
+        // bob withdraws 1e18 for alice
         hevm.prank(bob);
         vault.withdraw(1e18, alice, bob);
 
