@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
@@ -103,13 +103,13 @@ contract VaultSimpleBorrowableTest is Test {
         });
         items[1] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: alice,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.enableController.selector, alice, address(vault))
         });
         items[2] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: alice,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.enableCollateral.selector, alice, address(vault))
         });

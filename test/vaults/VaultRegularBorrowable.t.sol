@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
@@ -332,19 +332,19 @@ contract VaultRegularBorrowableTest is Test {
         });
         items[2] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: bob,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.enableController.selector, bob, address(liabilityVault))
         });
         items[3] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: bob,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.enableCollateral.selector, bob, address(collateralVault1))
         });
         items[4] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: bob,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.enableCollateral.selector, bob, address(collateralVault2))
         });
@@ -416,25 +416,25 @@ contract VaultRegularBorrowableTest is Test {
         items = new IEVC.BatchItem[](11);
         items[0] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: alice,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.enableController.selector, alice, address(liabilityVault))
         });
         items[1] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: alice,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.enableCollateral.selector, alice, address(liabilityVault))
         });
         items[2] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: alice,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.enableCollateral.selector, alice, address(collateralVault1))
         });
         items[3] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: alice,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.enableCollateral.selector, alice, address(collateralVault2))
         });
@@ -458,19 +458,19 @@ contract VaultRegularBorrowableTest is Test {
         });
         items[7] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: alice,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.disableCollateral.selector, alice, address(liabilityVault))
         });
         items[8] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: alice,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.disableCollateral.selector, alice, address(collateralVault1))
         });
         items[9] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: alice,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.disableCollateral.selector, alice, address(collateralVault2))
         });
@@ -520,13 +520,13 @@ contract VaultRegularBorrowableTest is Test {
         });
         items[2] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: bob,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.disableCollateral.selector, bob, address(collateralVault1))
         });
         items[3] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: bob,
+            onBehalfOfAccount: address(0),
             value: 0,
             data: abi.encodeWithSelector(IEVC.disableCollateral.selector, bob, address(collateralVault2))
         });

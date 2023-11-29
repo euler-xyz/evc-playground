@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 import "openzeppelin/utils/cryptography/MessageHashUtils.sol";
@@ -13,6 +13,10 @@ abstract contract EIP712 {
 
     bytes32 internal constant _TYPE_HASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+
+    bytes32 internal constant PERMIT_TYPEHASH = keccak256(
+        "Permit(address signer,uint256 nonceNamespace,uint256 nonce,uint256 deadline,uint256 value,bytes data)"
+    );
 
     bytes32 internal immutable _hashedName;
     bytes32 internal immutable _hashedVersion;
@@ -66,7 +70,7 @@ contract evcPermitSignerECDSA is EIP712, Test {
         bytes calldata data
     ) external view returns (bytes memory signature) {
         bytes32 structHash = keccak256(
-            abi.encode(evc.PERMIT_TYPEHASH(), signer, nonceNamespace, nonce, deadline, value, keccak256(data))
+            abi.encode(PERMIT_TYPEHASH, signer, nonceNamespace, nonce, deadline, value, keccak256(data))
         );
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, _hashTypedDataV4(structHash));
         signature = abi.encodePacked(r, s, v);

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 
 interface IIRM {
     /// @notice Computes the interest rate for a given vault, asset and utilisation.

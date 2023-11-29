@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
@@ -58,7 +58,7 @@ contract ConditionalGaslessTxTest is Test {
         });
 
         bytes memory data = abi.encodeWithSelector(IEVC.batch.selector, items);
-        bytes memory signature = permitSigner.signPermit(alice, 0, 1, type(uint256).max, 0, data);
+        bytes memory signature = permitSigner.signPermit(alice, 0, 0, type(uint256).max, 0, data);
 
         assertEq(asset.balanceOf(address(alice)), 0);
         assertEq(vault.maxWithdraw(alicesSubAccount), 100e18);
@@ -70,11 +70,11 @@ contract ConditionalGaslessTxTest is Test {
         // -------- conditionsEnforcer.currentBlockTimestamp() using evc.callInternal() to check the condition
         // -------- vault.withdraw() using evc.callInternal() to withdraw the funds
         vm.expectRevert(abi.encodeWithSelector(SimpleConditionsEnforcer.ConditionNotMet.selector));
-        evc.permit(alice, 0, 1, type(uint256).max, 0, data, signature);
+        evc.permit(alice, 0, 0, type(uint256).max, 0, data, signature);
 
         // succeeds if enough time elapses
         vm.warp(100);
-        evc.permit(alice, 0, 1, type(uint256).max, 0, data, signature);
+        evc.permit(alice, 0, 0, type(uint256).max, 0, data, signature);
 
         assertEq(asset.balanceOf(address(alice)), 100e18);
         assertEq(vault.maxWithdraw(alicesSubAccount), 0);

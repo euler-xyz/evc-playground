@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.19;
 
 import "forge-std/Test.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
@@ -51,14 +51,14 @@ contract GaslessTxTest is Test {
         });
 
         bytes memory data = abi.encodeWithSelector(IEVC.batch.selector, items);
-        bytes memory signature = permitSigner.signPermit(alice, 0, 1, type(uint256).max, 0, data);
+        bytes memory signature = permitSigner.signPermit(alice, 0, 0, type(uint256).max, 0, data);
 
         // having the signature, anyone can execute the calldata on behalf of alice and get tipped
         items[0] = IEVC.BatchItem({
             targetContract: address(evc),
-            onBehalfOfAccount: address(this),
+            onBehalfOfAccount: address(0),
             value: 0,
-            data: abi.encodeWithSelector(IEVC.permit.selector, alice, 0, 1, type(uint256).max, 0, data, signature)
+            data: abi.encodeWithSelector(IEVC.permit.selector, alice, 0, 0, type(uint256).max, 0, data, signature)
         });
         items[1] = IEVC.BatchItem({
             targetContract: address(piggyBank),
