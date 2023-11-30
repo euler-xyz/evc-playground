@@ -30,6 +30,7 @@ This repository serves as a sandbox for exploring the EVC. It includes various e
 │   └── TipsPiggyBank.sol
 └── vaults
     ├── VaultBase.sol
+    ├── VaultBorrowableWETH.sol
     ├── VaultRegularBorrowable.sol
     ├── VaultSimple.sol
     └── VaultSimpleBorrowable.sol
