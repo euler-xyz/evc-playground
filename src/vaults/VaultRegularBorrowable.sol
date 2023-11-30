@@ -121,8 +121,6 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     ) external routedThroughEVC nonReentrant {
         address msgSender = EVCAuthenticate(true);
 
-        takeVaultSnapshot();
-
         if (msgSender == violator) {
             revert SelfLiquidation();
         }
@@ -149,6 +147,8 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         if (cf == 0) {
             revert CollateralDisabled();
         }
+
+        takeVaultSnapshot();
 
         uint256 seizeShares;
         {
