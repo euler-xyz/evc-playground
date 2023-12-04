@@ -69,9 +69,8 @@ contract evcPermitSignerECDSA is EIP712, Test {
         uint256 value,
         bytes calldata data
     ) external view returns (bytes memory signature) {
-        bytes32 structHash = keccak256(
-            abi.encode(PERMIT_TYPEHASH, signer, nonceNamespace, nonce, deadline, value, keccak256(data))
-        );
+        bytes32 structHash =
+            keccak256(abi.encode(PERMIT_TYPEHASH, signer, nonceNamespace, nonce, deadline, value, keccak256(data)));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, _hashTypedDataV4(structHash));
         signature = abi.encodePacked(r, s, v);
     }

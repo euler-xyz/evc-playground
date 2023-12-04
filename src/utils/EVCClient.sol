@@ -31,7 +31,7 @@ abstract contract EVCClient {
         _;
     }
 
-    /// @notice Ensures that the caller is the EVC by using the EVC callback functionality if necessary.
+    /// @notice Ensures that the msg.sender is the EVC by using the EVC callback functionality if necessary.
     modifier routedThroughEVC() {
         if (msg.sender == address(evc)) {
             _;
@@ -44,7 +44,7 @@ abstract contract EVCClient {
         }
     }
 
-    /// @notice Ensures that the caller is the EVC by using the EVC callback functionality if necessary.
+    /// @notice Ensures that the msg.sender is the EVC by using the EVC callback functionality if necessary.
     /// @dev This modifier is used for payable functions because it forwards the value to the EVC.
     modifier routedThroughEVCPayable() {
         if (msg.sender == address(evc)) {
@@ -58,27 +58,40 @@ abstract contract EVCClient {
         }
     }
 
-    /// @notice Authenticates the caller in the context of the EVC.
-    /// @param checkController A boolean flag that indicates whether is should be checked if the vault is enabled as a
-    /// controller for the account on behalf of which the operation is being executed.
-    /// @return The address of the account on behalf of which the operation is being executed.
-    function EVCAuthenticate(bool checkController) internal view returns (address) {
-        if (msg.sender == address(evc)) {
-            (address onBehalfOfAccount, bool controllerEnabled) =
-                evc.getCurrentOnBehalfOfAccount(checkController ? address(this) : address(0));
+    /// @notice Retrieves the message sender in the context of the EVC.
+    /// @dev This function returns the account on behalf of which the current operation is being performed, which is
+    /// either msg.sender or the account authenticated by the EVC.
+    /// @return The address of the message sender.
+    function _msgSender() internal view returns (address) {
+        address sender = msg.sender;
 
-            if (checkController && !controllerEnabled) {
-                revert ControllerDisabled();
-            }
-
-            return onBehalfOfAccount;
+        if (sender == address(evc)) {
+            (sender,) = evc.getCurrentOnBehalfOfAccount(address(0));
         }
 
-        if (checkController && !evc.isControllerEnabled(msg.sender, address(this))) {
+        return sender;
+    }
+
+    /// @notice Retrieves the message sender in the context of the EVC for a borrow operation.
+    /// @dev This function returns the account on behalf of which the current operation is being performed, which is
+    /// either msg.sender or the account authenticated by the EVC. This function reverts if the vault is not enabled as
+    /// a controller for the account on behalf of which the operation is being executed.
+    /// @return The address of the message sender.
+    function _msgSenderForBorrow() internal view returns (address) {
+        address sender = msg.sender;
+        bool controllerEnabled;
+
+        if (sender == address(evc)) {
+            (sender, controllerEnabled) = evc.getCurrentOnBehalfOfAccount(address(this));
+        } else {
+            controllerEnabled = evc.isControllerEnabled(sender, address(this));
+        }
+
+        if (!controllerEnabled) {
             revert ControllerDisabled();
         }
 
-        return msg.sender;
+        return sender;
     }
 
     /// @notice Retrieves the owner of an account.

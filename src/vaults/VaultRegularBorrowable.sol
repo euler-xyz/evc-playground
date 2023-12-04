@@ -119,7 +119,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         address collateral,
         uint256 repayAssets
     ) external routedThroughEVC nonReentrant {
-        address msgSender = EVCAuthenticate(true);
+        address msgSender = _msgSenderForBorrow();
 
         if (msgSender == violator) {
             revert SelfLiquidation();

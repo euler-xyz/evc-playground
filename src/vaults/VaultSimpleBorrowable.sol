@@ -197,7 +197,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @param assets The amount of assets to borrow.
     /// @param receiver The receiver of the assets.
     function borrow(uint256 assets, address receiver) external routedThroughEVC nonReentrant {
-        address msgSender = EVCAuthenticate(true);
+        address msgSender = _msgSenderForBorrow();
 
         takeVaultSnapshot();
 
@@ -219,7 +219,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @param assets The amount of assets to repay.
     /// @param receiver The receiver of the repayment.
     function repay(uint256 assets, address receiver) external routedThroughEVC nonReentrant {
-        address msgSender = EVCAuthenticate(false);
+        address msgSender = _msgSender();
 
         // sanity check: the receiver must be under control of the EVC
         if (!isControllerEnabled(receiver, address(this))) {
@@ -253,7 +253,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         uint256 assets,
         address collateralReceiver
     ) external routedThroughEVC nonReentrant returns (uint256 shares) {
-        address msgSender = EVCAuthenticate(true);
+        address msgSender = _msgSenderForBorrow();
 
         takeVaultSnapshot();
 
@@ -276,7 +276,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @param debtFrom The account to repay the debt from.
     /// @return shares The amount of shares burned.
     function unwind(uint256 assets, address debtFrom) external routedThroughEVC nonReentrant returns (uint256 shares) {
-        address msgSender = EVCAuthenticate(true);
+        address msgSender = _msgSenderForBorrow();
 
         // sanity check: the account from which the debt is pulled must be under control of the EVC
         if (!isControllerEnabled(debtFrom, address(this))) {
@@ -308,7 +308,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @param assets The amount of debt to pull.
     /// @return A boolean indicating whether the operation was successful.
     function pullDebt(address from, uint256 assets) external routedThroughEVC nonReentrant returns (bool) {
-        address msgSender = EVCAuthenticate(true);
+        address msgSender = _msgSenderForBorrow();
 
         // sanity check: the account from which the debt is pulled must be under control of the EVC
         if (!isControllerEnabled(from, address(this))) {

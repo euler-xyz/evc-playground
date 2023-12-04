@@ -34,7 +34,7 @@ contract VaultBorrowableWETH is VaultRegularBorrowable {
         nonReentrant
         returns (uint256 shares)
     {
-        address msgSender = EVCAuthenticate(false);
+        address msgSender = _msgSender();
 
         takeVaultSnapshot();
 
