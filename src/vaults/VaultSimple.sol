@@ -75,11 +75,11 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         // no need to do anything here because the vault does not allow borrowing
     }
 
-    /// @dev Disables a controller.
-    /// @param account The account of the controller.
-    function disableController(address account) external virtual override nonReentrant {
+    /// @notice Disables the controller.
+    /// @dev The controller is only disabled if the account has no debt.
+    function disableController() external virtual override nonReentrant {
         // ensure that the account does not have any liabilities before disabling controller
-        releaseAccountFromControl(account);
+        EVCClient.disableController(_msgSender());
     }
 
     /// @dev Returns the total assets of the vault.

@@ -56,5 +56,5 @@ abstract contract VaultBase is IVault, EVCClient {
 
     /// @notice Disables a controller for an account
     /// @dev Must be overridden by child contracts
-    function disableController(address account) external virtual;
+    function disableController() external virtual;
 }

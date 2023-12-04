@@ -137,10 +137,10 @@ abstract contract EVCClient {
         return evc.isControllerEnabled(account, vault);
     }
 
-    /// @notice Releases the account from the control of the calling contract.
+    /// @notice Disables the controller for an account
     /// @dev Ensure that the account does not have any liabilities before doing this.
     /// @param account The address of the account.
-    function releaseAccountFromControl(address account) internal {
+    function disableController(address account) internal {
         evc.disableController(account);
     }
 

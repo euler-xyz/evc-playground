@@ -221,7 +221,7 @@ contract VaultRegularBorrowableTest is Test {
 
         // she disables collaterals and controller
         vm.prank(alice);
-        liabilityVault.disableController(alice);
+        liabilityVault.disableController();
 
         vm.prank(alice);
         evc.disableCollateral(alice, address(liabilityVault));
@@ -246,7 +246,7 @@ contract VaultRegularBorrowableTest is Test {
 
         // he disables collaterals and controller
         vm.prank(bob);
-        liabilityVault.disableController(bob);
+        liabilityVault.disableController();
 
         vm.prank(bob);
         evc.disableCollateral(bob, address(collateralVault1));
@@ -454,7 +454,7 @@ contract VaultRegularBorrowableTest is Test {
             targetContract: address(liabilityVault),
             onBehalfOfAccount: alice,
             value: 0,
-            data: abi.encodeWithSelector(VaultSimpleBorrowable.disableController.selector, alice)
+            data: abi.encodeWithSelector(VaultSimpleBorrowable.disableController.selector)
         });
         items[7] = IEVC.BatchItem({
             targetContract: address(evc),
@@ -516,7 +516,7 @@ contract VaultRegularBorrowableTest is Test {
             targetContract: address(liabilityVault),
             onBehalfOfAccount: bob,
             value: 0,
-            data: abi.encodeWithSelector(VaultSimpleBorrowable.disableController.selector, bob)
+            data: abi.encodeWithSelector(VaultSimpleBorrowable.disableController.selector)
         });
         items[2] = IEVC.BatchItem({
             targetContract: address(evc),

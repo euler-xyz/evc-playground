@@ -243,10 +243,6 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
             forgiveAccountStatusCheck(violator);
         }
 
-        if (debtOf(violator) == 0) {
-            releaseAccountFromControl(violator);
-        }
-
         requireAccountAndVaultStatusCheck(msgSender);
     }
 

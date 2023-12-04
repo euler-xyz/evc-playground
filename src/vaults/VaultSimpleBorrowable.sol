@@ -139,13 +139,13 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         revert AccountUnhealthy();
     }
 
-    /// @notice Disables the controller for an account.
+    /// @notice Disables the controller.
     /// @dev The controller is only disabled if the account has no debt.
-    /// @param account The account to disable the controller for.
-    function disableController(address account) external virtual override nonReentrant {
+    function disableController() external virtual override nonReentrant {
         // ensure that the account does not have any liabilities before disabling controller
-        if (debtOf(account) == 0) {
-            releaseAccountFromControl(account);
+        address msgSender = _msgSender();
+        if (debtOf(msgSender) == 0) {
+            EVCClient.disableController(msgSender);
         }
     }
 
@@ -236,10 +236,6 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
 
         emit Repay(msgSender, receiver, assets);
 
-        if (debtOf(receiver) == 0) {
-            releaseAccountFromControl(receiver);
-        }
-
         requireAccountAndVaultStatusCheck(address(0));
     }
 
@@ -294,10 +290,6 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         emit Repay(msgSender, debtFrom, assets);
         emit Withdraw(msgSender, msgSender, msgSender, assets, shares);
 
-        if (debtOf(debtFrom) == 0) {
-            releaseAccountFromControl(debtFrom);
-        }
-
         requireAccountAndVaultStatusCheck(msgSender);
     }
 
@@ -325,10 +317,6 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
 
         emit Repay(msgSender, from, assets);
         emit Borrow(msgSender, msgSender, assets);
-
-        if (debtOf(from) == 0) {
-            releaseAccountFromControl(from);
-        }
 
         requireAccountAndVaultStatusCheck(msgSender);
 
