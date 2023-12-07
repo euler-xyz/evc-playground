@@ -24,6 +24,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     error FlashloanNotSupported();
     error BorrowCapExceeded();
     error AccountUnhealthy();
+    error OutstandingDebt();
 
     uint256 public borrowCap;
     uint256 public totalBorrowed;
@@ -140,12 +141,15 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @notice Disables the controller.
-    /// @dev The controller is only disabled if the account has no debt.
+    /// @dev The controller is only disabled if the account has no debt. If the account has outstanding debt, the
+    /// function reverts.
     function disableController() external virtual override nonReentrant {
         // ensure that the account does not have any liabilities before disabling controller
         address msgSender = _msgSender();
         if (debtOf(msgSender) == 0) {
             EVCClient.disableController(msgSender);
+        } else {
+            revert OutstandingDebt();
         }
     }
 
