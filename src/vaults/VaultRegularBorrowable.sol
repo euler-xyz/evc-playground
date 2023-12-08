@@ -84,6 +84,19 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         collateralFactor[vault] = _collateralFactor;
     }
 
+    /// @notice Gets the current interest rate of the vault.
+    /// @return The current interest rate.
+    function getInterestRate() external view returns (int256) {
+        return int256(interestRate);
+    }
+
+    /// @notice Gets the collateral factor of a vault.
+    /// @param vault The vault.
+    /// @return The collateral factor.
+    function getCollateralFactor(ERC4626 vault) external view returns (uint256) {
+        return collateralFactor[vault];
+    }
+
     /// @notice Returns the debt of an account.
     /// @dev This function is overridden to take into account the interest rate accrual.
     /// @param account The account.
