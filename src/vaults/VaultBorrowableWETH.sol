@@ -7,7 +7,7 @@ import "./VaultRegularBorrowable.sol";
 
 /// @title VaultBorrowableWETH
 /// @notice This contract extends VaultRegularBorrowable with additional feature for handling ETH deposits into a WETH
-/// vault. It's an exaple of how routedThroughEVCPayable modifier can be used.
+/// vault. It's an exaple of how callThroughEVCPayable modifier can be used.
 contract VaultBorrowableWETH is VaultRegularBorrowable {
     WETH internal immutable weth;
 
@@ -30,7 +30,7 @@ contract VaultBorrowableWETH is VaultRegularBorrowable {
         public
         payable
         virtual
-        routedThroughEVCPayable
+        callThroughEVCPayable
         nonReentrant
         returns (uint256 shares)
     {

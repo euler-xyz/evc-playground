@@ -200,7 +200,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @notice Borrows assets.
     /// @param assets The amount of assets to borrow.
     /// @param receiver The receiver of the assets.
-    function borrow(uint256 assets, address receiver) external routedThroughEVC nonReentrant {
+    function borrow(uint256 assets, address receiver) external callThroughEVC nonReentrant {
         address msgSender = _msgSenderForBorrow();
 
         takeVaultSnapshot();
@@ -222,7 +222,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @dev This function transfers the specified amount of assets from the caller to the vault.
     /// @param assets The amount of assets to repay.
     /// @param receiver The receiver of the repayment.
-    function repay(uint256 assets, address receiver) external routedThroughEVC nonReentrant {
+    function repay(uint256 assets, address receiver) external callThroughEVC nonReentrant {
         address msgSender = _msgSender();
 
         // sanity check: the receiver must be under control of the EVC
@@ -252,7 +252,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     function wind(
         uint256 assets,
         address collateralReceiver
-    ) external routedThroughEVC nonReentrant returns (uint256 shares) {
+    ) external callThroughEVC nonReentrant returns (uint256 shares) {
         address msgSender = _msgSenderForBorrow();
 
         takeVaultSnapshot();
@@ -275,7 +275,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @param assets The amount of assets to unwind.
     /// @param debtFrom The account to repay the debt from.
     /// @return shares The amount of shares burned.
-    function unwind(uint256 assets, address debtFrom) external routedThroughEVC nonReentrant returns (uint256 shares) {
+    function unwind(uint256 assets, address debtFrom) external callThroughEVC nonReentrant returns (uint256 shares) {
         address msgSender = _msgSenderForBorrow();
 
         // sanity check: the account from which the debt is pulled must be under control of the EVC
@@ -303,7 +303,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @param from The account to pull the debt from.
     /// @param assets The amount of debt to pull.
     /// @return A boolean indicating whether the operation was successful.
-    function pullDebt(address from, uint256 assets) external routedThroughEVC nonReentrant returns (bool) {
+    function pullDebt(address from, uint256 assets) external callThroughEVC nonReentrant returns (bool) {
         address msgSender = _msgSenderForBorrow();
 
         // sanity check: the account from which the debt is pulled must be under control of the EVC

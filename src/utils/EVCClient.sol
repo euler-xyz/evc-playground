@@ -32,11 +32,11 @@ abstract contract EVCClient {
     }
 
     /// @notice Ensures that the msg.sender is the EVC by using the EVC callback functionality if necessary.
-    modifier routedThroughEVC() {
+    modifier callThroughEVC() {
         if (msg.sender == address(evc)) {
             _;
         } else {
-            bytes memory result = evc.callback(msg.sender, 0, msg.data);
+            bytes memory result = evc.call(address(this), msg.sender, 0, msg.data);
 
             assembly {
                 return(add(32, result), mload(result))
@@ -46,11 +46,11 @@ abstract contract EVCClient {
 
     /// @notice Ensures that the msg.sender is the EVC by using the EVC callback functionality if necessary.
     /// @dev This modifier is used for payable functions because it forwards the value to the EVC.
-    modifier routedThroughEVCPayable() {
+    modifier callThroughEVCPayable() {
         if (msg.sender == address(evc)) {
             _;
         } else {
-            bytes memory result = evc.callback{value: msg.value}(msg.sender, msg.value, msg.data);
+            bytes memory result = evc.call{value: msg.value}(address(this), msg.sender, msg.value, msg.data);
 
             assembly {
                 return(add(32, result), mload(result))
@@ -180,15 +180,16 @@ abstract contract EVCClient {
     }
 
     /// @notice Liquidates a certain amount of collateral shares from a violator's vault.
-    /// @dev This function impersonates the violator and transfers the specified amount of shares from the violator's
-    /// vault to the liquidator.
+    /// @dev This function controls the collateral in order to transfers the specified amount of shares from the
+    /// violator's vault to the liquidator.
     /// @param vault The address of the vault from which the shares are being liquidated.
     /// @param violator The address of the violator whose shares are being liquidated.
     /// @param liquidator The address to which the liquidated shares are being transferred.
     /// @param shares The amount of shares to be liquidated.
     function liquidateCollateralShares(address vault, address violator, address liquidator, uint256 shares) internal {
-        // Impersonate the violator to transfer shares from the violator's vault to the liquidator.
-        bytes memory result = evc.impersonate(vault, violator, 0, abi.encodeCall(ERC20.transfer, (liquidator, shares)));
+        // Control the collateral in order to transfer shares from the violator's vault to the liquidator.
+        bytes memory result =
+            evc.controlCollateral(vault, violator, 0, abi.encodeCall(ERC20.transfer, (liquidator, shares)));
 
         if (!abi.decode(result, (bool))) {
             revert SharesSeizureFailed();

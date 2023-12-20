@@ -148,10 +148,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     /// @param to The recipient of the transfer.
     /// @param amount The amount shares to transfer.
     /// @return A boolean indicating whether the transfer was successful.
-    function transfer(
-        address to,
-        uint256 amount
-    ) public virtual override routedThroughEVC nonReentrant returns (bool) {
+    function transfer(address to, uint256 amount) public virtual override callThroughEVC nonReentrant returns (bool) {
         address msgSender = _msgSender();
 
         takeVaultSnapshot();
@@ -183,7 +180,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         address from,
         address to,
         uint256 amount
-    ) public virtual override routedThroughEVC nonReentrant returns (bool) {
+    ) public virtual override callThroughEVC nonReentrant returns (bool) {
         address msgSender = _msgSender();
 
         takeVaultSnapshot();
@@ -219,7 +216,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     function deposit(
         uint256 assets,
         address receiver
-    ) public virtual override routedThroughEVC nonReentrant returns (uint256 shares) {
+    ) public virtual override callThroughEVC nonReentrant returns (uint256 shares) {
         address msgSender = _msgSender();
 
         takeVaultSnapshot();
@@ -244,7 +241,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     function mint(
         uint256 shares,
         address receiver
-    ) public virtual override routedThroughEVC nonReentrant returns (uint256 assets) {
+    ) public virtual override callThroughEVC nonReentrant returns (uint256 assets) {
         address msgSender = _msgSender();
 
         takeVaultSnapshot();
@@ -270,7 +267,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         uint256 assets,
         address receiver,
         address owner
-    ) public virtual override routedThroughEVC nonReentrant returns (uint256 shares) {
+    ) public virtual override callThroughEVC nonReentrant returns (uint256 shares) {
         address msgSender = _msgSender();
 
         takeVaultSnapshot();
@@ -305,7 +302,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         uint256 shares,
         address receiver,
         address owner
-    ) public virtual override routedThroughEVC nonReentrant returns (uint256 assets) {
+    ) public virtual override callThroughEVC nonReentrant returns (uint256 assets) {
         address msgSender = _msgSender();
 
         takeVaultSnapshot();

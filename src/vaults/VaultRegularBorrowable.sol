@@ -131,7 +131,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         address violator,
         address collateral,
         uint256 repayAssets
-    ) external routedThroughEVC nonReentrant {
+    ) external callThroughEVC nonReentrant {
         address msgSender = _msgSenderForBorrow();
 
         if (msgSender == violator) {
@@ -235,24 +235,24 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
             emit Transfer(violator, msgSender, seizeShares);
         } else {
             // if external assets are being seized, the EVC will take care of safety
-            // checks during the violator impersonation
+            // checks during the collateral control
             liquidateCollateralShares(collateral, violator, msgSender, seizeShares);
 
             // there's a possibility that the liquidation does not bring the violator back to
             // a healthy state or the liquidator chooses not to repay enough to bring the violator
             // back to health. hence, the account status check that is scheduled during the
-            // impersonation may fail reverting the liquidation. hence, as a controller, we
+            // controlCollateral may fail reverting the liquidation. hence, as a controller, we
             // can forgive the account status check for the violator allowing it to end up in
             // an unhealthy state after the liquidation.
             // IMPORTANT: the account status check forgiveness must be done with care!
-            // a malicious collateral could do some funky stuff during the impersonation
+            // a malicious collateral could do some funky stuff during the controlCollateral
             // leading to withdrawal of more collateral than specified, or withdrawal of other
             // collaterals, leaving us with bad debt. to prevent that, we ensure that only
             // collaterals with cf > 0 can be seized which means that only vetted collaterals
-            // are seizable and cannot do any harm during the impersonation.
+            // are seizable and cannot do any harm during the controlCollateral.
             // the other option would be to snapshot the balances of all the collaterals
-            // before the impersonation and compare them with expected balances after the
-            // impersonation. however, this is out of scope for this playground.
+            // before the controlCollateral and compare them with expected balances after the
+            // controlCollateral. however, this is out of scope for this playground.
             forgiveAccountStatusCheck(violator);
         }
 
