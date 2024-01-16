@@ -50,4 +50,6 @@ contract VaultBorrowableWETH is VaultRegularBorrowable {
 
         requireAccountAndVaultStatusCheck(address(0));
     }
+
+    // @alcueca: I know this is an example, but for completitude I would add a `redeemToETH` function.
 }

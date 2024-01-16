@@ -13,5 +13,6 @@ interface IIRM {
     /// @notice Resets the parameters for a given vault.
     /// @param vault The address of the market.
     /// @param resetParams The parameters to reset.
+    // @alcueca: This function is not used in this repo, so it should be removed from this interface
     function reset(address vault, bytes calldata resetParams) external;
 }

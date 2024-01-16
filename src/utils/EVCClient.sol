@@ -183,7 +183,7 @@ abstract contract EVCClient {
     /// @dev This function controls the collateral in order to transfers the specified amount of shares from the
     /// violator's vault to the liquidator.
     /// @param vault The address of the vault from which the shares are being liquidated.
-    /// @param violator The address of the violator whose shares are being liquidated.
+    /// @param violator The address of the violator whose shares are being liquidated. // @alcueca: Maybe rename to `liquidated`?
     /// @param liquidator The address to which the liquidated shares are being transferred.
     /// @param shares The amount of shares to be liquidated.
     function liquidateCollateralShares(address vault, address violator, address liquidator, uint256 shares) internal {
@@ -191,7 +191,7 @@ abstract contract EVCClient {
         bytes memory result =
             evc.controlCollateral(vault, violator, 0, abi.encodeCall(ERC20.transfer, (liquidator, shares)));
 
-        if (!abi.decode(result, (bool))) {
+        if (!abi.decode(result, (bool))) { // @alcueca: There is a requirement here that the ERC20 transfer returns true.
             revert SharesSeizureFailed();
         }
     }

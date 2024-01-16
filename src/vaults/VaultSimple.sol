@@ -16,6 +16,7 @@ import "./VaultBase.sol";
 /// VaultSimple implementation prevents from share inflation attack by using virtual assets and shares. Look into
 /// Open-Zeppelin documentation for more details. This contract does not take the supply cap into account when
 /// calculating max deposit and max mint values.
+// @alcueca: Are the virtual assets and shares implemented on the snapshot?
 contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -65,6 +66,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
             revert SupplyCapExceeded();
         }
 
+        // @alcueca: The natspec below seems outdated
         // example: if 90% of the assets were withdrawn, revert the transaction
         //require(finalSupply >= initialSupply / 10, "withdrawal too large");
     }
@@ -78,6 +80,8 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     /// @notice Disables the controller.
     /// @dev The controller is only disabled if the account has no debt.
     function disableController() external virtual override nonReentrant {
+        // @alcueca: This vault doesn't allow borrowing, so we can't check that the account has no debt
+        // @alcueca: This vault should never be a controller, but user errors can happen
         // ensure that the account does not have any liabilities before disabling controller
         EVCClient.disableController(_msgSender());
     }
@@ -148,6 +152,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     /// @param to The recipient of the transfer.
     /// @param amount The amount shares to transfer.
     /// @return A boolean indicating whether the transfer was successful.
+    // @alcueca: Why are we using `callThroughEVC` here? We are transferring the tokens and requiring the check?
     function transfer(address to, uint256 amount) public virtual override callThroughEVC nonReentrant returns (bool) {
         address msgSender = _msgSender();
 
@@ -231,7 +236,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
 
         emit Deposit(msgSender, receiver, assets, shares);
 
-        requireAccountAndVaultStatusCheck(address(0));
+        requireAccountAndVaultStatusCheck(address(0)); // @alcueca: Use `requireVaultStatusCheck`
     }
 
     /// @dev Mints a certain amount of shares for a receiver.
@@ -255,7 +260,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
 
         emit Deposit(msgSender, receiver, assets, shares);
 
-        requireAccountAndVaultStatusCheck(address(0));
+        requireAccountAndVaultStatusCheck(address(0)); // @alcueca: Use `requireVaultStatusCheck`
     }
 
     /// @dev Withdraws a certain amount of assets for a receiver.
@@ -329,6 +334,8 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         requireAccountAndVaultStatusCheck(owner);
     }
 
+    // @alcueca: `convert*` functions are not supposed to be exact, and we might prefer to use the snapshot for those.
+    // This internal function should be `_previewToShares`. `preview*` would call it with the current assets, and `convert*` with the snapshot.
     function _convertToShares(uint256 assets, bool roundUp) internal view virtual returns (uint256) {
         return roundUp
             ? assets.mulDivUp(totalSupply + 1, totalAssets() + 1)

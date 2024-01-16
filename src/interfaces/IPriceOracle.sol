@@ -30,6 +30,7 @@ interface IPriceOracle {
     /// @param base The address of the base asset.
     /// @param quote The address of the quote asset.
     /// @return tick The tick value.
+    // @alcueca: If this is specific to Uniswap v3, maybe extract to a separate interface?
     function getTick(uint256 amount, address base, address quote) external view returns (uint256 tick);
 
     /// @notice Returns the bid and ask ticks for a given amount of base asset in quote asset.
