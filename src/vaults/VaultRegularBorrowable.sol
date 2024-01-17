@@ -8,7 +8,7 @@ import "./VaultSimpleBorrowable.sol";
 
 /// @title VaultRegularBorrowable
 /// @notice This contract extends VaultSimpleBorrowable with additional features like interest rate accrual and
-/// recognition of external collateral vaults. // @alcueca: And liquidations.
+/// recognition of external collateral vaults. // alcueca: And liquidations.
 contract VaultRegularBorrowable is VaultSimpleBorrowable {
     using FixedPointMathLib for uint256;
 
@@ -28,7 +28,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     IIRM public irm;
 
     // oracle
-    ERC20 public referenceAsset; // @alcueca: This is the asset that we use to calculate the value of all other assets.
+    ERC20 public referenceAsset; // alcueca: This is the asset that we use to calculate the value of all other assets.
     IPriceOracle public oracle;
 
     error InvalidCollateralFactor();
@@ -164,7 +164,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         takeVaultSnapshot();
 
         uint256 seizeShares;
-        { // @alcueca: This block, which calculates how many shares to seize, can be extracted into a separate contract.
+        { // alcueca: This block, which calculates how many shares to seize, can be extracted into a separate contract.
           // That contract would then be in charge of deciding whether to use a liquidation algorithm or other.
           // Failing that, it should at least be extracted to its own function.
             (uint256 liabilityAssets, uint256 liabilityValue, uint256 collateralValue) =
@@ -200,17 +200,17 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
             // can always repay the entire debt to avoid dust positions
             if (repayValue > maxRepayValue && repayAssets > HARD_LIQUIDATION_THRESHOLD * 10 ** asset.decimals()) {
                 revert RepayAssetsExceeded();
-            } // @alcueca: `HARD_LIQUIDATION_THRESHOLD * 10 ** asset.decimals()` is a very vague amount (1 PEPE, or 1 WBTC). You might be better off not worrying about dust.
+            } // alcueca: `HARD_LIQUIDATION_THRESHOLD * 10 ** asset.decimals()` is a very vague amount (1 PEPE, or 1 WBTC). You might be better off not worrying about dust.
 
             // the liquidator will be transferred the collateral value of the repaid debt + the liquidation incentive
             address collateralAsset = address(ERC4626(collateral).asset());
-            uint256 one = 10 ** ERC20(collateralAsset).decimals(); // @alcueca: one -> collateralUnit
+            uint256 one = 10 ** ERC20(collateralAsset).decimals(); // alcueca: one -> collateralUnit
 
             uint256 seizeValue = (repayValue * (100 + liquidationIncentive)) / 100;
 
             uint256 seizeAssets =
                 (seizeValue * one) / IPriceOracle(oracle).getQuote(one, collateralAsset, address(referenceAsset));
-            // @alcueca: seizeAssets = IPriceOracle(oracle).getQuote(seizeValue, address(referenceAsset), collateralAsset);
+            // alcueca: seizeAssets = IPriceOracle(oracle).getQuote(seizeValue, address(referenceAsset), collateralAsset);
 
             seizeShares = ERC4626(collateral).convertToShares(seizeAssets);
 
@@ -274,19 +274,19 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     ) internal view returns (uint256 liabilityAssets, uint256 liabilityValue, uint256 collateralValue) {
         liabilityAssets = debtOf(account);
 
-        // @alcueca: Calculate the value of the liability in terms of the reference asset.
+        // alcueca: Calculate the value of the liability in terms of the reference asset.
         liabilityValue = IPriceOracle(oracle).getQuote(liabilityAssets, address(asset), address(referenceAsset));
 
-        // @alcueca: Calculate the aggregated value of the collateral in terms of the reference asset.
+        // alcueca: Calculate the aggregated value of the collateral in terms of the reference asset.
         for (uint256 i = 0; i < collaterals.length; ++i) {
             ERC4626 collateral = ERC4626(collaterals[i]);
             uint256 cf = collateralFactor[collateral];
 
-            if (cf != 0) { // @alcueca: Collaterals with a collateral factor of 0 are worthless.
+            if (cf != 0) { // alcueca: Collaterals with a collateral factor of 0 are worthless.
                 uint256 collateralShares = collateral.balanceOf(account);
 
                 if (collateralShares > 0) {
-                    // @alcueca: Here, if the collateral vault implements a `convert` method that is exact (and therefore can be manipulated),
+                    // alcueca: Here, if the collateral vault implements a `convert` method that is exact (and therefore can be manipulated),
                     // the value of the collateral can be manipulated so that it drops and the account is liquidated.
                     uint256 collateralAssets = collateral.convertToAssets(collateralShares);
 

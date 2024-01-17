@@ -12,7 +12,7 @@ import "../interfaces/IERC3156FlashLender.sol";
 /// enabled as a controller if needed. This contract does not take the account health into account when calculating max
 /// withdraw and max redeem values. This contract does not implement the interest accrual hence it returns raw values of
 /// total borrows and 0 for the interest accumulator in the interest accrual-related functions.
-// @alcueca: This vault only allows borrowing from itself, meaning it doesn't accept other vaults as collateral.
+// alcueca: This vault only allows borrowing from itself, meaning it doesn't accept other vaults as collateral.
 contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
@@ -79,8 +79,8 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// that this function is only called once per the EVC checks deferred context, it can be also used to accrue
     /// interest.
     /// @return A snapshot of the vault's state.
-    // @alcueca: The parent contract calls this function and stores the snapshot.
-    // @alcueca: `take` is confusing, and some might think it means `store`, use `calculate` or `create` instead
+    // alcueca: The parent contract calls this function and stores the snapshot.
+    // alcueca: `take` is confusing, and some might think it means `store`, use `calculate` or `create` instead
     function doTakeVaultSnapshot() internal virtual override returns (bytes memory) {
         (uint256 currentTotalBorrowed,) = _accrueInterest();
 
@@ -92,7 +92,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @dev This function is called after any action that may affect the vault's state. Considering that and the fact
     /// that this function is only called once per the EVC checks deferred context, it can be also used to update the
     /// interest rate.
-    // @alcueca: `IVault.checkVaultStatus` can only be called from the EVC and only while checks are in progress because of the `onlyEVCWithChecksInProgress` modifier. So it can't be called at any other time to reset the snapshot mid-batch.
+    // alcueca: `IVault.checkVaultStatus` can only be called from the EVC and only while checks are in progress because of the `onlyEVCWithChecksInProgress` modifier. So it can't be called at any other time to reset the snapshot mid-batch.
     /// @param oldSnapshot The snapshot of the vault's state before the action.
     function doCheckVaultStatus(bytes memory oldSnapshot) internal virtual override {
         // sanity check in case the snapshot hasn't been taken
@@ -101,7 +101,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         // use the vault status hook to update the interest rate (it should happen only once per transaction).
         // EVC.forgiveVaultStatus check should never be used for this vault, otherwise the interest rate will not be
         // updated.
-        _updateInterest(); // @alcueca: This contract doesn't implement the interest accrual, so this function does nothing.
+        _updateInterest(); // alcueca: This contract doesn't implement the interest accrual, so this function does nothing.
 
         // validate the vault state here:
         (uint256 initialSupply, uint256 initialBorrowed) = abi.decode(oldSnapshot, (uint256, uint256));
@@ -211,7 +211,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
 
         require(assets != 0, "ZERO_ASSETS");
 
-        receiver = getAccountOwner(receiver); // @alcueca: Users might input an EVC subaccount, in which case we want to send tokens to the owner.
+        receiver = getAccountOwner(receiver); // alcueca: Users might input an EVC subaccount, in which case we want to send tokens to the owner.
 
         _increaseOwed(msgSender, assets);
 
@@ -230,7 +230,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         address msgSender = _msgSender();
 
         // sanity check: the receiver must be under control of the EVC
-        // @alcueca: Otherwise, we allowed to disable this vault as the controller for an account with debt
+        // alcueca: Otherwise, we allowed to disable this vault as the controller for an account with debt
         if (!isControllerEnabled(receiver, address(this))) {
             revert ControllerDisabled();
         }
@@ -312,7 +312,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         address msgSender = _msgSenderForBorrow();
 
         // sanity check: the account from which the debt is pulled must be under control of the EVC
-        // @alcueca: _msgSenderForBorrow() checks that `msgSender` is controlled by this vault
+        // alcueca: _msgSenderForBorrow() checks that `msgSender` is controlled by this vault
         if (!isControllerEnabled(from, address(this))) {
             revert ControllerDisabled();
         }
@@ -334,7 +334,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     }
 
     /// @dev This function is overridden to take into account the fact that some of the assets may be borrowed.
-    // @alcueca: As explained elsewhere, this should use the snapshot.
+    // alcueca: As explained elsewhere, this should use the snapshot.
     function _convertToShares(uint256 assets, bool roundUp) internal view virtual override returns (uint256) {
         (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
 
