@@ -34,7 +34,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         string memory _symbol
     ) VaultBase(_evc) Owned(msg.sender) ERC4626(_asset, _name, _symbol) {}
 
-    /// @dev Sets the supply cap of the vault.
+    /// @notice Sets the supply cap of the vault.
     /// @param newSupplyCap The new supply cap.
     function setSupplyCap(uint256 newSupplyCap) external onlyOwner {
         supplyCap = newSupplyCap;
@@ -80,20 +80,24 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         EVCClient.disableController(_msgSender());
     }
 
-    /// @dev Returns the total assets of the vault.
+    /// @notice Returns the total assets of the vault.
     /// @return The total assets.
     function totalAssets() public view virtual override returns (uint256) {
         return asset.balanceOf(address(this));
     }
 
-    /// @dev Converts assets to shares.
+    /// @notice Converts assets to shares.
+    /// @dev That function is manipulable in its current form as it uses exact values. Considering that other vaults may
+    /// rely on it, for a production vault, a manipulation resistant mechanism should be implemented.
     /// @param assets The assets to convert.
     /// @return The converted shares.
     function convertToShares(uint256 assets) public view virtual override returns (uint256) {
         return _convertToShares(assets, false);
     }
 
-    /// @dev Converts shares to assets.
+    /// @notice Converts shares to assets.
+    /// @dev That function is manipulable in its current form as it uses exact values. Considering that other vaults may
+    /// rely on it, for a production vault, a manipulation resistant mechanism should be implemented.
     /// @param shares The shares to convert.
     /// @return The converted assets.
     function convertToAssets(uint256 shares) public view virtual override returns (uint256) {
@@ -128,7 +132,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         return _convertToAssets(shares, false);
     }
 
-    /// @dev Approves a spender to spend a certain amount.
+    /// @notice Approves a spender to spend a certain amount.
     /// @param spender The spender to approve.
     /// @param amount The amount to approve.
     /// @return A boolean indicating whether the approval was successful.
@@ -142,7 +146,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         return true;
     }
 
-    /// @dev Transfers a certain amount of shares to a recipient.
+    /// @notice Transfers a certain amount of shares to a recipient.
     /// @param to The recipient of the transfer.
     /// @param amount The amount shares to transfer.
     /// @return A boolean indicating whether the transfer was successful.
@@ -169,7 +173,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         return true;
     }
 
-    /// @dev Transfers a certain amount of shares from a sender to a recipient.
+    /// @notice Transfers a certain amount of shares from a sender to a recipient.
     /// @param from The sender of the transfer.
     /// @param to The recipient of the transfer.
     /// @param amount The amount of shares to transfer.
@@ -207,7 +211,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         return true;
     }
 
-    /// @dev Deposits a certain amount of assets for a receiver.
+    /// @notice Deposits a certain amount of assets for a receiver.
     /// @param assets The assets to deposit.
     /// @param receiver The receiver of the deposit.
     /// @return shares The shares equivalent to the deposited assets.
@@ -232,7 +236,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         requireVaultStatusCheck();
     }
 
-    /// @dev Mints a certain amount of shares for a receiver.
+    /// @notice Mints a certain amount of shares for a receiver.
     /// @param shares The shares to mint.
     /// @param receiver The receiver of the mint.
     /// @return assets The assets equivalent to the minted shares.
@@ -256,7 +260,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         requireVaultStatusCheck();
     }
 
-    /// @dev Withdraws a certain amount of assets for a receiver.
+    /// @notice Withdraws a certain amount of assets for a receiver.
     /// @param assets The assets to withdraw.
     /// @param receiver The receiver of the withdrawal.
     /// @param owner The owner of the assets.
@@ -291,7 +295,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         requireAccountAndVaultStatusCheck(owner);
     }
 
-    /// @dev Redeems a certain amount of shares for a receiver.
+    /// @notice Redeems a certain amount of shares for a receiver.
     /// @param shares The shares to redeem.
     /// @param receiver The receiver of the redemption.
     /// @param owner The owner of the shares.

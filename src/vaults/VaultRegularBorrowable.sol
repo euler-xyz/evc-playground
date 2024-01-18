@@ -242,7 +242,11 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     /// @param collateral The address of the collateral to be seized.
     /// @param repayAssets The amount of assets the liquidator is attempting to repay.
     /// @return The amount of collateral shares to seize from the violator's account.
-    function _calculateSharesToSeize(address violator, address collateral, uint256 repayAssets) internal view returns (uint256) {
+    function _calculateSharesToSeize(
+        address violator,
+        address collateral,
+        uint256 repayAssets
+    ) internal view returns (uint256) {
         // do not allow to seize the assets for collateral without a collateral factor.
         // note that a user can enable any address as collateral, even if it's not recognized
         // as such (cf == 0)
@@ -292,8 +296,8 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
 
         uint256 seizeValue = (repayValue * (100 + liquidationIncentive)) / 100;
 
-        uint256 seizeAssets =
-            (seizeValue * collateralUnit) / IPriceOracle(oracle).getQuote(collateralUnit, collateralAsset, address(referenceAsset));
+        uint256 seizeAssets = (seizeValue * collateralUnit)
+            / IPriceOracle(oracle).getQuote(collateralUnit, collateralAsset, address(referenceAsset));
 
         uint256 seizeShares = ERC4626(collateral).convertToShares(seizeAssets);
 

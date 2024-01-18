@@ -53,6 +53,11 @@ contract VaultBorrowableWETH is VaultRegularBorrowable {
         requireAccountAndVaultStatusCheck(address(0));
     }
 
+    /// @notice Redeems a certain amount of shares for a receiver and sends the equivalent assets as ETH.
+    /// @param shares The shares to redeem.
+    /// @param receiver The receiver of the redemption.
+    /// @param owner The owner of the shares.
+    /// @return assets The assets equivalent to the redeemed shares.
     function redeemToETH(
         uint256 shares,
         address receiver,
@@ -79,6 +84,7 @@ contract VaultBorrowableWETH is VaultRegularBorrowable {
 
         emit Withdraw(msgSender, receiver, owner, assets, shares);
 
+        // Convert WETH to ETH and send to the receiver.
         weth.withdraw(assets);
 
         (bool sent,) = receiver.call{value: assets}("");
