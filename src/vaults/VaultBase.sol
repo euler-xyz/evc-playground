@@ -15,10 +15,13 @@ abstract contract VaultBase is IVault, EVCClient {
 
     constructor(IEVC _evc) EVCClient(_evc) {}
 
-    /// @notice Takes a snapshot of the vault state
-    function takeVaultSnapshot() internal {
+    /// @notice Creates a snapshot of the vault state
+    function createVaultSnapshot() internal {
+        // We delete snapshots on `checkVaultStatus`, which can only happen at the end of the EVC batch. Snapshots are
+        // taken before any action is taken on the vault that affects the cault asset records and deleted at the end, so
+        // that asset calculations are always based on the state before the current batch of actions.
         if (snapshot.length == 0) {
-            snapshot = doTakeVaultSnapshot();
+            snapshot = doCreateVaultSnapshot();
         }
     }
 
@@ -42,9 +45,9 @@ abstract contract VaultBase is IVault, EVCClient {
         return IVault.checkAccountStatus.selector;
     }
 
-    /// @notice Takes a snapshot of the vault state
+    /// @notice Creates a snapshot of the vault state
     /// @dev Must be overridden by child contracts
-    function doTakeVaultSnapshot() internal virtual returns (bytes memory snapshot);
+    function doCreateVaultSnapshot() internal virtual returns (bytes memory snapshot);
 
     /// @notice Checks the vault status
     /// @dev Must be overridden by child contracts
@@ -55,6 +58,7 @@ abstract contract VaultBase is IVault, EVCClient {
     function doCheckAccountStatus(address, address[] calldata) internal view virtual;
 
     /// @notice Disables a controller for an account
-    /// @dev Must be overridden by child contracts
+    /// @dev Must be overridden by child contracts. Must call the EVC.disableController() only if it's safe to do so
+    /// (i.e. the account has repaid their debt in full)
     function disableController() external virtual;
 }

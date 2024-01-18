@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 
 import "solmate/utils/ReentrancyGuard.sol";
 import "solmate/auth/Owned.sol";
-import "solmate/mixins/ERC4626.sol";
+import "solmate/tokens/ERC4626.sol";
 import "solmate/utils/SafeTransferLib.sol";
 import "solmate/utils/FixedPointMathLib.sol";
 import "./VaultBase.sol";
@@ -34,17 +34,17 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         string memory _symbol
     ) VaultBase(_evc) Owned(msg.sender) ERC4626(_asset, _name, _symbol) {}
 
-    /// @dev Sets the supply cap of the vault.
+    /// @notice Sets the supply cap of the vault.
     /// @param newSupplyCap The new supply cap.
     function setSupplyCap(uint256 newSupplyCap) external onlyOwner {
         supplyCap = newSupplyCap;
         emit SupplyCapSet(newSupplyCap);
     }
 
-    /// @notice Takes a snapshot of the vault.
+    /// @notice Creates a snapshot of the vault.
     /// @dev This function is called before any action that may affect the vault's state.
     /// @return A snapshot of the vault's state.
-    function doTakeVaultSnapshot() internal virtual override returns (bytes memory) {
+    function doCreateVaultSnapshot() internal virtual override returns (bytes memory) {
         // make total supply snapshot here and return it:
         return abi.encode(_convertToAssets(totalSupply, false));
     }
@@ -64,9 +64,6 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         if (supplyCap != 0 && finalSupply > supplyCap && finalSupply > initialSupply) {
             revert SupplyCapExceeded();
         }
-
-        // example: if 90% of the assets were withdrawn, revert the transaction
-        //require(finalSupply >= initialSupply / 10, "withdrawal too large");
     }
 
     /// @notice Checks the status of an account.
@@ -78,24 +75,29 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     /// @notice Disables the controller.
     /// @dev The controller is only disabled if the account has no debt.
     function disableController() external virtual override nonReentrant {
-        // ensure that the account does not have any liabilities before disabling controller
+        // this vault doesn't allow borrowing, so we can't check that the account has no debt.
+        // this vault should never be a controller, but user errors can happen
         EVCClient.disableController(_msgSender());
     }
 
-    /// @dev Returns the total assets of the vault.
+    /// @notice Returns the total assets of the vault.
     /// @return The total assets.
     function totalAssets() public view virtual override returns (uint256) {
         return asset.balanceOf(address(this));
     }
 
-    /// @dev Converts assets to shares.
+    /// @notice Converts assets to shares.
+    /// @dev That function is manipulable in its current form as it uses exact values. Considering that other vaults may
+    /// rely on it, for a production vault, a manipulation resistant mechanism should be implemented.
     /// @param assets The assets to convert.
     /// @return The converted shares.
     function convertToShares(uint256 assets) public view virtual override returns (uint256) {
         return _convertToShares(assets, false);
     }
 
-    /// @dev Converts shares to assets.
+    /// @notice Converts shares to assets.
+    /// @dev That function is manipulable in its current form as it uses exact values. Considering that other vaults may
+    /// rely on it, for a production vault, a manipulation resistant mechanism should be implemented.
     /// @param shares The shares to convert.
     /// @return The converted assets.
     function convertToAssets(uint256 shares) public view virtual override returns (uint256) {
@@ -130,7 +132,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         return _convertToAssets(shares, false);
     }
 
-    /// @dev Approves a spender to spend a certain amount.
+    /// @notice Approves a spender to spend a certain amount.
     /// @param spender The spender to approve.
     /// @param amount The amount to approve.
     /// @return A boolean indicating whether the approval was successful.
@@ -144,14 +146,14 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         return true;
     }
 
-    /// @dev Transfers a certain amount of shares to a recipient.
+    /// @notice Transfers a certain amount of shares to a recipient.
     /// @param to The recipient of the transfer.
     /// @param amount The amount shares to transfer.
     /// @return A boolean indicating whether the transfer was successful.
     function transfer(address to, uint256 amount) public virtual override callThroughEVC nonReentrant returns (bool) {
         address msgSender = _msgSender();
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         balanceOf[msgSender] -= amount;
 
@@ -171,7 +173,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         return true;
     }
 
-    /// @dev Transfers a certain amount of shares from a sender to a recipient.
+    /// @notice Transfers a certain amount of shares from a sender to a recipient.
     /// @param from The sender of the transfer.
     /// @param to The recipient of the transfer.
     /// @param amount The amount of shares to transfer.
@@ -183,7 +185,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     ) public virtual override callThroughEVC nonReentrant returns (bool) {
         address msgSender = _msgSender();
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         uint256 allowed = allowance[from][msgSender]; // Saves gas for limited approvals.
 
@@ -209,7 +211,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         return true;
     }
 
-    /// @dev Deposits a certain amount of assets for a receiver.
+    /// @notice Deposits a certain amount of assets for a receiver.
     /// @param assets The assets to deposit.
     /// @param receiver The receiver of the deposit.
     /// @return shares The shares equivalent to the deposited assets.
@@ -219,7 +221,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     ) public virtual override callThroughEVC nonReentrant returns (uint256 shares) {
         address msgSender = _msgSender();
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         // Check for rounding error since we round down in previewDeposit.
         require((shares = previewDeposit(assets)) != 0, "ZERO_SHARES");
@@ -231,10 +233,10 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
 
         emit Deposit(msgSender, receiver, assets, shares);
 
-        requireAccountAndVaultStatusCheck(address(0));
+        requireVaultStatusCheck();
     }
 
-    /// @dev Mints a certain amount of shares for a receiver.
+    /// @notice Mints a certain amount of shares for a receiver.
     /// @param shares The shares to mint.
     /// @param receiver The receiver of the mint.
     /// @return assets The assets equivalent to the minted shares.
@@ -244,7 +246,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     ) public virtual override callThroughEVC nonReentrant returns (uint256 assets) {
         address msgSender = _msgSender();
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         assets = previewMint(shares); // No need to check for rounding error, previewMint rounds up.
 
@@ -255,10 +257,10 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
 
         emit Deposit(msgSender, receiver, assets, shares);
 
-        requireAccountAndVaultStatusCheck(address(0));
+        requireVaultStatusCheck();
     }
 
-    /// @dev Withdraws a certain amount of assets for a receiver.
+    /// @notice Withdraws a certain amount of assets for a receiver.
     /// @param assets The assets to withdraw.
     /// @param receiver The receiver of the withdrawal.
     /// @param owner The owner of the assets.
@@ -270,7 +272,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     ) public virtual override callThroughEVC nonReentrant returns (uint256 shares) {
         address msgSender = _msgSender();
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         shares = previewWithdraw(assets); // No need to check for rounding error, previewWithdraw rounds up.
 
@@ -293,7 +295,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         requireAccountAndVaultStatusCheck(owner);
     }
 
-    /// @dev Redeems a certain amount of shares for a receiver.
+    /// @notice Redeems a certain amount of shares for a receiver.
     /// @param shares The shares to redeem.
     /// @param receiver The receiver of the redemption.
     /// @param owner The owner of the shares.
@@ -305,7 +307,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     ) public virtual override callThroughEVC nonReentrant returns (uint256 assets) {
         address msgSender = _msgSender();
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         if (msgSender != owner) {
             uint256 allowed = allowance[owner][msgSender]; // Saves gas for limited approvals.

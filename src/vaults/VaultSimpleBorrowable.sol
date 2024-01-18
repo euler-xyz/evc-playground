@@ -3,7 +3,6 @@
 pragma solidity ^0.8.19;
 
 import "./VaultSimple.sol";
-import "../interfaces/IERC3156FlashLender.sol";
 
 /// @title VaultSimpleBorrowable
 /// @notice This contract extends VaultSimple to add borrowing functionality.
@@ -12,7 +11,7 @@ import "../interfaces/IERC3156FlashLender.sol";
 /// enabled as a controller if needed. This contract does not take the account health into account when calculating max
 /// withdraw and max redeem values. This contract does not implement the interest accrual hence it returns raw values of
 /// total borrows and 0 for the interest accumulator in the interest accrual-related functions.
-contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
+contract VaultSimpleBorrowable is VaultSimple {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
@@ -20,8 +19,6 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     event Borrow(address indexed caller, address indexed owner, uint256 assets);
     event Repay(address indexed caller, address indexed receiver, uint256 assets);
 
-    error FlashloanFailure();
-    error FlashloanNotSupported();
     error BorrowCapExceeded();
     error AccountUnhealthy();
     error OutstandingDebt();
@@ -73,12 +70,12 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         return _convertToAssets(ownerShares, false) > totAssets ? _convertToShares(totAssets, false) : ownerShares;
     }
 
-    /// @notice Takes a snapshot of the vault.
+    /// @notice Creates a snapshot of the vault.
     /// @dev This function is called before any action that may affect the vault's state. Considering that and the fact
     /// that this function is only called once per the EVC checks deferred context, it can be also used to accrue
     /// interest.
     /// @return A snapshot of the vault's state.
-    function doTakeVaultSnapshot() internal virtual override returns (bytes memory) {
+    function doCreateVaultSnapshot() internal virtual override returns (bytes memory) {
         (uint256 currentTotalBorrowed,) = _accrueInterest();
 
         // make total supply and total borrows snapshot:
@@ -88,7 +85,9 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @notice Checks the vault's status.
     /// @dev This function is called after any action that may affect the vault's state. Considering that and the fact
     /// that this function is only called once per the EVC checks deferred context, it can be also used to update the
-    /// interest rate.
+    /// interest rate. `IVault.checkVaultStatus` can only be called from the EVC and only while checks are in progress
+    /// because of the `onlyEVCWithChecksInProgress` modifier. So it can't be called at any other time to reset the
+    /// snapshot mid-batch.
     /// @param oldSnapshot The snapshot of the vault's state before the action.
     function doCheckVaultStatus(bytes memory oldSnapshot) internal virtual override {
         // sanity check in case the snapshot hasn't been taken
@@ -97,6 +96,8 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         // use the vault status hook to update the interest rate (it should happen only once per transaction).
         // EVC.forgiveVaultStatus check should never be used for this vault, otherwise the interest rate will not be
         // updated.
+        // this contract doesn't implement the interest accrual, so this function does nothing. needed for the sake of
+        // inheritance
         _updateInterest();
 
         // validate the vault state here:
@@ -153,60 +154,17 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         }
     }
 
-    /// @inheritdoc IERC3156FlashLender
-    function maxFlashLoan(address token) public view returns (uint256) {
-        return token == address(asset) ? asset.balanceOf(address(this)) : 0;
-    }
-
-    /// @inheritdoc IERC3156FlashLender
-    function flashFee(address token, uint256) public view returns (uint256) {
-        if (token == address(asset)) {
-            return 0;
-        } else {
-            revert FlashloanNotSupported();
-        }
-    }
-
-    /// @inheritdoc IERC3156FlashLender
-    function flashLoan(
-        IERC3156FlashBorrower receiver,
-        address token,
-        uint256 amount,
-        bytes calldata data
-    ) external nonReentrant returns (bool) {
-        if (token != address(asset)) {
-            revert FlashloanNotSupported();
-        } else if (maxFlashLoan(token) < amount) {
-            revert FlashloanFailure();
-        }
-
-        uint256 origBalance = ERC20(token).balanceOf(address(this));
-
-        ERC20(token).safeTransfer(address(receiver), amount);
-
-        uint256 fee = flashFee(token, amount);
-        bytes32 result = receiver.onFlashLoan(msg.sender, token, amount, fee, data);
-
-        if (
-            result != keccak256("ERC3156FlashBorrower.onFlashLoan")
-                || ERC20(token).balanceOf(address(this)) < origBalance + fee
-        ) {
-            revert FlashloanFailure();
-        }
-
-        return true;
-    }
-
     /// @notice Borrows assets.
     /// @param assets The amount of assets to borrow.
     /// @param receiver The receiver of the assets.
     function borrow(uint256 assets, address receiver) external callThroughEVC nonReentrant {
         address msgSender = _msgSenderForBorrow();
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         require(assets != 0, "ZERO_ASSETS");
 
+        // users might input an EVC subaccount, in which case we want to send tokens to the owner
         receiver = getAccountOwner(receiver);
 
         _increaseOwed(msgSender, assets);
@@ -225,12 +183,13 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     function repay(uint256 assets, address receiver) external callThroughEVC nonReentrant {
         address msgSender = _msgSender();
 
-        // sanity check: the receiver must be under control of the EVC
+        // sanity check: the receiver must be under control of the EVC. otherwise, we allowed to disable this vault as
+        // the controller for an account with debt
         if (!isControllerEnabled(receiver, address(this))) {
             revert ControllerDisabled();
         }
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         require(assets != 0, "ZERO_ASSETS");
 
@@ -255,7 +214,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     ) external callThroughEVC nonReentrant returns (uint256 shares) {
         address msgSender = _msgSenderForBorrow();
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         require((shares = previewDeposit(assets)) != 0, "ZERO_SHARES");
 
@@ -283,7 +242,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
             revert ControllerDisabled();
         }
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         shares = previewWithdraw(assets);
 
@@ -306,12 +265,13 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     function pullDebt(address from, uint256 assets) external callThroughEVC nonReentrant returns (bool) {
         address msgSender = _msgSenderForBorrow();
 
-        // sanity check: the account from which the debt is pulled must be under control of the EVC
+        // sanity check: the account from which the debt is pulled must be under control of the EVC.
+        // _msgSenderForBorrow() checks that `msgSender` is controlled by this vault
         if (!isControllerEnabled(from, address(this))) {
             revert ControllerDisabled();
         }
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         require(assets != 0, "ZERO_AMOUNT");
         require(msgSender != from, "SELF_DEBT_PULL");
