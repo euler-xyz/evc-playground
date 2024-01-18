@@ -52,7 +52,7 @@ The `VaultSimple` contract is a simple vault that implements the ERC-4626 interf
 
 The `VaultSimpleBorrowable` contract is a simple vault that extents the `VaultSimple` functionality by adding a borrowing functionality (but no interest accrual). The contract showcases a pattern that should be followed in order to properly use EVC's authentication features for borrowing operations (when it matters whether the user has enabled a controller). It implements a simple vault status check based on a pre- and post-operation snapshots and a simple account status check.
 
-The `VaultRegularBorrowable` contract is a vault that extends the `VaultSimpleBorrowable` functionality by adding recognized collaterals, price oracle integration and interest accrual. It implements a simple liquidation pattern that showcases the EVC's `impersonate` functionality that is used in order to seize violator's collateral shares.
+The `VaultRegularBorrowable` contract is a vault that extends the `VaultSimpleBorrowable` functionality by adding recognized collaterals, price oracle integration and interest accrual. It implements a simple liquidation pattern that showcases the EVC's `controlCollateral` functionality that is used in order to seize violator's collateral shares.
 
 The `VaultBorrowableWETH` contract is a vault that extends the `VaultRegularBorrowable` functionality by adding a special function for handling ETH deposits into a WETH vault. It showcases EVC `callback` functionality for a `payable` function.
 

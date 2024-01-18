@@ -73,12 +73,12 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         return _convertToAssets(ownerShares, false) > totAssets ? _convertToShares(totAssets, false) : ownerShares;
     }
 
-    /// @notice Takes a snapshot of the vault.
+    /// @notice Creates a snapshot of the vault.
     /// @dev This function is called before any action that may affect the vault's state. Considering that and the fact
     /// that this function is only called once per the EVC checks deferred context, it can be also used to accrue
     /// interest.
     /// @return A snapshot of the vault's state.
-    function doTakeVaultSnapshot() internal virtual override returns (bytes memory) {
+    function doCreateVaultSnapshot() internal virtual override returns (bytes memory) {
         (uint256 currentTotalBorrowed,) = _accrueInterest();
 
         // make total supply and total borrows snapshot:
@@ -88,7 +88,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     /// @notice Checks the vault's status.
     /// @dev This function is called after any action that may affect the vault's state. Considering that and the fact
     /// that this function is only called once per the EVC checks deferred context, it can be also used to update the
-    /// interest rate.
+    /// interest rate. `IVault.checkVaultStatus` can only be called from the EVC and only while checks are in progress because of the `onlyEVCWithChecksInProgress` modifier. So it can't be called at any other time to reset the snapshot mid-batch.
     /// @param oldSnapshot The snapshot of the vault's state before the action.
     function doCheckVaultStatus(bytes memory oldSnapshot) internal virtual override {
         // sanity check in case the snapshot hasn't been taken
@@ -97,7 +97,8 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
         // use the vault status hook to update the interest rate (it should happen only once per transaction).
         // EVC.forgiveVaultStatus check should never be used for this vault, otherwise the interest rate will not be
         // updated.
-        _updateInterest();
+        // this contract doesn't implement the interest accrual, so this function does nothing. needed for the sake of inheritance
+        _updateInterest();  
 
         // validate the vault state here:
         (uint256 initialSupply, uint256 initialBorrowed) = abi.decode(oldSnapshot, (uint256, uint256));
@@ -203,10 +204,11 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     function borrow(uint256 assets, address receiver) external callThroughEVC nonReentrant {
         address msgSender = _msgSenderForBorrow();
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         require(assets != 0, "ZERO_ASSETS");
 
+        // users might input an EVC subaccount, in which case we want to send tokens to the owner
         receiver = getAccountOwner(receiver);
 
         _increaseOwed(msgSender, assets);
@@ -225,12 +227,12 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     function repay(uint256 assets, address receiver) external callThroughEVC nonReentrant {
         address msgSender = _msgSender();
 
-        // sanity check: the receiver must be under control of the EVC
+        // sanity check: the receiver must be under control of the EVC. otherwise, we allowed to disable this vault as the controller for an account with debt
         if (!isControllerEnabled(receiver, address(this))) {
             revert ControllerDisabled();
         }
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         require(assets != 0, "ZERO_ASSETS");
 
@@ -255,7 +257,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     ) external callThroughEVC nonReentrant returns (uint256 shares) {
         address msgSender = _msgSenderForBorrow();
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         require((shares = previewDeposit(assets)) != 0, "ZERO_SHARES");
 
@@ -283,7 +285,7 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
             revert ControllerDisabled();
         }
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         shares = previewWithdraw(assets);
 
@@ -306,12 +308,12 @@ contract VaultSimpleBorrowable is VaultSimple, IERC3156FlashLender {
     function pullDebt(address from, uint256 assets) external callThroughEVC nonReentrant returns (bool) {
         address msgSender = _msgSenderForBorrow();
 
-        // sanity check: the account from which the debt is pulled must be under control of the EVC
+        // sanity check: the account from which the debt is pulled must be under control of the EVC. _msgSenderForBorrow() checks that `msgSender` is controlled by this vault
         if (!isControllerEnabled(from, address(this))) {
             revert ControllerDisabled();
         }
 
-        takeVaultSnapshot();
+        createVaultSnapshot();
 
         require(assets != 0, "ZERO_AMOUNT");
         require(msgSender != from, "SELF_DEBT_PULL");
