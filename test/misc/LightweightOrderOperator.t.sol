@@ -7,7 +7,7 @@ import "evc/EthereumVaultConnector.sol";
 import "../../src/vaults/VaultSimple.sol";
 import "../../src/operators/LightweightOrderOperator.sol";
 import "../../src/utils/SimpleConditionsEnforcer.sol";
-import "../utils/evcPermitSignerECDSA.sol";
+import "../utils/EVCPermitSignerECDSA.sol";
 
 contract LightweightOrderOperatorTest is Test {
     IEVC evc;
