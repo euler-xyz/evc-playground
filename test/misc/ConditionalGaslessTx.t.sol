@@ -13,14 +13,14 @@ contract ConditionalGaslessTxTest is Test {
     MockERC20 asset;
     VaultSimple vault;
     SimpleConditionsEnforcer conditionsEnforcer;
-    evcPermitSignerECDSA permitSigner;
+    EVCPermitSignerECDSA permitSigner;
 
     function setUp() public {
         evc = new EthereumVaultConnector();
         asset = new MockERC20("Asset", "ASS", 18);
         vault = new VaultSimple(evc, asset, "Vault", "VAU");
         conditionsEnforcer = new SimpleConditionsEnforcer();
-        permitSigner = new evcPermitSignerECDSA(address(evc));
+        permitSigner = new EVCPermitSignerECDSA(address(evc));
     }
 
     function test_ConditionalGaslessTx() public {

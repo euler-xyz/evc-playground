@@ -15,7 +15,7 @@ contract LightweightOrderOperatorTest is Test {
     VaultSimple vault;
     LightweightOrderOperator orderOperator;
     SimpleConditionsEnforcer conditionsEnforcer;
-    evcPermitSignerECDSA permitSigner;
+    EVCPermitSignerECDSA permitSigner;
 
     event OrderPending(LightweightOrderOperator.Order order);
     event OrderExecuted(bytes32 indexed orderHash, address indexed caller);
@@ -27,7 +27,7 @@ contract LightweightOrderOperatorTest is Test {
         vault = new VaultSimple(evc, asset, "Vault", "VAU");
         orderOperator = new LightweightOrderOperator(evc);
         conditionsEnforcer = new SimpleConditionsEnforcer();
-        permitSigner = new evcPermitSignerECDSA(address(evc));
+        permitSigner = new EVCPermitSignerECDSA(address(evc));
     }
 
     function test_LightweightOrderOperator(uint256 alicePK) public {

@@ -43,7 +43,7 @@ abstract contract EIP712 {
     }
 }
 
-contract evcPermitSignerECDSA is EIP712, Test {
+contract EVCPermitSignerECDSA is EIP712, Test {
     EthereumVaultConnector private immutable evc;
     uint256 internal privateKey;
 

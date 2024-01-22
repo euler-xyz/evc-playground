@@ -13,14 +13,14 @@ contract GaslessTxTest is Test {
     MockERC20 asset;
     VaultSimple vault;
     TipsPiggyBank piggyBank;
-    evcPermitSignerECDSA permitSigner;
+    EVCPermitSignerECDSA permitSigner;
 
     function setUp() public {
         evc = new EthereumVaultConnector();
         asset = new MockERC20("Asset", "ASS", 18);
         vault = new VaultSimple(evc, asset, "Vault", "VAU");
         piggyBank = new TipsPiggyBank();
-        permitSigner = new evcPermitSignerECDSA(address(evc));
+        permitSigner = new EVCPermitSignerECDSA(address(evc));
     }
 
     function test_GaslessTx() public {
