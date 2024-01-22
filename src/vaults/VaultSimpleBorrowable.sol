@@ -206,60 +206,6 @@ contract VaultSimpleBorrowable is VaultSimple {
         requireAccountAndVaultStatusCheck(address(0));
     }
 
-    /// @notice Winds up the vault.
-    /// @dev This function deposits assets into the vault and borrows the same amount.
-    /// @dev Despite the lack of asset transfers, this function emits Deposit and Borrow events.
-    /// @param assets The amount of assets to wind up.
-    /// @param collateralReceiver The receiver of the collateral.
-    /// @return shares The amount of shares minted.
-    function wind(
-        uint256 assets,
-        address collateralReceiver
-    ) external callThroughEVC nonReentrant returns (uint256 shares) {
-        address msgSender = _msgSenderForBorrow();
-
-        createVaultSnapshot();
-
-        require((shares = previewDeposit(assets)) != 0, "ZERO_SHARES");
-
-        _mint(collateralReceiver, shares);
-
-        _increaseOwed(msgSender, assets);
-
-        emit Deposit(msgSender, collateralReceiver, assets, shares);
-        emit Borrow(msgSender, msgSender, assets);
-
-        requireAccountAndVaultStatusCheck(msgSender);
-    }
-
-    /// @notice Unwinds the vault.
-    /// @dev This function repays a debt and withdraws the same amount of assets.
-    /// @dev Despite the lack of asset transfers, this function emits Repay and Withdraw events.
-    /// @param assets The amount of assets to unwind.
-    /// @param debtFrom The account to repay the debt from.
-    /// @return shares The amount of shares burned.
-    function unwind(uint256 assets, address debtFrom) external callThroughEVC nonReentrant returns (uint256 shares) {
-        address msgSender = _msgSenderForBorrow();
-
-        // sanity check: the account from which the debt is pulled must be under control of the EVC
-        if (!isControllerEnabled(debtFrom, address(this))) {
-            revert ControllerDisabled();
-        }
-
-        createVaultSnapshot();
-
-        shares = previewWithdraw(assets);
-
-        _decreaseOwed(debtFrom, assets);
-
-        _burn(msgSender, shares);
-
-        emit Repay(msgSender, debtFrom, assets);
-        emit Withdraw(msgSender, msgSender, msgSender, assets, shares);
-
-        requireAccountAndVaultStatusCheck(msgSender);
-    }
-
     /// @notice Pulls debt from an account.
     /// @dev This function decreases the debt of one account and increases the debt of another.
     /// @dev Despite the lack of asset transfers, this function emits Repay and Borrow events.
