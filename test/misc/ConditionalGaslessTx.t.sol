@@ -6,7 +6,7 @@ import "solmate/test/utils/mocks/MockERC20.sol";
 import "evc/interfaces/IEthereumVaultConnector.sol";
 import "../../src/vaults/VaultSimple.sol";
 import "../../src/utils/SimpleConditionsEnforcer.sol";
-import "../utils/evcPermitSignerECDSA.sol";
+import "../utils/EVCPermitSignerECDSA.sol";
 
 contract ConditionalGaslessTxTest is Test {
     IEVC evc;
