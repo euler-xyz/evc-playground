@@ -82,7 +82,7 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
 
     /// @notice Returns the total assets of the vault.
     /// @return The total assets.
-    function totalAssets() public view virtual override returns (uint256) {
+    function totalAssets() public view virtual override nonReentrantRO returns (uint256) {
         return _totalAssets;
     }
 
@@ -109,28 +109,28 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
     /// @notice Simulates the effects of depositing a certain amount of assets at the current block.
     /// @param assets The amount of assets to simulate depositing.
     /// @return The amount of shares that would be minted.
-    function previewDeposit(uint256 assets) public view virtual override returns (uint256) {
+    function previewDeposit(uint256 assets) public view virtual override nonReentrantRO returns (uint256) {
         return _convertToShares(assets, false);
     }
 
     /// @notice Simulates the effects of minting a certain amount of shares at the current block.
     /// @param shares The amount of shares to simulate minting.
     /// @return The amount of assets that would be deposited.
-    function previewMint(uint256 shares) public view virtual override returns (uint256) {
+    function previewMint(uint256 shares) public view virtual override nonReentrantRO returns (uint256) {
         return _convertToAssets(shares, true);
     }
 
     /// @notice Simulates the effects of withdrawing a certain amount of assets at the current block.
     /// @param assets The amount of assets to simulate withdrawing.
     /// @return The amount of shares that would be burned.
-    function previewWithdraw(uint256 assets) public view virtual override returns (uint256) {
+    function previewWithdraw(uint256 assets) public view virtual override nonReentrantRO returns (uint256) {
         return _convertToShares(assets, true);
     }
 
     /// @notice Simulates the effects of redeeming a certain amount of shares at the current block.
     /// @param shares The amount of shares to simulate redeeming.
     /// @return The amount of assets that would be redeemed.
-    function previewRedeem(uint256 shares) public view virtual override returns (uint256) {
+    function previewRedeem(uint256 shares) public view virtual override nonReentrantRO returns (uint256) {
         return _convertToAssets(shares, false);
     }
 
@@ -226,7 +226,7 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
         createVaultSnapshot();
 
         // Check for rounding error since we round down in previewDeposit.
-        require((shares = previewDeposit(assets)) != 0, "ZERO_SHARES");
+        require((shares = _convertToShares(assets, false)) != 0, "ZERO_SHARES");
 
         // Need to transfer before minting or ERC777s could reenter.
         asset.safeTransferFrom(msgSender, address(this), assets);
@@ -252,7 +252,7 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
 
         createVaultSnapshot();
 
-        assets = previewMint(shares); // No need to check for rounding error, previewMint rounds up.
+        assets = _convertToAssets(shares, true); // No need to check for rounding error, previewMint rounds up.
 
         // Need to transfer before minting or ERC777s could reenter.
         asset.safeTransferFrom(msgSender, address(this), assets);
@@ -280,7 +280,7 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
 
         createVaultSnapshot();
 
-        shares = previewWithdraw(assets); // No need to check for rounding error, previewWithdraw rounds up.
+        shares = _convertToShares(assets, true); // No need to check for rounding error, previewWithdraw rounds up.
 
         if (msgSender != owner) {
             uint256 allowed = allowance[owner][msgSender]; // Saves gas for limited approvals.
@@ -326,7 +326,7 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
         }
 
         // Check for rounding error since we round down in previewRedeem.
-        require((assets = previewRedeem(shares)) != 0, "ZERO_ASSETS");
+        require((assets = _convertToAssets(shares, false)) != 0, "ZERO_ASSETS");
 
         receiver = getAccountOwner(receiver);
 
@@ -343,13 +343,13 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
 
     function _convertToShares(uint256 assets, bool roundUp) internal view virtual returns (uint256) {
         return roundUp
-            ? assets.mulDivUp(totalSupply + 1, totalAssets() + 1)
-            : assets.mulDivDown(totalSupply + 1, totalAssets() + 1);
+            ? assets.mulDivUp(totalSupply + 1, _totalAssets + 1)
+            : assets.mulDivDown(totalSupply + 1, _totalAssets + 1);
     }
 
     function _convertToAssets(uint256 shares, bool roundUp) internal view virtual returns (uint256) {
         return roundUp
-            ? shares.mulDivUp(totalAssets() + 1, totalSupply + 1)
-            : shares.mulDivDown(totalAssets() + 1, totalSupply + 1);
+            ? shares.mulDivUp(_totalAssets + 1, totalSupply + 1)
+            : shares.mulDivDown(_totalAssets + 1, totalSupply + 1);
     }
 }

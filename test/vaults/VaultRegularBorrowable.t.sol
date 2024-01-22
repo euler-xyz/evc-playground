@@ -276,7 +276,7 @@ contract VaultRegularBorrowableTest is Test {
         assertEq(collateralVault2.maxWithdraw(bob), 0);
     }
 
-    function test_RegularBorrowRepayWithBatch(address alice, address bob) public {
+    function test_RegularBorrowRepaxyWithBatch(address alice, address bob) public {
         vm.assume(alice != address(0) && bob != address(0) && !evc.haveCommonOwner(alice, bob));
         vm.assume(
             alice != address(evc) && alice != address(liabilityVault) && alice != address(collateralVault1)

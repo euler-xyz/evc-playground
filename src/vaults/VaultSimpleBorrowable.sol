@@ -44,16 +44,16 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @notice Returns the debt of an account.
     /// @param account The account to check.
     /// @return The debt of the account.
-    function debtOf(address account) public view virtual returns (uint256) {
-        return owed[account];
+    function debtOf(address account) public view virtual nonReentrantRO returns (uint256) {
+        return _debtOf(account);
     }
 
     /// @notice Returns the maximum amount that can be withdrawn by an owner.
     /// @dev This function is overridden to take into account the fact that some of the assets may be borrowed.
     /// @param owner The owner of the assets.
     /// @return The maximum amount that can be withdrawn.
-    function maxWithdraw(address owner) public view virtual override returns (uint256) {
-        uint256 totAssets = totalAssets();
+    function maxWithdraw(address owner) public view virtual override nonReentrantRO returns (uint256) {
+        uint256 totAssets = _totalAssets;
         uint256 ownerAssets = _convertToAssets(balanceOf[owner], false);
 
         return ownerAssets > totAssets ? totAssets : ownerAssets;
@@ -63,8 +63,8 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @dev This function is overridden to take into account the fact that some of the assets may be borrowed.
     /// @param owner The owner of the assets.
     /// @return The maximum amount that can be redeemed.
-    function maxRedeem(address owner) public view virtual override returns (uint256) {
-        uint256 totAssets = totalAssets();
+    function maxRedeem(address owner) public view virtual override nonReentrantRO returns (uint256) {
+        uint256 totAssets = _totalAssets;
         uint256 ownerShares = balanceOf[owner];
 
         return _convertToAssets(ownerShares, false) > totAssets ? _convertToShares(totAssets, false) : ownerShares;
@@ -121,7 +121,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @param account The account to check.
     /// @param collaterals The collaterals of the account.
     function doCheckAccountStatus(address account, address[] calldata collaterals) internal view virtual override {
-        uint256 liabilityAssets = debtOf(account);
+        uint256 liabilityAssets = _debtOf(account);
 
         if (liabilityAssets == 0) return;
 
@@ -147,7 +147,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     function disableController() external virtual override nonReentrant {
         // ensure that the account does not have any liabilities before disabling controller
         address msgSender = _msgSender();
-        if (debtOf(msgSender) == 0) {
+        if (_debtOf(msgSender) == 0) {
             EVCClient.disableController(msgSender);
         } else {
             revert OutstandingDebt();
@@ -296,8 +296,8 @@ contract VaultSimpleBorrowable is VaultSimple {
         (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
 
         return roundUp
-            ? assets.mulDivUp(totalSupply + 1, totalAssets() + currentTotalBorrowed + 1)
-            : assets.mulDivDown(totalSupply + 1, totalAssets() + currentTotalBorrowed + 1);
+            ? assets.mulDivUp(totalSupply + 1, _totalAssets + currentTotalBorrowed + 1)
+            : assets.mulDivDown(totalSupply + 1, _totalAssets + currentTotalBorrowed + 1);
     }
 
     /// @dev This function is overridden to take into account the fact that some of the assets may be borrowed.
@@ -305,15 +305,22 @@ contract VaultSimpleBorrowable is VaultSimple {
         (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
 
         return roundUp
-            ? shares.mulDivUp(totalAssets() + currentTotalBorrowed + 1, totalSupply + 1)
-            : shares.mulDivDown(totalAssets() + currentTotalBorrowed + 1, totalSupply + 1);
+            ? shares.mulDivUp(_totalAssets + currentTotalBorrowed + 1, totalSupply + 1)
+            : shares.mulDivDown(_totalAssets + currentTotalBorrowed + 1, totalSupply + 1);
+    }
+
+    /// @notice Returns the debt of an account.
+    /// @param account The account to check.
+    /// @return The debt of the account.
+    function _debtOf(address account) internal view virtual returns (uint256) {
+        return owed[account];
     }
 
     /// @notice Increases the owed amount of an account.
     /// @param account The account.
     /// @param assets The assets.
     function _increaseOwed(address account, uint256 assets) internal virtual {
-        owed[account] = debtOf(account) + assets;
+        owed[account] = _debtOf(account) + assets;
         totalBorrowed += assets;
     }
 
@@ -321,7 +328,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @param account The account.
     /// @param assets The assets.
     function _decreaseOwed(address account, uint256 assets) internal virtual {
-        owed[account] = debtOf(account) - assets;
+        owed[account] = _debtOf(account) - assets;
         totalBorrowed -= assets;
     }
 

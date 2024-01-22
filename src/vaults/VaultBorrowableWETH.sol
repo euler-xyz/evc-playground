@@ -41,7 +41,7 @@ contract VaultBorrowableWETH is VaultRegularBorrowable {
         createVaultSnapshot();
 
         // Check for rounding error since we round down in previewDeposit.
-        require((shares = previewDeposit(msg.value)) != 0, "ZERO_SHARES");
+        require((shares = _convertToShares(msg.value, false)) != 0, "ZERO_SHARES");
 
         // Wrap received ETH into WETH.
         weth.deposit{value: msg.value}();
@@ -78,7 +78,7 @@ contract VaultBorrowableWETH is VaultRegularBorrowable {
         }
 
         // Check for rounding error since we round down in previewRedeem.
-        require((assets = previewRedeem(shares)) != 0, "ZERO_ASSETS");
+        require((assets = _convertToAssets(shares, false)) != 0, "ZERO_ASSETS");
 
         receiver = getAccountOwner(receiver);
 

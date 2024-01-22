@@ -88,7 +88,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     /// @dev Reverts if the vault status check is deferred because the interest rate is calculated in the
     /// checkVaultStatus().
     /// @return The current interest rate.
-    function getInterestRate() external view returns (int256) {
+    function getInterestRate() external view nonReentrantRO returns (int256) {
         if (isVaultStatusCheckDeferred(address(this))) {
             revert VaultStatusCheckDeferred();
         }
@@ -99,28 +99,15 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     /// @notice Gets the collateral factor of a vault.
     /// @param vault The vault.
     /// @return The collateral factor.
-    function getCollateralFactor(ERC4626 vault) external view returns (uint256) {
+    function getCollateralFactor(ERC4626 vault) external view nonReentrantRO returns (uint256) {
         return collateralFactor[vault];
-    }
-
-    /// @notice Returns the debt of an account.
-    /// @dev This function is overridden to take into account the interest rate accrual.
-    /// @param account The account.
-    /// @return The debt of the account.
-    function debtOf(address account) public view virtual override returns (uint256) {
-        uint256 debt = owed[account];
-
-        if (debt == 0) return 0;
-
-        (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
-        return (debt * currentInterestAccumulator) / userInterestAccumulator[account];
     }
 
     /// @notice Checks the status of an account.
     /// @param account The account.
     /// @param collaterals The collaterals of the account.
     function doCheckAccountStatus(address account, address[] calldata collaterals) internal view virtual override {
-        if (debtOf(account) > 0) {
+        if (_debtOf(account) > 0) {
             (, uint256 liabilityValue, uint256 collateralValue) = _calculateLiabilityAndCollateral(account, collaterals);
 
             if (liabilityValue > collateralValue) {
@@ -216,7 +203,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         address account,
         address[] memory collaterals
     ) internal view returns (uint256 liabilityAssets, uint256 liabilityValue, uint256 collateralValue) {
-        liabilityAssets = debtOf(account);
+        liabilityAssets = _debtOf(account);
 
         // Calculate the value of the liability in terms of the reference asset
         liabilityValue = IPriceOracle(oracle).getQuote(liabilityAssets, address(asset), address(referenceAsset));
@@ -333,6 +320,19 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         userInterestAccumulator[account] = interestAccumulator;
     }
 
+    /// @notice Returns the debt of an account.
+    /// @dev This function is overridden to take into account the interest rate accrual.
+    /// @param account The account.
+    /// @return The debt of the account.
+    function _debtOf(address account) internal view virtual override returns (uint256) {
+        uint256 debt = owed[account];
+
+        if (debt == 0) return 0;
+
+        (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
+        return (debt * currentInterestAccumulator) / userInterestAccumulator[account];
+    }
+
     /// @notice Accrues interest.
     /// @return The current values of total borrowed and interest accumulator.
     function _accrueInterest() internal virtual override returns (uint256, uint256) {
@@ -373,7 +373,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     /// @notice Updates the interest rate.
     function _updateInterest() internal virtual override {
         uint256 borrowed = totalBorrowed;
-        uint256 poolAssets = totalAssets() + borrowed;
+        uint256 poolAssets = _totalAssets + borrowed;
 
         uint32 utilisation;
         if (poolAssets != 0) {
