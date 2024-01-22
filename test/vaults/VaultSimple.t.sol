@@ -7,6 +7,20 @@ import "solmate/test/utils/mocks/MockERC20.sol";
 import "evc/EthereumVaultConnector.sol";
 import "../../src/vaults/VaultSimple.sol";
 
+contract VaultSimpleWithYield is VaultSimple {
+    constructor(
+        IEVC _evc,
+        ERC20 _asset,
+        string memory _name,
+        string memory _symbol
+    ) VaultSimple(_evc, _asset, _name, _symbol) {}
+
+    function generateYield(MockERC20 underlying, uint256 assets) external nonReentrant {
+        underlying.mint(address(this), assets);
+        _totalAssets += assets;
+    }
+}
+
 contract VaultSimpleTest is DSTestPlus {
     IEVC evc;
     MockERC20 underlying;
@@ -18,12 +32,7 @@ contract VaultSimpleTest is DSTestPlus {
     function setUp() public {
         evc = new EthereumVaultConnector();
         underlying = new MockERC20("Mock Token", "TKN", 18);
-        vault = new VaultSimple(
-            evc,
-            underlying,
-            "Mock Token Vault",
-            "vTKN"
-        );
+        vault = new VaultSimpleWithYield(evc, underlying, "Mock Token Vault", "vTKN");
     }
 
     function invariantMetadata() public {
@@ -35,12 +44,7 @@ contract VaultSimpleTest is DSTestPlus {
     function testMetadata(address evcAddr, string calldata name, string calldata symbol) public {
         hevm.assume(evcAddr != address(0));
 
-        VaultSimple vlt = new VaultSimple(
-            IEVC(evcAddr),
-            underlying,
-            name,
-            symbol
-        );
+        VaultSimple vlt = new VaultSimple(IEVC(evcAddr), underlying, name, symbol);
         assertEq(vlt.name(), name);
         assertEq(vlt.symbol(), symbol);
         assertEq(address(vlt.asset()), address(underlying));
@@ -282,7 +286,7 @@ contract VaultSimpleTest is DSTestPlus {
             // Alice's share count stays the same but the underlying amount changes from 2000 to 3000.
             // Bob's share count stays the same but the underlying amount changes from 4000 to 6000.
             // Note: The assets are rounded down to the nearest integer.
-            underlying.mint(address(vault), mutationUnderlyingAmount);
+            VaultSimpleWithYield(address(vault)).generateYield(underlying, mutationUnderlyingAmount);
             assertEq(vault.totalSupply(), preMutationShareBal);
             assertEq(vault.totalAssets(), preMutationBal + mutationUnderlyingAmount);
             assertEq(vault.balanceOf(alice), aliceShareAmount);
@@ -337,7 +341,7 @@ contract VaultSimpleTest is DSTestPlus {
 
         // 6. Vault mutates by +3000 tokens
         // NOTE: Vault holds 17000 tokens.
-        underlying.mint(address(vault), mutationUnderlyingAmount);
+        VaultSimpleWithYield(address(vault)).generateYield(underlying, mutationUnderlyingAmount);
         assertEq(vault.totalAssets(), 17000);
         assertEq(vault.convertToAssets(vault.balanceOf(alice)), 6070);
         assertEq(vault.convertToAssets(vault.balanceOf(bob)), 10928);

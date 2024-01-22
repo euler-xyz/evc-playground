@@ -55,9 +55,8 @@ contract LightweightOrderOperatorTest is Test {
         // does not require any kind of authentication) and the evc operations
         // for the actual deposit. moreover, we can specify a tip that will be
         // paid to the operator when the order is executed.
-        LightweightOrderOperator.NonEVCBatchItem[] memory nonEVCItems = new LightweightOrderOperator.NonEVCBatchItem[](
-                1
-            );
+        LightweightOrderOperator.NonEVCBatchItem[] memory nonEVCItems =
+            new LightweightOrderOperator.NonEVCBatchItem[](1);
         nonEVCItems[0] = LightweightOrderOperator.NonEVCBatchItem({
             targetContract: address(conditionsEnforcer),
             data: abi.encodeWithSelector(

@@ -11,9 +11,39 @@ import "../utils/EVCClient.sol";
 /// correctly implement the controller release, vault status snapshotting and account/vaults
 /// status checks.
 abstract contract VaultBase is IVault, EVCClient {
+    error Reentrancy();
+
+    uint256 private constant REENTRANCY_UNLOCKED = 1;
+    uint256 private constant REENTRANCY_LOCKED = 2;
+
+    uint256 private reentrancyLock;
     bytes private snapshot;
 
-    constructor(IEVC _evc) EVCClient(_evc) {}
+    constructor(IEVC _evc) EVCClient(_evc) {
+        reentrancyLock = REENTRANCY_UNLOCKED;
+    }
+
+    /// @notice Prevents reentrancy
+    modifier nonReentrant() virtual {
+        if (reentrancyLock != REENTRANCY_UNLOCKED) {
+            revert Reentrancy();
+        }
+
+        reentrancyLock = REENTRANCY_LOCKED;
+
+        _;
+
+        reentrancyLock = REENTRANCY_UNLOCKED;
+    }
+
+    /// @notice Prevents read-only reentrancy (should be used for view functions)
+    modifier nonReentrantRO() virtual {
+        if (reentrancyLock != REENTRANCY_UNLOCKED) {
+            revert Reentrancy();
+        }
+
+        _;
+    }
 
     /// @notice Creates a snapshot of the vault state
     function createVaultSnapshot() internal {

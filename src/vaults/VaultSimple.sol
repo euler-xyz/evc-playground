@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.19;
 
-import "solmate/utils/ReentrancyGuard.sol";
 import "solmate/auth/Owned.sol";
 import "solmate/tokens/ERC4626.sol";
 import "solmate/utils/SafeTransferLib.sol";
@@ -14,9 +13,9 @@ import "./VaultBase.sol";
 /// @notice In this contract, the EVC is authenticated before any action that may affect the state of the vault or an
 /// account. This is done to ensure that if it's EVC calling, the account is correctly authorized. Unlike solmate,
 /// VaultSimple implementation prevents from share inflation attack by using virtual assets and shares. Look into
-/// Open-Zeppelin documentation for more details. This contract does not take the supply cap into account when
-/// calculating max deposit and max mint values.
-contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
+/// Open-Zeppelin documentation for more details. This vault implements internal balance tracking. This contract does
+/// not take the supply cap into account when calculating max deposit and max mint values.
+contract VaultSimple is VaultBase, Owned, ERC4626 {
     using SafeTransferLib for ERC20;
     using FixedPointMathLib for uint256;
 
@@ -25,6 +24,7 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     error SnapshotNotTaken();
     error SupplyCapExceeded();
 
+    uint256 internal _totalAssets;
     uint256 public supplyCap;
 
     constructor(
@@ -83,24 +83,26 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
     /// @notice Returns the total assets of the vault.
     /// @return The total assets.
     function totalAssets() public view virtual override returns (uint256) {
-        return asset.balanceOf(address(this));
+        return _totalAssets;
     }
 
     /// @notice Converts assets to shares.
     /// @dev That function is manipulable in its current form as it uses exact values. Considering that other vaults may
     /// rely on it, for a production vault, a manipulation resistant mechanism should be implemented.
+    /// @dev Considering that this function may be relied on by controller vaults, it's read-only re-entrancy protected.
     /// @param assets The assets to convert.
     /// @return The converted shares.
-    function convertToShares(uint256 assets) public view virtual override returns (uint256) {
+    function convertToShares(uint256 assets) public view virtual override nonReentrantRO returns (uint256) {
         return _convertToShares(assets, false);
     }
 
     /// @notice Converts shares to assets.
     /// @dev That function is manipulable in its current form as it uses exact values. Considering that other vaults may
     /// rely on it, for a production vault, a manipulation resistant mechanism should be implemented.
+    /// @dev Considering that this function may be relied on by controller vaults, it's read-only re-entrancy protected.
     /// @param shares The shares to convert.
     /// @return The converted assets.
-    function convertToAssets(uint256 shares) public view virtual override returns (uint256) {
+    function convertToAssets(uint256 shares) public view virtual override nonReentrantRO returns (uint256) {
         return _convertToAssets(shares, false);
     }
 
@@ -229,6 +231,8 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         // Need to transfer before minting or ERC777s could reenter.
         asset.safeTransferFrom(msgSender, address(this), assets);
 
+        _totalAssets += assets;
+
         _mint(receiver, shares);
 
         emit Deposit(msgSender, receiver, assets, shares);
@@ -252,6 +256,8 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
 
         // Need to transfer before minting or ERC777s could reenter.
         asset.safeTransferFrom(msgSender, address(this), assets);
+
+        _totalAssets += assets;
 
         _mint(receiver, shares);
 
@@ -292,6 +298,8 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
 
         asset.safeTransfer(receiver, assets);
 
+        _totalAssets -= assets;
+
         requireAccountAndVaultStatusCheck(owner);
     }
 
@@ -327,6 +335,8 @@ contract VaultSimple is VaultBase, ReentrancyGuard, Owned, ERC4626 {
         emit Withdraw(msgSender, receiver, owner, assets, shares);
 
         asset.safeTransfer(receiver, assets);
+
+        _totalAssets -= assets;
 
         requireAccountAndVaultStatusCheck(owner);
     }

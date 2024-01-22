@@ -12,6 +12,7 @@ contract SimpleConditionsEnforcer {
         LT, // Less than
         GE, // Greater than or equal to
         LE // Less than or equal to
+
     }
 
     /// @dev Error to be thrown when a condition is not met.

@@ -32,6 +32,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
 
     error InvalidCollateralFactor();
     error SelfLiquidation();
+    error VaultStatusCheckDeferred();
     error ViolatorStatusCheckDeferred();
     error NoLiquidationOpportunity();
     error RepayAssetsInsufficient();
@@ -84,8 +85,14 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     }
 
     /// @notice Gets the current interest rate of the vault.
+    /// @dev Reverts if the vault status check is deferred because the interest rate is calculated in the
+    /// checkVaultStatus().
     /// @return The current interest rate.
     function getInterestRate() external view returns (int256) {
+        if (isVaultStatusCheckDeferred(address(this))) {
+            revert VaultStatusCheckDeferred();
+        }
+
         return int256(interestRate);
     }
 

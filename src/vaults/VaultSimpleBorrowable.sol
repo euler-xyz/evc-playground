@@ -173,6 +173,8 @@ contract VaultSimpleBorrowable is VaultSimple {
 
         asset.safeTransfer(receiver, assets);
 
+        _totalAssets -= assets;
+
         requireAccountAndVaultStatusCheck(msgSender);
     }
 
@@ -194,6 +196,8 @@ contract VaultSimpleBorrowable is VaultSimple {
         require(assets != 0, "ZERO_ASSETS");
 
         asset.safeTransferFrom(msgSender, address(this), assets);
+
+        _totalAssets += assets;
 
         _decreaseOwed(receiver, assets);
 

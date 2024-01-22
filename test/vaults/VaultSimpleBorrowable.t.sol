@@ -14,12 +14,7 @@ contract VaultSimpleBorrowableTest is Test {
     function setUp() public {
         evc = new EthereumVaultConnector();
         asset = new MockERC20("Asset", "ASS", 18);
-        vault = new VaultSimpleBorrowable(
-            evc,
-            asset,
-            "Asset Vault",
-            "vASS"
-        );
+        vault = new VaultSimpleBorrowable(evc, asset, "Asset Vault", "vASS");
     }
 
     function test_SimpleBorrowRepay(address alice, uint128 randomAmount) public {

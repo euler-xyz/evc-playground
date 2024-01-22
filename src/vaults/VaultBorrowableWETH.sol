@@ -46,6 +46,8 @@ contract VaultBorrowableWETH is VaultRegularBorrowable {
         // Wrap received ETH into WETH.
         weth.deposit{value: msg.value}();
 
+        _totalAssets += msg.value;
+
         _mint(receiver, shares);
 
         emit Deposit(msgSender, receiver, msg.value, shares);
@@ -89,6 +91,8 @@ contract VaultBorrowableWETH is VaultRegularBorrowable {
 
         (bool sent,) = receiver.call{value: assets}("");
         require(sent, "Failed to send Ether");
+
+        _totalAssets -= assets;
 
         requireAccountAndVaultStatusCheck(owner);
     }

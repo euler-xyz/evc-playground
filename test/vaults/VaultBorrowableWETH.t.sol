@@ -20,15 +20,8 @@ contract VaultBorrowableWETHTest is Test {
         irm = new IRMMock();
         oracle = new PriceOracleMock();
 
-        vault = new VaultBorrowableWETH(
-            evc,
-            ERC20(address(weth)),
-            irm,
-            oracle,
-            ERC20(address(0)),
-            "WETH VAULT",
-            "VWETH"
-        );
+        vault =
+            new VaultBorrowableWETH(evc, ERC20(address(weth)), irm, oracle, ERC20(address(0)), "WETH VAULT", "VWETH");
     }
 
     function test_depositAndWithdraw(address alice, uint128 amount) public {

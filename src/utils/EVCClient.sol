@@ -179,6 +179,13 @@ abstract contract EVCClient {
         return evc.isAccountStatusCheckDeferred(account);
     }
 
+    /// @notice Checks whether the status check is deferred for a given vault.
+    /// @param vault The address of the vault.
+    /// @return A boolean flag that indicates whether the status check is deferred.
+    function isVaultStatusCheckDeferred(address vault) internal view returns (bool) {
+        return evc.isVaultStatusCheckDeferred(vault);
+    }
+
     /// @notice Liquidates a certain amount of collateral shares from a violator's vault.
     /// @dev This function controls the collateral in order to transfers the specified amount of shares from the
     /// violator's vault to the liquidator.
