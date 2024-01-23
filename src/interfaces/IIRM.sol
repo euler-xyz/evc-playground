@@ -8,5 +8,5 @@ interface IIRM {
     /// @param asset The address of the asset.
     /// @param utilisation The utilisation rate.
     /// @return The computed interest rate in SPY (Second Percentage Yield).
-    function computeInterestRate(address vault, address asset, uint32 utilisation) external returns (int96);
+    function computeInterestRate(address vault, address asset, uint32 utilisation) external returns (uint96);
 }

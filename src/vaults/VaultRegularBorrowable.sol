@@ -17,7 +17,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     uint256 internal constant TARGET_HEALTH_FACTOR = 125;
     uint256 internal constant ONE = 1e27;
 
-    int96 internal interestRate;
+    uint96 internal interestRate;
     uint256 internal lastInterestUpdate;
     uint256 internal interestAccumulator;
     mapping(address account => uint256) internal userInterestAccumulator;
@@ -88,12 +88,12 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     /// @dev Reverts if the vault status check is deferred because the interest rate is calculated in the
     /// checkVaultStatus().
     /// @return The current interest rate.
-    function getInterestRate() external view nonReentrantRO returns (int256) {
+    function getInterestRate() external view nonReentrantRO returns (uint256) {
         if (isVaultStatusCheckDeferred(address(this))) {
             revert VaultStatusCheckDeferred();
         }
 
-        return int256(interestRate);
+        return interestRate;
     }
 
     /// @notice Gets the collateral factor of a vault.
@@ -360,10 +360,8 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
             return (oldTotalBorrowed, oldInterestAccumulator, false);
         }
 
-        uint256 newInterestAccumulator = (
-            FixedPointMathLib.rpow(uint256(int256(interestRate) + int256(ONE)), timeElapsed, ONE)
-                * oldInterestAccumulator
-        ) / ONE;
+        uint256 newInterestAccumulator =
+            (FixedPointMathLib.rpow(uint256(interestRate) + ONE, timeElapsed, ONE) * oldInterestAccumulator) / ONE;
 
         uint256 newTotalBorrowed = (oldTotalBorrowed * newInterestAccumulator) / oldInterestAccumulator;
 
