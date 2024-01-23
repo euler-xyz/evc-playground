@@ -120,10 +120,10 @@ This will download foundryup. To start Foundry, run:
 foundryup
 ```
 
-To clone the repo:
+To clone the repo and install dependencies:
 
 ```sh
-git clone https://github.com/euler-xyz/evc-playground.git && cd evc-playground
+git clone https://github.com/euler-xyz/evc-playground.git && cd evc-playground && forge install
 ```
 
 ## Testing
