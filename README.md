@@ -150,13 +150,13 @@ It should contain the following environment variables:
 Load the variables in the `.env` file and spin up a local anvil fork:
 
 ```sh
-source .env && anvil --fork-url $RPC_URL --mnemonic $MNEMONIC
+source .env && anvil --fork-url "$RPC_URL" --mnemonic "$MNEMONIC"
 ```
 
 In different terminal window, deploy the contracts:
 
 ```sh
-source .env && forge script script/01_Deployment.s.sol:Deployment --rpc-url $ANVIL_RPC_URL --broadcast
+source .env && forge script script/01_Deployment.s.sol:Deployment --rpc-url "$ANVIL_RPC_URL" --broadcast
 ```
 
 If deployment successful, the addresses of all the deployed contracts should be console logged in the Logs section.
