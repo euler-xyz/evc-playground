@@ -31,7 +31,8 @@ struct ERC4626VaultInfo {
     uint256 totalShares;
     uint256 totalAssets;
     uint256 totalBorrowed;
-    uint256 interestRate;
+    uint256 interestRateSPY;
+    uint256 interestRateAPY;
     address irm;
     address oracle;
 }
