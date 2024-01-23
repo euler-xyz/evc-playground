@@ -134,6 +134,33 @@ To run the tests:
 forge test
 ```
 
+## Deployment on a local anvil fork
+
+First, create the `.env` file in the root directory of the repository by copying `.env.example`:
+
+```sh
+cp .env.example .env
+```
+
+It should contain the following environment variables:
+- `ANVIL_RPC_URL="http://127.0.0.1:8545"` (the default address and port of the anvil fork)
+- `RPC_URL` (remote endpoint from which the state will be fetched)
+- `MNEMONIC` (the mnemonic to be used to generate the accounts. the deployer address will be the first address derived from it. the deployer will become an owner of all the deployed ownable contracts and will additionally be minted some test tokens)
+
+Load the variables in the `.env` file and spin up a local anvil fork:
+
+```sh
+source .env && anvil --fork-url $RPC_URL --mnemonic $MNEMONIC
+```
+
+In different terminal window, deploy the contracts:
+
+```sh
+source .env && forge script script/01_Deployment.s.sol:Deployment --rpc-url $ANVIL_RPC_URL --broadcast
+```
+
+If deployment successful, the addresses of all the deployed contracts should be console logged in the Logs section.
+
 ## Safety and Limitations
 
 This software is experimental and is provided "as is" and "as available". No warranties are provided, and no liability will be assumed for any loss incurred through the use of this codebase.
