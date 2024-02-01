@@ -44,7 +44,7 @@ This repository serves as a sandbox for exploring the EVC. It includes various e
 
 If you're interested in building a vault that is interoperable with the EVC, you should start by looking at the [EVCClient](/src/utils/EVCClient.sol) contract and the contracts in the [vaults directory](/src/vaults).
 
-The `EVCClient` contract is an abstract base contract for interacting with the EVC. It provides utility functions for authenticating callers in the context of the EVC, scheduling and forgiving status checks, and liquidating collateral shares.
+The `EVCClient` contract is an abstract base contract for interacting with the EVC. It inherits from [`EVCUtil`](https://github.com/euler-xyz/ethereum-vault-connector/blob/master/src/utils/EVCUtil.sol) contract and provides utility functions for authenticating callers in the context of the EVC, scheduling and forgiving status checks, and liquidating collateral shares.
 
 The `VaultBase` is an abstract base contract that all EVC-interoperable vaults inherit from. It provides standard modifiers for reentrancy protection and account/vault status checks scheduling. It declares functions that must be defined in the child contract in order to correctly implement controller release, vault snapshotting and account/vaults status checks.
 
@@ -54,7 +54,7 @@ The `VaultSimpleBorrowable` contract is a simple vault that extents the `VaultSi
 
 The `VaultRegularBorrowable` contract is a vault that extends the `VaultSimpleBorrowable` functionality by adding recognized collaterals, price oracle integration and interest accrual. It implements a simple liquidation pattern that showcases the EVC's `controlCollateral` functionality that is used in order to seize violator's collateral shares.
 
-The `VaultBorrowableWETH` contract is a vault that extends the `VaultRegularBorrowable` functionality by adding a special function for handling ETH deposits into a WETH vault. It showcases EVC `callback` functionality for a `payable` function.
+The `VaultBorrowableWETH` contract is a vault that extends the `VaultRegularBorrowable` functionality by adding a special function for handling ETH deposits into a WETH vault. It showcases EVC `call` callback pattern for a `payable` function.
 
 Areas of experimentation for vaults:
 1. Real World Assets (RWA) lending
