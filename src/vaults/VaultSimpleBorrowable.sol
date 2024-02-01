@@ -165,7 +165,7 @@ contract VaultSimpleBorrowable is VaultSimple {
         require(assets != 0, "ZERO_ASSETS");
 
         // users might input an EVC subaccount, in which case we want to send tokens to the owner
-        receiver = getAccountOwner(receiver);
+        receiver = _getAccountOwner(receiver);
 
         _increaseOwed(msgSender, assets);
 

@@ -100,7 +100,7 @@ contract VaultRegularBorrowableTest is Test {
 
         // controller and collateral not enabled, hence borrow unsuccessful
         vm.prank(bob);
-        vm.expectRevert(abi.encodeWithSelector(EVCClient.ControllerDisabled.selector));
+        vm.expectRevert(abi.encodeWithSelector(EVCUtil.ControllerDisabled.selector));
         liabilityVault.borrow(35e18, bob);
 
         vm.prank(bob);

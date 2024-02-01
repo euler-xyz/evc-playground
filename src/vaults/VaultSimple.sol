@@ -290,7 +290,7 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
             }
         }
 
-        receiver = getAccountOwner(receiver);
+        receiver = _getAccountOwner(receiver);
 
         _burn(owner, shares);
 
@@ -328,7 +328,7 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
         // Check for rounding error since we round down in previewRedeem.
         require((assets = _convertToAssets(shares, false)) != 0, "ZERO_ASSETS");
 
-        receiver = getAccountOwner(receiver);
+        receiver = _getAccountOwner(receiver);
 
         _burn(owner, shares);
 

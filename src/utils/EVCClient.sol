@@ -3,109 +3,16 @@
 pragma solidity ^0.8.19;
 
 import "solmate/tokens/ERC20.sol";
-import "evc/interfaces/IEthereumVaultConnector.sol";
+import "evc/utils/EVCUtil.sol";
 
 /// @title EVCClient
 /// @dev This contract is an abstract base contract for interacting with the Ethereum Vault Connector (EVC).
 /// It provides utility functions for authenticating callers in the context of the EVC,
 /// scheduling and forgiving status checks, and liquidating collateral shares.
-abstract contract EVCClient {
-    IEVC private immutable evc;
-
-    error NotAuthorized();
-    error ControllerDisabled();
+abstract contract EVCClient is EVCUtil {
     error SharesSeizureFailed();
 
-    constructor(IEVC _evc) {
-        require(address(_evc) != address(0), "EVCClient: EVC address cannot be zero");
-
-        evc = _evc;
-    }
-
-    /// @notice Ensures that the caller is the EVC in the appropriate context.
-    modifier onlyEVCWithChecksInProgress() {
-        if (msg.sender != address(evc) || !evc.areChecksInProgress()) {
-            revert NotAuthorized();
-        }
-
-        _;
-    }
-
-    /// @notice Ensures that the msg.sender is the EVC by using the EVC callback functionality if necessary.
-    modifier callThroughEVC() {
-        if (msg.sender == address(evc)) {
-            _;
-        } else {
-            bytes memory result = evc.call(address(this), msg.sender, 0, msg.data);
-
-            assembly {
-                return(add(32, result), mload(result))
-            }
-        }
-    }
-
-    /// @notice Ensures that the msg.sender is the EVC by using the EVC callback functionality if necessary.
-    /// @dev This modifier is used for payable functions because it forwards the value to the EVC.
-    modifier callThroughEVCPayable() {
-        if (msg.sender == address(evc)) {
-            _;
-        } else {
-            bytes memory result = evc.call{value: msg.value}(address(this), msg.sender, msg.value, msg.data);
-
-            assembly {
-                return(add(32, result), mload(result))
-            }
-        }
-    }
-
-    /// @notice Retrieves the message sender in the context of the EVC.
-    /// @dev This function returns the account on behalf of which the current operation is being performed, which is
-    /// either msg.sender or the account authenticated by the EVC.
-    /// @return The address of the message sender.
-    function _msgSender() internal view returns (address) {
-        address sender = msg.sender;
-
-        if (sender == address(evc)) {
-            (sender,) = evc.getCurrentOnBehalfOfAccount(address(0));
-        }
-
-        return sender;
-    }
-
-    /// @notice Retrieves the message sender in the context of the EVC for a borrow operation.
-    /// @dev This function returns the account on behalf of which the current operation is being performed, which is
-    /// either msg.sender or the account authenticated by the EVC. This function reverts if the vault is not enabled as
-    /// a controller for the account on behalf of which the operation is being executed.
-    /// @return The address of the message sender.
-    function _msgSenderForBorrow() internal view returns (address) {
-        address sender = msg.sender;
-        bool controllerEnabled;
-
-        if (sender == address(evc)) {
-            (sender, controllerEnabled) = evc.getCurrentOnBehalfOfAccount(address(this));
-        } else {
-            controllerEnabled = evc.isControllerEnabled(sender, address(this));
-        }
-
-        if (!controllerEnabled) {
-            revert ControllerDisabled();
-        }
-
-        return sender;
-    }
-
-    /// @notice Retrieves the owner of an account.
-    /// @dev Use with care. If the account is not registered on the EVC yet, the account address is returned as the
-    /// owner.
-    /// @param account The address of the account.
-    /// @return owner The address of the account owner.
-    function getAccountOwner(address account) internal view returns (address owner) {
-        try evc.getAccountOwner(account) returns (address _owner) {
-            owner = _owner;
-        } catch {
-            owner = account;
-        }
-    }
+    constructor(IEVC _evc) EVCUtil(_evc) {}
 
     /// @notice Retrieves the collaterals enabled for an account.
     /// @param account The address of the account.
