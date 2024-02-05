@@ -14,16 +14,16 @@ abstract contract DefaultBeforeAfterHooks is BaseTest {
     using Pretty for int256;
     using Pretty for bool;
 
-    struct FtVars {
+    struct Vars {
         uint256 balanceBefore;
         uint256 balanceAfter;
     }
 
-    FtVars ftVars;
+    Vars vars;
 
-    function _beforeFT() internal {
+    function _before() internal {
     }
 
-    function _afterFT() internal {
+    function _after() internal {
     }
 }

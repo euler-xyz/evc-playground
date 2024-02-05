@@ -3,4 +3,6 @@ pragma solidity ^0.8.19;
 
 /// @title ProtocolAssertions
 /// @notice Helper contract for protocol specific assertions
-contract ProtocolAssertions {}
+contract ProtocolAssertions {
+//TODO: abstract repeated protocol assertions here
+}

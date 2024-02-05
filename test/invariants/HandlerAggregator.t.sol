@@ -1,13 +1,19 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-// Import Handler contracts,
-import {DefaultHandler} from "./handlers/DefaultHandler.t.sol";
+// Handler Contracts
+import {VaultSimpleHandler} from "./handlers/VaultSimpleHandler.t.sol";
+import {VaultSimpleBorrowableHandler} from "./handlers/VaultSimpleBorrowableHandler.t.sol";
+import {VaultRegularBorrowableHandler} from "./handlers/VaultRegularBorrowableHandler.t.sol";
+import {VaultBorrowableETHHandler} from "./handlers/VaultBorrowableETHHandler.t.sol";
 
 /// @notice Helper contract to aggregate all handler contracts, inherited in BaseInvariants
-abstract contract HandlerAggregator is DefaultHandler
+abstract contract HandlerAggregator is
+    VaultSimpleHandler,
+    VaultSimpleBorrowableHandler,
+    VaultRegularBorrowableHandler,
+    VaultBorrowableETHHandler
 {
     /// @notice Helper function in case any handler requires additional setup
-    function _setUpHandlers() internal {
-    }
+    function _setUpHandlers() internal {}
 }

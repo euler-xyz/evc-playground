@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+// Interfaces
 import {IERC20} from "forge-std/interfaces/IERC20.sol";
 
-/// @notice Proxy contract for invariant suite actors to avoid aTester calling contracts
+/// @title Actor
+/// @notice Proxy contract for invariant suite actors to avoid Tester calling contracts
+/// @dev This expands the flexibility of the invariant suite
 contract Actor {
     /// @notice list of tokens to approve
     address[] internal tokens;

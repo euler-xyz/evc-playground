@@ -7,4 +7,4 @@ echidna-assert:
 
 # Medusa
 medusa:
-	medusa fuzz --config ./test/invariants/_config/medusa.json
+	medusa fuzz

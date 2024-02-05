@@ -5,7 +5,7 @@
 		"timeout": 0,
 		"testLimit": 0,
 		"callSequenceLength": 100,
-		"corpusDirectory": "../_corpus/medusa",
+		"corpusDirectory": "test/invariants/_corpus/medusa",
 		"coverageEnabled": true,
 		"deploymentOrder": [
 			"TesterMedusa"
@@ -71,12 +71,12 @@
 	"compilation": {
 		"platform": "crytic-compile",
 		"platformConfig": {
-			"target": "../TesterMedusa.t.sol",
+			"target": "test/invariants/TesterMedusa.t.sol",
 			"solcVersion": "",
 			"exportDirectory": "",
 			"args": [
 				"--solc-remaps",
-				"@crytic/properties/=../../../lib/properties/ forge-std/=../../../lib/forge-std/src/ ds-test/=../../../lib/forge-std/lib/ds-test/src/",
+				"@crytic/properties/=lib/properties/ forge-std/=lib/forge-std/src/ ds-test/=lib/forge-std/lib/ds-test/src/",
 				"--compile-libraries=(Pretty,0xf01),(Strings,0xf02)"
 			]
 		}

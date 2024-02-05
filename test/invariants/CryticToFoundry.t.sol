@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+// Libraries
 import "forge-std/Test.sol";
+
+// Test Contracts
 import {Invariants} from "./Invariants.t.sol";
 import {Setup} from "./Setup.t.sol";
 
-
-/*
- * Test suite that converts from  "fuzz tests" to foundry "unit tests"
- * The objective is to go from random values to hardcoded values that can be analyzed more easily
- */
+/// @title CryticToFoundry
+/// @notice Foundry wrapper for fuzzer failed call sequences
+/// @dev Regression testing for failed call sequences
 contract CryticToFoundry is Invariants, Setup {
     modifier setup() override {
         _;
