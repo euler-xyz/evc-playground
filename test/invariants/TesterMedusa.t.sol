@@ -13,8 +13,16 @@ contract TesterMedusa is Invariants, Setup {
         /// @dev since medusa does not support initial balances yet, we need to deal some tokens to the contract
         vm.deal(address(this), 1e26 ether);
 
+        setUp();
+    }
+
+    /// @dev Foundry compatibility faster setup debugging
+    function setUp() internal {
         // Deploy protocol contracts and protocol actors
         _setUp();
+
+        // Deploy actors
+        _setUpActors();
 
         // Initialize handler contracts
         _setUpHandlers();

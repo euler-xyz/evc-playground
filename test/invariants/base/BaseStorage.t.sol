@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+// Libraries
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
+
 // Contracts
 import {VaultSimple} from "src/vaults/VaultSimple.sol";
 import {VaultSimpleBorrowable} from "src/vaults/VaultSimpleBorrowable.sol";
 import {VaultRegularBorrowable} from "src/vaults/VaultRegularBorrowable.sol";
 import {VaultBorrowableWETH} from "src/vaults/VaultBorrowableWETH.sol";
+
+// Interfaces
+import {IEVC} from "evc/interfaces/IEthereumVaultConnector.sol";
 
 // Utils
 import {Actor} from "../utils/Actor.sol";
@@ -46,7 +52,7 @@ abstract contract BaseStorage {
     //                                       SUITE STORAGE                                       //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    //  VAULT CONTRACTS: HANDLERS' TARGETS
+    //  VAULT CONTRACTS
 
     /// @notice VaultSimple contract
     VaultSimple internal vaultSimple;
@@ -60,6 +66,24 @@ abstract contract BaseStorage {
     /// @notice VaultBorrowableETH contract
     VaultBorrowableWETH internal vaultBorrowableWETH;
 
+    /// @notice Enum for vault types, used to limit accesses to vaults array by complexity
+    enum VaultType {
+        Simple,
+        SimpleBorrowable,
+        RegularBorrowable,
+        BorrowableWETH
+    }
+
     /// @notice Array of all vaults, sorted from most simple to most complex, for modular testing
     address[] internal vaults;
+
+    // EVC
+
+    /// @notice EVC contract
+    IEVC internal evc;
+
+    // MOCK TOKENS
+
+    /// @notice MockERC20 contract
+    MockERC20 internal underlying;
 }

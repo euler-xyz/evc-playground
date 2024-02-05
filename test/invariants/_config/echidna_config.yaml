@@ -45,7 +45,7 @@ corpusDir: "test/invariants/_corpus/echidna/default/_data/corpus"
 #mutConsts: [100, 1, 1]
 
 #remappings
-cryticArgs: ["--solc-remaps", "@crytic/properties/=lib/properties/ forge-std/=lib/forge-std/src/ ds-test/=lib/forge-std/lib/ds-test/src/", "--compile-libraries=(Pretty,0xf01),(Strings,0xf02)"]
+cryticArgs: ["--solc-remaps", "@crytic/properties/=lib/properties/ forge-std/=lib/forge-std/src/ ds-test/=lib/forge-std/lib/ds-test/src/ evc/=lib/ethereum-vault-connector/src/ solmate/=lib/solmate/src/ openzeppelin/=lib/openzeppelin-contracts/contracts/", "--compile-libraries=(Pretty,0xf01),(Strings,0xf02)"]
 
 deployContracts: [["0xf01", "Pretty"], ["0xf02", "Strings"]]
 
