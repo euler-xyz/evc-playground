@@ -77,6 +77,10 @@ abstract contract BaseStorage {
     /// @notice Array of all vaults, sorted from most simple to most complex, for modular testing
     address[] internal vaults;
 
+    /// @notice Used in handlers, sets the upper limit index af the vaults array that the property will be tested
+    /// against
+    uint256 internal limitVault;
+
     // EVC
 
     /// @notice EVC contract

@@ -23,10 +23,18 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
     //                                   ACTOR PROXY MECHANISM                                   //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+    /// @dev Actor proxy mechanism
     modifier setup() virtual {
         actor = actors[msg.sender];
         _;
         actor = Actor(payable(address(0)));
+    }
+
+    /// @dev sets the upper limit index af the vaults array that the property will be tested against
+    modifier targetsVaultsUpTo(VaultType _vaultType) {
+        limitVault = uint256(_vaultType);
+        _;
+        limitVault = 0;
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
