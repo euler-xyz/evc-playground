@@ -20,16 +20,6 @@ contract VaultSimpleHandler is BaseHandler, DefaultBeforeAfterHooks {
      */
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    //                                       GHOST VARAIBLES                                     //
-    ///////////////////////////////////////////////////////////////////////////////////////////////
-
-    /// @notice Sum of all balances in the vault
-    uint256 public vaultSimple_ghost_sumBalances;
-
-    /// @notice Sum of all balances per user in the vault
-    mapping(address => uint256) public vaultSimple_ghost_sumBalancesPerUser;
-
-    ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                           ACTIONS                                         //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -46,8 +36,8 @@ contract VaultSimpleHandler is BaseHandler, DefaultBeforeAfterHooks {
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.deposit.selector, assets, receiver));
 
         if (success) {
-            vaultSimple_ghost_sumBalances += assets;
-            vaultSimple_ghost_sumBalancesPerUser[address(actor)] += assets;
+            ghost_sumBalances[vaultAddress] += assets;
+            ghost_sumBalancesPerUser[vaultAddress][address(actor)] += assets;
         }
     }
 
@@ -66,8 +56,8 @@ contract VaultSimpleHandler is BaseHandler, DefaultBeforeAfterHooks {
         uint256 assets = abi.decode(returnData, (uint256));
 
         if (success) {
-            vaultSimple_ghost_sumBalances += assets;
-            vaultSimple_ghost_sumBalancesPerUser[address(actor)] += assets;
+            ghost_sumBalances[vaultAddress] += assets;
+            ghost_sumBalancesPerUser[vaultAddress][address(actor)] += assets;
         }
     }
 
@@ -84,8 +74,8 @@ contract VaultSimpleHandler is BaseHandler, DefaultBeforeAfterHooks {
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.withdraw.selector, assets, receiver));
 
         if (success) {
-            vaultSimple_ghost_sumBalances -= assets;
-            vaultSimple_ghost_sumBalancesPerUser[address(actor)] -= assets;
+            ghost_sumBalances[vaultAddress] -= assets;
+            ghost_sumBalancesPerUser[vaultAddress][address(actor)] -= assets;
         }
     }
 
@@ -104,8 +94,8 @@ contract VaultSimpleHandler is BaseHandler, DefaultBeforeAfterHooks {
         uint256 assets = abi.decode(returnData, (uint256));
 
         if (success) {
-            vaultSimple_ghost_sumBalances -= assets;
-            vaultSimple_ghost_sumBalancesPerUser[address(actor)] -= assets;
+            ghost_sumBalances[vaultAddress] -= assets;
+            ghost_sumBalancesPerUser[vaultAddress][address(actor)] -= assets;
         }
     }
 

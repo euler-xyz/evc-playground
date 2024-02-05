@@ -10,6 +10,16 @@ import {BaseStorage, VaultSimple} from "../base/BaseStorage.t.sol";
 /// @dev inherits all suite assertions since per-action assertions are implemented in the handlers
 contract BaseHandler is ProtocolAssertions {
     ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                       SHARED VARAIBLES                                     //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /// @notice Sum of all balances in the vault
+    mapping(address => uint256) public ghost_sumBalances;
+
+    /// @notice Sum of all balances per user in the vault
+    mapping(address => mapping(address => uint256)) public ghost_sumBalancesPerUser;
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      HELPERS                                              //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 

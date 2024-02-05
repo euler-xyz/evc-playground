@@ -40,9 +40,11 @@ contract Setup is BaseTest {
         /// this helps with property inheritance and modularity
         vaultSimple = new VaultSimple(evc, underlying, "VaultSimple", "VS");
         vaults.push(address(vaultSimple));
+        vaultNames[address(vaultSimple)] = "VaultSimple";
 
         vaultSimpleBorrowable = new VaultSimpleBorrowable(evc, underlying, "VaultSimpleBorrowable", "VSB");
         vaults.push(address(vaultSimpleBorrowable));
+        vaultNames[address(vaultSimpleBorrowable)] = "VaultSimpleBorrowable";
 
         //vaultRegularBorrowable = new VaultRegularBorrowable(evc, underlying, "VaultRegularBorrowable", "VRB");
         //vaults.push(address(vaultRegularBorrowable));

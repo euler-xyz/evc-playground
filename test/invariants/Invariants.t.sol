@@ -25,18 +25,16 @@ abstract contract Invariants is
     //                                 BASE INVARIANTS                                           //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    /*  
-    E.g. of an invariant wrapper recognized by Echidna and Medusa
-
-    function echidna_invariant_Area1_A() public returns (bool) {
-        assert_invariant_Area1_A(pool.owner());
-        return true;
-    } 
-    */
-
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                 VAULT SIMPLE INVARIANTS                                   //
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    function echidna_invariant_VaultSimple_invariantA() public targetVaultsFrom(VaultType.Simple) returns (bool) {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            assert_VaultSimple_invariantA(vaults[i]);
+        }
+        return true;
+    }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                            VAULT SIMPLE BORROWABLE INVARIANTS                             //

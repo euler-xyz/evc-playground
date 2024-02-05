@@ -77,6 +77,9 @@ abstract contract BaseStorage {
     /// @notice Array of all vaults, sorted from most simple to most complex, for modular testing
     address[] internal vaults;
 
+    /// @notice refencer to the vault in order to ease debugging broken invariants
+    mapping(address => string) internal vaultNames;
+
     /// @notice Used in handlers, sets the upper limit index af the vaults array that the property will be tested
     /// against
     uint256 internal limitVault;

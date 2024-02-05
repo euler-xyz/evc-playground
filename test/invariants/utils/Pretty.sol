@@ -3,18 +3,15 @@ pragma solidity ^0.8.19;
 
 ///@notice https://github.com/one-hundred-proof/kyberswap-exploit/blob/main/lib/helpers/Pretty.sol
 library Strings {
-    function concat(
-        string memory _base,
-        string memory _value
-    ) internal pure returns (string memory) {
+    function concat(string memory _base, string memory _value) internal pure returns (string memory) {
         bytes memory _baseBytes = bytes(_base);
         bytes memory _valueBytes = bytes(_value);
 
         string memory _tmpValue = new string(_baseBytes.length + _valueBytes.length);
         bytes memory _newValue = bytes(_tmpValue);
 
-        uint i;
-        uint j;
+        uint256 i;
+        uint256 j;
 
         for (i = 0; i < _baseBytes.length; i++) {
             _newValue[j++] = _baseBytes[i];
@@ -40,10 +37,9 @@ library Pretty {
     }
 
     function pretty(uint256 n) external pure returns (string memory) {
-        return
-            n == type(uint256).max ? "type(uint256).max" : n == type(uint128).max
-                ? "type(uint128).max"
-                : _pretty(n, DEFAULT_DECIMALS);
+        return n == type(uint256).max
+            ? "type(uint256).max"
+            : n == type(uint128).max ? "type(uint128).max" : _pretty(n, DEFAULT_DECIMALS);
     }
 
     function pretty(bool value) external pure returns (string memory) {
