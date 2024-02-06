@@ -36,6 +36,13 @@ abstract contract Invariants is
         return true;
     }
 
+    function echidna_invariant_VaultSimple_invariantB() public targetVaultsFrom(VaultType.Simple) returns (bool) {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            assert_VaultSimple_invariantB(vaults[i]);
+        }
+        return true;
+    }
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                            VAULT SIMPLE BORROWABLE INVARIANTS                             //
     ///////////////////////////////////////////////////////////////////////////////////////////////

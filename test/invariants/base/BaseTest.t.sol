@@ -46,8 +46,17 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
 
     Vm internal constant vm = Vm(VM_ADDRESS);
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                          HELPERS                                          //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
     function _makeAddr(string memory name) internal pure returns (address addr) {
         uint256 privateKey = uint256(keccak256(abi.encodePacked(name)));
         addr = vm.addr(privateKey);
+    }
+
+    function _getRandomActor(uint256 _i) internal view returns (address) {
+        uint256 _actorIndex = _i % NUMBER_OF_ACTORS;
+        return actorAddresses[_actorIndex];
     }
 }

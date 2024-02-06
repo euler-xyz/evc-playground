@@ -19,6 +19,12 @@ contract BaseHandler is ProtocolAssertions {
     /// @notice Sum of all balances per user in the vault
     mapping(address => mapping(address => uint256)) public ghost_sumBalancesPerUser;
 
+    /// @notice Sum of all shares balances in the vault
+    mapping(address => uint256) public ghost_sumSharesBalances;
+
+    /// @notice Sum of all shares balances per user in the vault
+    mapping(address => mapping(address => uint256)) public ghost_sumSharesBalancesPerUser;
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      HELPERS                                              //
     ///////////////////////////////////////////////////////////////////////////////////////////////

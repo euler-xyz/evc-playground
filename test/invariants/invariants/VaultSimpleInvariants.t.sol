@@ -17,11 +17,20 @@ abstract contract VaultSimpleInvariants is HandlerAggregator {
 
     VaultSimple
     Invariant A: totalAssets = sum of all balances
-    
+    Invariant B: totalSupply = sum of all minted shares
+
+    */
+
     /////////////////////////////////////////////////////////////////////////////////////////////*/
 
     function assert_VaultSimple_invariantA(address _vault) internal {
-        uint256 totalSupply = VaultSimple(_vault).totalAssets();
+        uint256 totalAssets = VaultSimple(_vault).totalAssets();
+
+        assertEq(totalAssets, ghost_sumBalances[_vault], vaultNames[_vault]);
+    }
+
+    function assert_VaultSimple_invariantB(address _vault) internal {
+        uint256 totalSupply = VaultSimple(_vault).totalSupply();
 
         assertEq(totalSupply, ghost_sumBalances[_vault], vaultNames[_vault]);
     }

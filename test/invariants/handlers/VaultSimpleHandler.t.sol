@@ -24,7 +24,6 @@ contract VaultSimpleHandler is BaseHandler, DefaultBeforeAfterHooks {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     function deposit(uint256 assets, address receiver) external setup {
-        //TODO make reciever one of the actors
         bool success;
         bytes memory returnData;
 
@@ -35,14 +34,15 @@ contract VaultSimpleHandler is BaseHandler, DefaultBeforeAfterHooks {
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.deposit.selector, assets, receiver));
 
+        uint256 shares = abi.decode(returnData, (uint256));
+
         if (success) {
-            ghost_sumBalances[vaultAddress] += assets;
-            ghost_sumBalancesPerUser[vaultAddress][address(actor)] += assets;
+            _increaseGhostAssets(vaultAddress, assets, address(receiver));
+            _increaseGhostShares(vaultAddress, shares, address(receiver));
         }
     }
 
     function mint(uint256 shares, address receiver) external setup {
-        //TODO make reciever one of the actors
         bool success;
         bytes memory returnData;
 
@@ -56,50 +56,117 @@ contract VaultSimpleHandler is BaseHandler, DefaultBeforeAfterHooks {
         uint256 assets = abi.decode(returnData, (uint256));
 
         if (success) {
-            ghost_sumBalances[vaultAddress] += assets;
-            ghost_sumBalancesPerUser[vaultAddress][address(actor)] += assets;
+            _increaseGhostAssets(vaultAddress, assets, address(receiver));
+            _increaseGhostShares(vaultAddress, shares, address(receiver));
         }
     }
 
-    function withdraw(uint256 assets, address receiver) external setup {
-        //TODO make reciever one of the actors
+    function depositToActor(uint256 assets, uint256 i) external setup {
         bool success;
         bytes memory returnData;
+
+        // Get one of the three actors randomly
+        address receiver = _getRandomActor(i);
 
         address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
 
         VaultSimple vault = VaultSimple(vaultAddress);
 
         (success, returnData) =
-            actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.withdraw.selector, assets, receiver));
+            actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.deposit.selector, assets, receiver));
+
+        uint256 shares = abi.decode(returnData, (uint256));
 
         if (success) {
-            ghost_sumBalances[vaultAddress] -= assets;
-            ghost_sumBalancesPerUser[vaultAddress][address(actor)] -= assets;
+            _increaseGhostAssets(vaultAddress, assets, address(receiver));
+            _increaseGhostShares(vaultAddress, shares, address(receiver));
         }
     }
 
-    function redeem(uint256 shares, address receiver) external setup {
-        //TODO make reciever one of the actors
+    function mintToActor(uint256 shares, uint256 i) external setup {
         bool success;
         bytes memory returnData;
+
+        // Get one of the three actors randomly
+        address receiver = _getRandomActor(i);
 
         address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
 
         VaultSimple vault = VaultSimple(vaultAddress);
 
         (success, returnData) =
-            actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.withdraw.selector, shares, receiver));
+            actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.mint.selector, shares, receiver));
 
         uint256 assets = abi.decode(returnData, (uint256));
 
         if (success) {
-            ghost_sumBalances[vaultAddress] -= assets;
-            ghost_sumBalancesPerUser[vaultAddress][address(actor)] -= assets;
+            _increaseGhostAssets(vaultAddress, assets, address(receiver));
+            _increaseGhostShares(vaultAddress, shares, address(receiver));
+        }
+    }
+
+    function withdraw(uint256 assets, address receiver) external setup {
+        bool success;
+        bytes memory returnData;
+
+        address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
+
+        VaultSimple vault = VaultSimple(vaultAddress);
+
+        (success, returnData) = actor.proxy(
+            vaultAddress, abi.encodeWithSelector(VaultSimple.withdraw.selector, assets, receiver, address(actor))
+        );
+
+        uint256 shares = abi.decode(returnData, (uint256));
+
+        if (success) {
+            _decreaseGhostAssets(vaultAddress, assets, address(actor));
+            _decreaseGhostShares(vaultAddress, shares, address(actor));
+        }
+    }
+
+    function redeem(uint256 shares, address receiver) external setup {
+        bool success;
+        bytes memory returnData;
+
+        address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
+
+        VaultSimple vault = VaultSimple(vaultAddress);
+
+        (success, returnData) = actor.proxy(
+            vaultAddress, abi.encodeWithSelector(VaultSimple.redeem.selector, shares, receiver, address(actor))
+        );
+
+        uint256 assets = abi.decode(returnData, (uint256));
+
+        if (success) {
+            _decreaseGhostAssets(vaultAddress, assets, address(actor));
+            _decreaseGhostShares(vaultAddress, shares, address(actor));
         }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                           HELPERS                                         //
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    //  GHOSTS UPDATES
+    function _increaseGhostAssets(address vaultAddress, uint256 assets, address receiver) internal {
+        ghost_sumBalances[vaultAddress] += assets;
+        ghost_sumBalancesPerUser[vaultAddress][receiver] += assets;
+    }
+
+    function _decreaseGhostAssets(address vaultAddress, uint256 assets, address owner) internal {
+        ghost_sumBalances[vaultAddress] -= assets;
+        ghost_sumBalancesPerUser[vaultAddress][owner] -= assets;
+    }
+
+    function _increaseGhostShares(address vaultAddress, uint256 shares, address receiver) internal {
+        ghost_sumSharesBalances[vaultAddress] += shares;
+        ghost_sumSharesBalancesPerUser[vaultAddress][receiver] += shares;
+    }
+
+    function _decreaseGhostShares(address vaultAddress, uint256 shares, address owner) internal {
+        ghost_sumSharesBalances[vaultAddress] -= shares;
+        ghost_sumSharesBalancesPerUser[vaultAddress][owner] -= shares;
+    }
 }
