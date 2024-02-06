@@ -16,8 +16,10 @@ abstract contract VaultSimpleInvariants is HandlerAggregator {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     VaultSimple
-    Invariant A: totalAssets = sum of all balances
-    Invariant B: totalSupply = sum of all minted shares
+        Invariant A: totalAssets = sum of all balances
+        Invariant B: totalSupply = sum of all minted shares
+        Invariant C: balanceOf(actor) = sum of all shares owned by address
+        Invariant D: totalSupply = sum of balanceOf(actors)
 
     */
 
@@ -26,12 +28,28 @@ abstract contract VaultSimpleInvariants is HandlerAggregator {
     function assert_VaultSimple_invariantA(address _vault) internal {
         uint256 totalAssets = VaultSimple(_vault).totalAssets();
 
-        assertEq(totalAssets, ghost_sumBalances[_vault], vaultNames[_vault]);
+        assertEq(totalAssets, ghost_sumBalances[_vault], string.concat("VaultSimple_invariantA: ", vaultNames[_vault]));
     }
 
     function assert_VaultSimple_invariantB(address _vault) internal {
         uint256 totalSupply = VaultSimple(_vault).totalSupply();
 
-        assertEq(totalSupply, ghost_sumBalances[_vault], vaultNames[_vault]);
+        assertEq(totalSupply, ghost_sumBalances[_vault], string.concat("VaultSimple_invariantB: ", vaultNames[_vault]));
+    }
+
+    function assert_VaultSimple_invariantC(address _vault, address _account) internal returns (uint256 balanceOf) {
+        balanceOf = VaultSimple(_vault).balanceOf(_account);
+
+        assertEq(
+            balanceOf,
+            ghost_sumSharesBalancesPerUser[_vault][_account],
+            string.concat("VaultSimple_invariantC: ", vaultNames[_vault])
+        );
+    }
+
+    function assert_VaultSimple_invariantD(address _vault, uint256 _sumBalances) internal {
+        uint256 totalSupply = VaultSimple(_vault).totalSupply();
+
+        assertEq(totalSupply, _sumBalances, string.concat("VaultSimple_invariantD: ", vaultNames[_vault]));
     }
 }

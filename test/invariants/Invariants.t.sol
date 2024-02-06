@@ -29,16 +29,17 @@ abstract contract Invariants is
     //                                 VAULT SIMPLE INVARIANTS                                   //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function echidna_invariant_VaultSimple_invariantA() public targetVaultsFrom(VaultType.Simple) returns (bool) {
+    function echidna_invariant_VaultSimple_invariantABCD() public targetVaultsFrom(VaultType.Simple) returns (bool) {
         for (uint256 i = limitVault; i < vaults.length; i++) {
             assert_VaultSimple_invariantA(vaults[i]);
-        }
-        return true;
-    }
-
-    function echidna_invariant_VaultSimple_invariantB() public targetVaultsFrom(VaultType.Simple) returns (bool) {
-        for (uint256 i = limitVault; i < vaults.length; i++) {
             assert_VaultSimple_invariantB(vaults[i]);
+
+            uint256 _sumBalanceOf;
+            for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
+                _sumBalanceOf += assert_VaultSimple_invariantC(vaults[i], actorAddresses[j]);
+            }
+            //assert_VaultSimple_invariantD(vaults[i], _sumBalanceOf); TODO implement this in a diferent environment
+            // where only transfers to actors are allowed
         }
         return true;
     }

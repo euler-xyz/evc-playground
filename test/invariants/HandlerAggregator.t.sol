@@ -8,6 +8,7 @@ import {VaultRegularBorrowableHandler} from "./handlers/VaultRegularBorrowableHa
 import {VaultBorrowableETHHandler} from "./handlers/VaultBorrowableETHHandler.t.sol";
 import {EVCHandler} from "./handlers/EVCHandler.t.sol";
 import {ERC20Handler} from "./handlers/ERC20Handler.t.sol";
+import {DonationAttackHandler} from "./handlers/simulators/DonationAttackHandler.t.sol";
 
 /// @notice Helper contract to aggregate all handler contracts, inherited in BaseInvariants
 abstract contract HandlerAggregator is
@@ -16,7 +17,8 @@ abstract contract HandlerAggregator is
     VaultRegularBorrowableHandler,
     VaultBorrowableETHHandler,
     EVCHandler,
-    ERC20Handler
+    ERC20Handler,
+    DonationAttackHandler
 {
     /// @notice Helper function in case any handler requires additional setup
     function _setUpHandlers() internal {}

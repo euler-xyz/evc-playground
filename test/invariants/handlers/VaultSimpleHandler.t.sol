@@ -42,25 +42,6 @@ contract VaultSimpleHandler is BaseHandler, DefaultBeforeAfterHooks {
         }
     }
 
-    function mint(uint256 shares, address receiver) external setup {
-        bool success;
-        bytes memory returnData;
-
-        address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
-
-        VaultSimple vault = VaultSimple(vaultAddress);
-
-        (success, returnData) =
-            actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.mint.selector, shares, receiver));
-
-        uint256 assets = abi.decode(returnData, (uint256));
-
-        if (success) {
-            _increaseGhostAssets(vaultAddress, assets, address(receiver));
-            _increaseGhostShares(vaultAddress, shares, address(receiver));
-        }
-    }
-
     function depositToActor(uint256 assets, uint256 i) external setup {
         bool success;
         bytes memory returnData;
@@ -76,6 +57,25 @@ contract VaultSimpleHandler is BaseHandler, DefaultBeforeAfterHooks {
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.deposit.selector, assets, receiver));
 
         uint256 shares = abi.decode(returnData, (uint256));
+
+        if (success) {
+            _increaseGhostAssets(vaultAddress, assets, address(receiver));
+            _increaseGhostShares(vaultAddress, shares, address(receiver));
+        }
+    }
+
+    function mint(uint256 shares, address receiver) external setup {
+        bool success;
+        bytes memory returnData;
+
+        address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
+
+        VaultSimple vault = VaultSimple(vaultAddress);
+
+        (success, returnData) =
+            actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.mint.selector, shares, receiver));
+
+        uint256 assets = abi.decode(returnData, (uint256));
 
         if (success) {
             _increaseGhostAssets(vaultAddress, assets, address(receiver));
@@ -143,6 +143,21 @@ contract VaultSimpleHandler is BaseHandler, DefaultBeforeAfterHooks {
             _decreaseGhostAssets(vaultAddress, assets, address(actor));
             _decreaseGhostShares(vaultAddress, shares, address(actor));
         }
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                         OWNER ACTIONS                                     //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    function setSupplyCap(uint256 newSupplyCap) external {
+        address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
+
+        VaultSimple vault = VaultSimple(vaultAddress);
+
+        // Since the owner is the deployer of the vault, we dont need to use a a proxy
+        vault.setSupplyCap(newSupplyCap);
+
+        assert(true);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
