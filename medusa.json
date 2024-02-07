@@ -76,7 +76,7 @@
 			"exportDirectory": "",
 			"args": [
 				"--solc-remaps",
-				"@crytic/properties/=lib/properties/ forge-std/=lib/forge-std/src/ ds-test/=lib/forge-std/lib/ds-test/src/",
+				"@crytic/properties/=lib/properties/ forge-std/=lib/forge-std/src/ ds-test/=lib/forge-std/lib/ds-test/src/ evc/=lib/ethereum-vault-connector/src/ solmate/=lib/solmate/src/ openzeppelin/=lib/openzeppelin-contracts/contracts/",
 				"--compile-libraries=(Pretty,0xf01),(Strings,0xf02)"
 			]
 		}

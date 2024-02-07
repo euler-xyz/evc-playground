@@ -2,12 +2,12 @@
 pragma solidity ^0.8.19;
 
 import {Actor} from "../utils/Actor.sol";
-import {DefaultBeforeAfterHooks} from "../hooks/DefaultBeforeAfterHooks.t.sol";
+import {VaultSimpleBeforeAfterHooks} from "../hooks/VaultSimpleBeforeAfterHooks.t.sol";
 import {BaseHandler} from "../base/BaseHandler.t.sol";
 
 /// @title EVCHandler
 /// @notice Handler test contract for the EVC actions
-contract EVCHandler is BaseHandler, DefaultBeforeAfterHooks {
+contract EVCHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                      STATE VARIABLES                                      //
 ///////////////////////////////////////////////////////////////////////////////////////////////

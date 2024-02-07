@@ -6,10 +6,12 @@ import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {EthereumVaultConnector} from "evc/EthereumVaultConnector.sol";
 
 // Contracts
-import {VaultSimple} from "src/vaults/VaultSimple.sol";
-import {VaultSimpleBorrowable} from "src/vaults/VaultSimpleBorrowable.sol";
-import {VaultRegularBorrowable} from "src/vaults/VaultRegularBorrowable.sol";
-import {VaultBorrowableWETH} from "src/vaults/VaultBorrowableWETH.sol";
+import {
+    VaultSimpleExtended as VaultSimple,
+    VaultSimpleBorrowableExtended as VaultSimpleBorrowable,
+    VaultRegularBorrowableExtended as VaultRegularBorrowable,
+    VaultBorrowableWETHExtended as VaultBorrowableWETH
+} from "test/invariants/helpers/extended/VaultsExtended.sol";
 
 // Test Contracts
 import {Actor} from "./utils/Actor.sol";

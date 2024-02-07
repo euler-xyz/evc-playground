@@ -6,12 +6,12 @@ import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 // Test Contracts
 import {Actor} from "../utils/Actor.sol";
-import {DefaultBeforeAfterHooks} from "../hooks/DefaultBeforeAfterHooks.t.sol";
+import {VaultSimpleBeforeAfterHooks} from "../hooks/VaultSimpleBeforeAfterHooks.t.sol";
 import {BaseHandler} from "../base/BaseHandler.t.sol";
 
 /// @title ERC20Handler
 /// @notice Handler test contract for ERC20 contacts
-contract ERC20Handler is BaseHandler, DefaultBeforeAfterHooks {
+contract ERC20Handler is BaseHandler, VaultSimpleBeforeAfterHooks {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////

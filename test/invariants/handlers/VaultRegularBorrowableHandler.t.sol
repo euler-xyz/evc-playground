@@ -2,12 +2,12 @@
 pragma solidity ^0.8.19;
 
 import {Actor} from "../utils/Actor.sol";
-import {DefaultBeforeAfterHooks} from "../hooks/DefaultBeforeAfterHooks.t.sol";
+import {VaultSimpleBeforeAfterHooks} from "../hooks/VaultSimpleBeforeAfterHooks.t.sol";
 import {BaseHandler} from "../base/BaseHandler.t.sol";
 
 /// @title VaultRegularBorrowableHandler
 /// @notice Handler test contract for the VaultRegularBorrowable actions
-contract VaultRegularBorrowableHandler is BaseHandler, DefaultBeforeAfterHooks {
+contract VaultRegularBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
 ///////////////////////////////////////////////////////////////////////////////////////////////
 //                                      STATE VARIABLES                                      //
 ///////////////////////////////////////////////////////////////////////////////////////////////
