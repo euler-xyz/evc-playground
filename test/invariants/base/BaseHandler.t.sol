@@ -3,7 +3,7 @@ pragma solidity ^0.8.19;
 
 import {Actor} from "../utils/Actor.sol";
 import {ProtocolAssertions} from "../base/ProtocolAssertions.t.sol";
-import {BaseStorage, VaultSimple} from "../base/BaseStorage.t.sol";
+import {BaseStorage, VaultSimple, VaultSimpleBorrowable} from "../base/BaseStorage.t.sol";
 
 /// @title BaseHandler
 /// @notice Contains common logic for all handlers
@@ -12,6 +12,8 @@ contract BaseHandler is ProtocolAssertions {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                       SHARED VARAIBLES                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    // SIMPLE VAULT
 
     /// @notice Sum of all balances in the vault
     mapping(address => uint256) public ghost_sumBalances;
@@ -24,6 +26,12 @@ contract BaseHandler is ProtocolAssertions {
 
     /// @notice Sum of all shares balances per user in the vault
     mapping(address => mapping(address => uint256)) public ghost_sumSharesBalancesPerUser;
+
+    // SIMPLE BORROWABLE VAULT
+
+    mapping(address => uint256) public ghost_totalBorrowed;
+
+    mapping(address => mapping(address => uint256)) public ghost_owedAmountPerUser;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      HELPERS                                              //
