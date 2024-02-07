@@ -1,6 +1,6 @@
 {
 	"fuzzing": {
-		"workers": 10,
+		"workers": 12,
 		"workerResetLimit": 50,
 		"timeout": 0,
 		"testLimit": 0,

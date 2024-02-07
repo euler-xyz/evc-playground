@@ -25,6 +25,14 @@ abstract contract Invariants is
     //                                 BASE INVARIANTS                                           //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
+    function echidna_invariant_Base_invariantAB() targetVaultsFrom(VaultType.Simple) public returns (bool) {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            assert_VaultBase_invariantA(vaults[i]);
+            assert_VaultBase_invariantB(vaults[i]);
+        }
+        return true;
+    }
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                 VAULT SIMPLE INVARIANTS                                   //
     ///////////////////////////////////////////////////////////////////////////////////////////////

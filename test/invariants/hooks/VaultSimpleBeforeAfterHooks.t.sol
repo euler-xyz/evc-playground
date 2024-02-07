@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {console} from "forge-std/console.sol";
+
 // Test Helpers
 import {Pretty, Strings} from "../utils/Pretty.sol";
 
@@ -26,8 +28,8 @@ abstract contract VaultSimpleBeforeAfterHooks is BaseTest {
         // VaultBase
         uint256 reentrancyLockBefore;
         uint256 reentrancyLockAfter;
-        bytes snapshotBefore;
-        bytes snapshotAfter;
+        uint256 snapshotLengthBefore;
+        uint256 snapshotLengthAfter;
         // VaultSimple
         uint256 totalAssetsBefore;
         uint256 totalAssetsAfter;
@@ -41,7 +43,7 @@ abstract contract VaultSimpleBeforeAfterHooks is BaseTest {
         VaultSimple sv = VaultSimple(_vault);
         svVars.totalSupplyBefore = sv.totalSupply();
         svVars.reentrancyLockBefore = sv.getReentrancyLock();
-        svVars.snapshotBefore = sv.getSnapshot();
+        svVars.snapshotLengthBefore = sv.getSnapshotLength();
         svVars.totalAssetsBefore = sv.totalAssets();
         svVars.supplyCapBefore = sv.supplyCap();
     }
@@ -50,8 +52,33 @@ abstract contract VaultSimpleBeforeAfterHooks is BaseTest {
         VaultSimple sv = VaultSimple(_vault);
         svVars.totalSupplyAfter = sv.totalSupply();
         svVars.reentrancyLockAfter = sv.getReentrancyLock();
-        svVars.snapshotAfter = sv.getSnapshot();
+        svVars.snapshotLengthAfter = sv.getSnapshotLength();
         svVars.totalAssetsAfter = sv.totalAssets();
         svVars.supplyCapAfter = sv.supplyCap();
+
+        // VaultSimple Post Conditions
+
+        assert_VaultSimple_PcA();
+    }
+
+    /*/////////////////////////////////////////////////////////////////////////////////////////////
+    //                                     POST CONDITIONS                                       //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    VaultSimple
+        Post Condition A: 
+            (supplyCapAfter != 0) && (totalSupplyAfter >= totalSupplyBefore) => supplyCapAfter >= totalSupplyAfter
+
+        */
+
+    /////////////////////////////////////////////////////////////////////////////////////////////*/
+
+    function assert_VaultSimple_PcA() internal {
+        assertTrue(
+            (svVars.totalSupplyAfter > svVars.totalSupplyBefore && svVars.supplyCapAfter != 0)
+                ? (svVars.supplyCapAfter >= svVars.totalSupplyAfter)
+                : true,
+            "(totalSupplyAfter > totalSupplyBefore)"
+        );
     }
 }

@@ -16,10 +16,10 @@ abstract contract VaultSimpleInvariants is HandlerAggregator {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     VaultSimple
-        Invariant A: totalAssets = sum of all balances
-        Invariant B: totalSupply = sum of all minted shares
-        Invariant C: balanceOf(actor) = sum of all shares owned by address
-        Invariant D: totalSupply = sum of balanceOf(actors)
+        Invariant A: totalAssets == sum of all balances
+        Invariant B: totalSupply == sum of all minted shares
+        Invariant C: balanceOf(actor) == sum of all shares owned by address
+        Invariant D: totalSupply == sum of balanceOf(actors)
 
     */
 

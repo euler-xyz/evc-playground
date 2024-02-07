@@ -17,7 +17,7 @@ contract TesterMedusa is Invariants, Setup {
     }
 
     /// @dev Foundry compatibility faster setup debugging
-    function setUp() internal {
+    function setUp() public {
         // Deploy protocol contracts and protocol actors
         _setUp();
 

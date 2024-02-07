@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.19;
 
+import {console} from "forge-std/console.sol";
+
 /// @title VaultBaseGetters
 /// @dev This contract provides getters for the private variables in VaultBase, via storage access
 contract VaultBaseGetters {
@@ -16,37 +18,56 @@ contract VaultBaseGetters {
         }
     }
 
+    /// @notice Gets the snapshot length, using assembly to read from storage
+    function getSnapshotLength() external view returns (uint256 snapshotLength) {
+        uint256 slot = SNAPSHOT_SLOT;
+
+        assembly {
+            snapshotLength := sload(slot)
+        }
+    }
+
     /// @notice Gets the snapshot, using assembly to read bytes from storage
     function getSnapshot() external view returns (bytes memory snapshot) {
         uint256 slot = SNAPSHOT_SLOT;
 
+        // Declared outside of the assembly block for easier debugging
+        uint256 length;
+        uint256 bytesLength;
+        uint256 slotContent;
+        uint256 slotData;
+
         assembly {
             // Calculate slot where data starts
             mstore(0, slot)
-            let slotData := keccak256(0, 0x20)
+            slotData := keccak256(0, 0x20)
 
-            // Load the length of the bytes
-            let bytesLength := sub(sload(slot), 0x21)
+            slotContent := sload(slot)
 
-            // Calculate the number of 32-byte chunks
-            let length := div(add(bytesLength, 0x1f), 0x20)
+            if gt(slotContent, 0) {
+                // Load the length of the bytes
+                bytesLength := sub(slotContent, 0x21)
 
-            // Update the free memory pointer
-            mstore(0x40, add(snapshot, add(mul(length, 0x20), 0x20)))
+                // Calculate the number of 32-byte chunks
+                length := div(add(bytesLength, 0x1f), 0x20)
 
-            // Store the length of the bytes in memory
-            let pointer := snapshot
-            mstore(pointer, bytesLength)
+                // Update the free memory pointer
+                mstore(0x40, add(snapshot, add(mul(length, 0x20), 0x20)))
 
-            for { let i := 0 } lt(i, length) { i := add(i, 1) } {
-                // Calculate the next slot to read
-                let dataSlot := add(slotData, i)
-                // Read the data from the slot
-                let data := sload(dataSlot)
+                // Store the length of the bytes in memory
+                let pointer := snapshot
+                mstore(pointer, bytesLength)
 
-                // Calculate the next memory pointer & stopre the data
-                pointer := add(pointer, 0x20)
-                mstore(pointer, data)
+                for { let i := 0 } lt(i, length) { i := add(i, 1) } {
+                    // Calculate the next slot to read
+                    let dataSlot := add(slotData, i)
+                    // Read the data from the slot
+                    let data := sload(dataSlot)
+
+                    // Calculate the next memory pointer & store the data
+                    pointer := add(pointer, 0x20)
+                    mstore(pointer, data)
+                }
             }
         }
     }

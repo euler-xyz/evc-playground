@@ -16,24 +16,21 @@ contract CryticToFoundry is Invariants, Setup {
         _;
     }
 
+    /// @dev Foundry compatibility faster setup debugging
     function setUp() public {
         // Deploy protocol contracts and protocol actors
         _setUp();
 
+        // Deploy actors
+        _setUpActors();
+
         // Initialize handler contracts
         _setUpHandlers();
 
-        /// @dev fixes the actor to the first user
         actor = actors[USER1];
     }
 
-    /*
-
-    E.g. of an foundry test that replays a failed invariant call sequence    
-
-    function test_invariant_Area1_A() public {
-        this.deposit(1);
-        echidna_basicInvariants_pool_B_F_G_2();
-    } 
-    */
+    function test_hooks() public {
+        assert_VaultBase_invariantA(vaults[0]);
+    }
 }

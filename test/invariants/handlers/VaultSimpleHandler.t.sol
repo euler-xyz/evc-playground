@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
+import {console} from "forge-std/console.sol";
+
 import {Actor} from "../utils/Actor.sol";
 import {VaultSimpleBeforeAfterHooks} from "../hooks/VaultSimpleBeforeAfterHooks.t.sol";
 import {BaseHandler, VaultSimple} from "../base/BaseHandler.t.sol";
@@ -31,12 +33,15 @@ contract VaultSimpleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
 
         VaultSimple vault = VaultSimple(vaultAddress);
 
+        _svBefore(vaultAddress);
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.deposit.selector, assets, receiver));
 
-        uint256 shares = abi.decode(returnData, (uint256));
-
         if (success) {
+            _svAfter(vaultAddress);
+
+            uint256 shares = abi.decode(returnData, (uint256));
+
             _increaseGhostAssets(vaultAddress, assets, address(receiver));
             _increaseGhostShares(vaultAddress, shares, address(receiver));
         }
@@ -53,12 +58,15 @@ contract VaultSimpleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
 
         VaultSimple vault = VaultSimple(vaultAddress);
 
+        _svBefore(vaultAddress);
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.deposit.selector, assets, receiver));
 
-        uint256 shares = abi.decode(returnData, (uint256));
-
         if (success) {
+            _svAfter(vaultAddress);
+
+            uint256 shares = abi.decode(returnData, (uint256));
+
             _increaseGhostAssets(vaultAddress, assets, address(receiver));
             _increaseGhostShares(vaultAddress, shares, address(receiver));
         }
@@ -72,12 +80,15 @@ contract VaultSimpleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
 
         VaultSimple vault = VaultSimple(vaultAddress);
 
+        _svBefore(vaultAddress);
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.mint.selector, shares, receiver));
 
-        uint256 assets = abi.decode(returnData, (uint256));
-
         if (success) {
+            _svAfter(vaultAddress);
+
+            uint256 assets = abi.decode(returnData, (uint256));
+
             _increaseGhostAssets(vaultAddress, assets, address(receiver));
             _increaseGhostShares(vaultAddress, shares, address(receiver));
         }
@@ -94,12 +105,15 @@ contract VaultSimpleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
 
         VaultSimple vault = VaultSimple(vaultAddress);
 
+        _svBefore(vaultAddress);
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.mint.selector, shares, receiver));
 
-        uint256 assets = abi.decode(returnData, (uint256));
-
         if (success) {
+            _svAfter(vaultAddress);
+
+            uint256 assets = abi.decode(returnData, (uint256));
+
             _increaseGhostAssets(vaultAddress, assets, address(receiver));
             _increaseGhostShares(vaultAddress, shares, address(receiver));
         }
@@ -113,13 +127,16 @@ contract VaultSimpleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
 
         VaultSimple vault = VaultSimple(vaultAddress);
 
+        _svBefore(vaultAddress);
         (success, returnData) = actor.proxy(
             vaultAddress, abi.encodeWithSelector(VaultSimple.withdraw.selector, assets, receiver, address(actor))
         );
 
-        uint256 shares = abi.decode(returnData, (uint256));
-
         if (success) {
+            _svAfter(vaultAddress);
+
+            uint256 shares = abi.decode(returnData, (uint256));
+
             _decreaseGhostAssets(vaultAddress, assets, address(actor));
             _decreaseGhostShares(vaultAddress, shares, address(actor));
         }
@@ -133,13 +150,16 @@ contract VaultSimpleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
 
         VaultSimple vault = VaultSimple(vaultAddress);
 
+        _svBefore(vaultAddress);
         (success, returnData) = actor.proxy(
             vaultAddress, abi.encodeWithSelector(VaultSimple.redeem.selector, shares, receiver, address(actor))
         );
 
-        uint256 assets = abi.decode(returnData, (uint256));
-
         if (success) {
+            _svAfter(vaultAddress);
+
+            uint256 assets = abi.decode(returnData, (uint256));
+
             _decreaseGhostAssets(vaultAddress, assets, address(actor));
             _decreaseGhostShares(vaultAddress, shares, address(actor));
         }
@@ -155,7 +175,9 @@ contract VaultSimpleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
         VaultSimple vault = VaultSimple(vaultAddress);
 
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
+        _svBefore(vaultAddress);
         vault.setSupplyCap(newSupplyCap);
+        _svAfter(vaultAddress);
 
         assert(true);
     }
