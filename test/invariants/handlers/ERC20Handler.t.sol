@@ -52,14 +52,14 @@ contract ERC20Handler is BaseHandler, VaultSimpleBeforeAfterHooks {
         }
     } */
 
-    function approveTo(uint256 i, uint256 amount) external setup {
+    function approveTo(uint256 i, uint256 j, uint256 amount) external setup {
         bool success;
         bytes memory returnData;
 
         // Get one of the three actors randomly
         address spender = _getRandomActor(i);
 
-        address erc20Address = _getRandomSupportedVault(VaultType.Simple);
+        address erc20Address = _getRandomSupportedVault(j, VaultType.Simple);
 
         (success, returnData) =
             actor.proxy(erc20Address, abi.encodeWithSelector(ERC20.approve.selector, spender, amount));
@@ -69,11 +69,11 @@ contract ERC20Handler is BaseHandler, VaultSimpleBeforeAfterHooks {
         }
     }
 
-    function transfer(address to, uint256 amount) external setup {
+    function transfer(address to, uint256 j, uint256 amount) external setup {
         bool success;
         bytes memory returnData;
 
-        address erc20Address = _getRandomSupportedVault(VaultType.Simple);
+        address erc20Address = _getRandomSupportedVault(j, VaultType.Simple);
 
         (success, returnData) = actor.proxy(erc20Address, abi.encodeWithSelector(ERC20.transfer.selector, to, amount));
 
@@ -83,14 +83,14 @@ contract ERC20Handler is BaseHandler, VaultSimpleBeforeAfterHooks {
         }
     }
 
-    function transferTo(uint256 i, uint256 amount) external setup {
+    function transferTo(uint256 i, uint256 j, uint256 amount) external setup {
         bool success;
         bytes memory returnData;
 
         // Get one of the three actors randomly
         address to = _getRandomActor(i);
 
-        address erc20Address = _getRandomSupportedVault(VaultType.Simple);
+        address erc20Address = _getRandomSupportedVault(j, VaultType.Simple);
 
         (success, returnData) = actor.proxy(erc20Address, abi.encodeWithSelector(ERC20.transfer.selector, to, amount));
 
@@ -100,14 +100,14 @@ contract ERC20Handler is BaseHandler, VaultSimpleBeforeAfterHooks {
         }
     }
 
-    function transferFrom(uint256 i, address to, uint256 amount) external setup {
+    function transferFrom(uint256 i, uint256 j, address to, uint256 amount) external setup {
         bool success;
         bytes memory returnData;
 
         // Get one of the three actors randomly
         address from = _getRandomActor(i);
 
-        address erc20Address = _getRandomSupportedVault(VaultType.Simple);
+        address erc20Address = _getRandomSupportedVault(j, VaultType.Simple);
 
         (success, returnData) =
             actor.proxy(erc20Address, abi.encodeWithSelector(ERC20.transferFrom.selector, from, to, amount));
@@ -127,7 +127,7 @@ contract ERC20Handler is BaseHandler, VaultSimpleBeforeAfterHooks {
         // Get one of the three actors randomly
         address to = _getRandomActor(u);
 
-        address erc20Address = _getRandomSupportedVault(VaultType.Simple);
+        address erc20Address = _getRandomSupportedVault(u, VaultType.Simple);
 
         (success, returnData) =
             actor.proxy(erc20Address, abi.encodeWithSelector(ERC20.transferFrom.selector, from, to, amount));

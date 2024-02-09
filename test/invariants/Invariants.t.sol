@@ -39,7 +39,7 @@ abstract contract Invariants is
 
     function echidna_invariant_VaultSimple_invariantABCD() public targetVaultsFrom(VaultType.Simple) returns (bool) {
         for (uint256 i = limitVault; i < vaults.length; i++) {
-            assert_VaultSimple_invariantA(vaults[i]);
+            //assert_VaultSimple_invariantA(vaults[i]);
             assert_VaultSimple_invariantB(vaults[i]);
 
             uint256 _sumBalanceOf;

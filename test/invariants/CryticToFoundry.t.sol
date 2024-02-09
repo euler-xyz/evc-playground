@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 // Libraries
 import "forge-std/Test.sol";
+import "forge-std/console.sol";
 
 // Test Contracts
 import {Invariants} from "./Invariants.t.sol";
@@ -32,5 +33,15 @@ contract CryticToFoundry is Invariants, Setup {
 
     function test_hooks() public {
         assert_VaultBase_invariantA(vaults[0]);
+    }
+
+    function test_evcAccess() public {
+        this.enableCollateral(0);
+        this.enableController(0);
+        console.log(address(actors[USER1]));
+        console.log(address(actors[USER2]));
+        console.log(address(actors[USER3]));
+        this.deposit(10, address(actor));
+        this.borrow(1, address(actor));
     }
 }

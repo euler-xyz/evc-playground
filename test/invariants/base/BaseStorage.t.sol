@@ -9,6 +9,8 @@ import {VaultSimple} from "src/vaults/VaultSimple.sol";
 import {VaultSimpleBorrowable} from "src/vaults/VaultSimpleBorrowable.sol";
 import {VaultRegularBorrowable} from "src/vaults/VaultRegularBorrowable.sol";
 import {VaultBorrowableWETH} from "src/vaults/VaultBorrowableWETH.sol";
+import {IRMMock} from "test/mocks/IRMMock.sol";
+import {PriceOracleMock} from "test/mocks/PriceOracleMock.sol";
 
 // Interfaces
 import {IEVC} from "evc/interfaces/IEthereumVaultConnector.sol";
@@ -89,8 +91,27 @@ abstract contract BaseStorage {
     /// @notice EVC contract
     IEVC internal evc;
 
-    // MOCK TOKENS
+    // TOKENS
 
     /// @notice MockERC20 contract
-    MockERC20 internal underlying;
+    MockERC20 internal referenceAsset;
+    /// @notice Array of all reference assets
+    address[] internal referenceAssets;
+
+    /// @notice MockERC20 contract
+    MockERC20 internal liabilityAsset;
+    /// @notice MockERC20 contract
+    MockERC20 internal collateralAsset1;
+    /// @notice MockERC20 contract
+    MockERC20 internal collateralAsset2;
+    /// @notice Array of all base assets
+    address[] internal baseAssets;
+
+    // IRM AND ORACLE
+
+    /// @notice Interest rates manager mock contract
+    IRMMock internal irm;
+
+    /// @notice Price oracle mock contract
+    PriceOracleMock internal oracle;
 }

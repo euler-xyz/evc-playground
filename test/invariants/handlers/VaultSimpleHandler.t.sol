@@ -25,11 +25,38 @@ contract VaultSimpleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
     //                                           ACTIONS                                         //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function deposit(uint256 assets, address receiver) external setup {
+    function deposit(uint256 assets, address receiver, uint256 j) external setup {
         bool success;
         bytes memory returnData;
 
-        address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
+        address vaultAddress = _getRandomSupportedVault(j, VaultType.Simple);
+
+        VaultSimple vault = VaultSimple(vaultAddress);
+
+        _approve(address(vault.asset()), actor, vaultAddress, assets);
+
+        _svBefore(vaultAddress);
+        (success, returnData) =
+            actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.deposit.selector, assets, receiver));
+
+        if (success) {
+            _svAfter(vaultAddress);
+
+            uint256 shares = abi.decode(returnData, (uint256));
+
+            _increaseGhostAssets(vaultAddress, assets, address(receiver));
+            _increaseGhostShares(vaultAddress, shares, address(receiver));
+        }
+    }
+
+    function depositToActor(uint256 assets, uint256 i, uint256 j) external setup {
+        bool success;
+        bytes memory returnData;
+
+        // Get one of the three actors randomly
+        address receiver = _getRandomActor(i);
+
+        address vaultAddress = _getRandomSupportedVault(j, VaultType.Simple);
 
         VaultSimple vault = VaultSimple(vaultAddress);
 
@@ -47,36 +74,11 @@ contract VaultSimpleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
         }
     }
 
-    function depositToActor(uint256 assets, uint256 i) external setup {
+    function mint(uint256 shares, address receiver, uint256 j) external setup {
         bool success;
         bytes memory returnData;
 
-        // Get one of the three actors randomly
-        address receiver = _getRandomActor(i);
-
-        address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
-
-        VaultSimple vault = VaultSimple(vaultAddress);
-
-        _svBefore(vaultAddress);
-        (success, returnData) =
-            actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimple.deposit.selector, assets, receiver));
-
-        if (success) {
-            _svAfter(vaultAddress);
-
-            uint256 shares = abi.decode(returnData, (uint256));
-
-            _increaseGhostAssets(vaultAddress, assets, address(receiver));
-            _increaseGhostShares(vaultAddress, shares, address(receiver));
-        }
-    }
-
-    function mint(uint256 shares, address receiver) external setup {
-        bool success;
-        bytes memory returnData;
-
-        address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
+        address vaultAddress = _getRandomSupportedVault(j, VaultType.Simple);
 
         VaultSimple vault = VaultSimple(vaultAddress);
 
@@ -94,14 +96,14 @@ contract VaultSimpleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
         }
     }
 
-    function mintToActor(uint256 shares, uint256 i) external setup {
+    function mintToActor(uint256 shares, uint256 i, uint256 j) external setup {
         bool success;
         bytes memory returnData;
 
         // Get one of the three actors randomly
         address receiver = _getRandomActor(i);
 
-        address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
+        address vaultAddress = _getRandomSupportedVault(j, VaultType.Simple);
 
         VaultSimple vault = VaultSimple(vaultAddress);
 
@@ -119,11 +121,11 @@ contract VaultSimpleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
         }
     }
 
-    function withdraw(uint256 assets, address receiver) external setup {
+    function withdraw(uint256 j, uint256 assets, address receiver) external setup {
         bool success;
         bytes memory returnData;
 
-        address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
+        address vaultAddress = _getRandomSupportedVault(j, VaultType.Simple);
 
         VaultSimple vault = VaultSimple(vaultAddress);
 
@@ -142,11 +144,11 @@ contract VaultSimpleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
         }
     }
 
-    function redeem(uint256 shares, address receiver) external setup {
+    function redeem(uint256 j, uint256 shares, address receiver) external setup {
         bool success;
         bytes memory returnData;
 
-        address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
+        address vaultAddress = _getRandomSupportedVault(j, VaultType.Simple);
 
         VaultSimple vault = VaultSimple(vaultAddress);
 
@@ -169,8 +171,8 @@ contract VaultSimpleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
     //                                         OWNER ACTIONS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function setSupplyCap(uint256 newSupplyCap) external {
-        address vaultAddress = _getRandomSupportedVault(VaultType.Simple);
+    function setSupplyCap(uint256 j, uint256 newSupplyCap) external {
+        address vaultAddress = _getRandomSupportedVault(j, VaultType.Simple);
 
         VaultSimple vault = VaultSimple(vaultAddress);
 

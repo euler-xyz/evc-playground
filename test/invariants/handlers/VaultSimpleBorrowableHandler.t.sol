@@ -27,11 +27,11 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
     //                                           ACTIONS                                         //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function borrow(uint256 assets, address receiver) external setup {
+    function borrow(uint256 assets, address receiver, uint256 j) external setup {
         bool success;
         bytes memory returnData;
 
-        address vaultAddress = _getRandomSupportedVault(VaultType.SimpleBorrowable);
+        address vaultAddress = _getRandomSupportedVault(j, VaultType.SimpleBorrowable);
 
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
@@ -45,14 +45,14 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
         }
     }
 
-    function borrowTo(uint256 assets, uint256 i) external setup {
+    function borrowTo(uint256 assets, uint256 i, uint256 j) external setup {
         bool success;
         bytes memory returnData;
 
         // Get one of the three actors randomly
         address receiver = _getRandomActor(i);
 
-        address vaultAddress = _getRandomSupportedVault(VaultType.SimpleBorrowable);
+        address vaultAddress = _getRandomSupportedVault(j, VaultType.SimpleBorrowable);
 
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
@@ -66,11 +66,11 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
         }
     }
 
-    function repay(uint256 assets, address receiver) external setup {
+    function repay(uint256 assets, address receiver, uint256 j) external setup {
         bool success;
         bytes memory returnData;
 
-        address vaultAddress = _getRandomSupportedVault(VaultType.SimpleBorrowable);
+        address vaultAddress = _getRandomSupportedVault(j, VaultType.SimpleBorrowable);
 
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
@@ -80,18 +80,19 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.repay.selector, assets, receiver));
 
         if (success) {
+            assert(false);
             _svAfter(vaultAddress);
         }
     }
 
-    function repayTo(uint256 assets, uint256 i) external setup {
+    function repayTo(uint256 assets, uint256 i, uint256 j) external setup {
         bool success;
         bytes memory returnData;
 
         // Get one of the three actors randomly
         address receiver = _getRandomActor(i);
 
-        address vaultAddress = _getRandomSupportedVault(VaultType.SimpleBorrowable);
+        address vaultAddress = _getRandomSupportedVault(j, VaultType.SimpleBorrowable);
 
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
@@ -101,18 +102,19 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.repay.selector, assets, receiver));
 
         if (success) {
+            assert(false);
             _svAfter(vaultAddress);
         }
     }
 
-    function pullDebt(uint256 i, uint256 assets) external setup {
+    function pullDebt(uint256 i, uint256 j, uint256 assets) external setup {
         bool success;
         bytes memory returnData;
 
         // Get one of the three actors randomly
         address from = _getRandomActor(i);
 
-        address vaultAddress = _getRandomSupportedVault(VaultType.SimpleBorrowable);
+        address vaultAddress = _getRandomSupportedVault(j, VaultType.SimpleBorrowable);
 
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
@@ -122,6 +124,7 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.pullDebt.selector, from, assets));
 
         if (success) {
+            assert(false);
             _svAfter(vaultAddress);
         }
     }
@@ -130,8 +133,8 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
     //                                         OWNER ACTIONS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function setBorrowCap(uint256 newBorrowCap) external {
-        address vaultAddress = _getRandomSupportedVault(VaultType.SimpleBorrowable);
+    function setBorrowCap(uint256 j, uint256 newBorrowCap) external {
+        address vaultAddress = _getRandomSupportedVault(j, VaultType.SimpleBorrowable);
 
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 

@@ -14,6 +14,8 @@ import {
 } from "test/invariants/helpers/extended/VaultsExtended.sol";
 
 // Test Contracts
+import {IRMMock} from "../mocks/IRMMock.sol";
+import {PriceOracleMock} from "../mocks/PriceOracleMock.sol";
 import {Actor} from "./utils/Actor.sol";
 import {BaseTest} from "./base/BaseTest.t.sol";
 
@@ -32,24 +34,40 @@ contract Setup is BaseTest {
         // Deploy the EVC
         evc = new EthereumVaultConnector();
 
-        // Deploy mock tokens
-        underlying = new MockERC20("Mock Token", "TKN", 18);
+        // Deploy the reference assets
+        referenceAsset = new MockERC20("Reference Asset", "RA", 18);
+        referenceAssets.push(address(referenceAsset));
+
+        // Deploy base assets
+        liabilityAsset = new MockERC20("Liability Asset", "LA", 18);
+        collateralAsset1 = new MockERC20("Collateral Asset 1", "CA1", 18);
+        collateralAsset2 = new MockERC20("Collateral Asset 2", "CA2", 6);
+        baseAssets.push(address(liabilityAsset));
+        baseAssets.push(address(collateralAsset1));
+        baseAssets.push(address(collateralAsset2));
+
+        // Deploy the IRM and the Price Oracle
+        irm = new IRMMock();
+        oracle = new PriceOracleMock();
     }
 
     function _deployVaults() internal {
         // Deploy vaults
         /// @dev vaults are stored in the vaults array in the order of complexity,
         /// this helps with property inheritance and modularity
-        vaultSimple = new VaultSimple(evc, underlying, "VaultSimple", "VS");
+        vaultSimple = new VaultSimple(evc, collateralAsset1, "VaultSimple", "VS");
         vaults.push(address(vaultSimple));
         vaultNames[address(vaultSimple)] = "VaultSimple";
 
-        vaultSimpleBorrowable = new VaultSimpleBorrowable(evc, underlying, "VaultSimpleBorrowable", "VSB");
+        vaultSimpleBorrowable = new VaultSimpleBorrowable(evc, collateralAsset2, "VaultSimpleBorrowable", "VSB");
         vaults.push(address(vaultSimpleBorrowable));
         vaultNames[address(vaultSimpleBorrowable)] = "VaultSimpleBorrowable";
 
-        //vaultRegularBorrowable = new VaultRegularBorrowable(evc, underlying, "VaultRegularBorrowable", "VRB");
-        //vaults.push(address(vaultRegularBorrowable));
+        vaultRegularBorrowable = new VaultRegularBorrowable(
+            evc, liabilityAsset, irm, oracle, referenceAsset, "VaultRegularBorrowable", "VRB"
+        );
+        vaults.push(address(vaultRegularBorrowable));
+        vaultNames[address(vaultRegularBorrowable)] = "VaultRegularBorrowable";
 
         //vaultBorrowableWETH = new VaultBorrowableWETH(evc, underlying, "VaultBorrowableWETH", "VBW");
         //vaults.push(address(vaultBorrowableWETH));
@@ -61,13 +79,20 @@ contract Setup is BaseTest {
         addresses[1] = USER2;
         addresses[2] = USER3;
 
-        address[] memory tokens = new address[](1);
-        tokens[0] = address(underlying);
+        address[] memory tokens = new address[](3);
+        tokens[0] = address(liabilityAsset);
+        tokens[1] = address(collateralAsset1);
+        tokens[2] = address(collateralAsset2);
 
         for (uint256 i = 0; i < NUMBER_OF_ACTORS; i++) {
-            // Deply actor proxies and
+            // Deply actor proxies and approve system contracts
             address _actor = _setUpActor(addresses[i], tokens, vaults);
-            underlying.mint(_actor, INITIAL_ETH_BALANCE);
+
+            // Mint initial balances to actors
+            for (uint256 j = 0; j < tokens.length; j++) {
+                MockERC20 _token = MockERC20(tokens[j]);
+                _token.mint(_actor, INITIAL_BALANCE);
+            }
             actorAddresses.push(_actor);
         }
     }

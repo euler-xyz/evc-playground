@@ -25,7 +25,7 @@ abstract contract VaultSimpleInvariants is HandlerAggregator {
 
     /////////////////////////////////////////////////////////////////////////////////////////////*/
 
-    function assert_VaultSimple_invariantA(address _vault) internal {
+    function assert_VaultSimple_invariantA(address _vault) internal {//TODO: implement balance changes
         uint256 totalAssets = VaultSimple(_vault).totalAssets();
 
         assertEq(totalAssets, ghost_sumBalances[_vault], string.concat("VaultSimple_invariantA: ", vaultNames[_vault]));

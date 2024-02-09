@@ -1,17 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-// Libraries
-import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
-
-// Contracts
-import {Actor} from "../../utils/Actor.sol";
 import {VaultSimpleBeforeAfterHooks} from "../../hooks/VaultSimpleBeforeAfterHooks.t.sol";
 import {BaseHandler} from "../../base/BaseHandler.t.sol";
 
-/// @title DonationAttackHandler
-/// @notice Handler test contract for the  DonationAttack actions
-contract DonationAttackHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
+/// @title PriceOracleHandler
+/// @notice Handler test contract for the  PriceOracle actions
+contract PriceOracleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,16 +33,11 @@ contract DonationAttackHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
     //                                           ACTIONS                                         //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    /// @notice This function transfers any amount of assets to a contract in the system
-    /// @dev Flashloan simulator
-    function donate(uint256 amount, uint256 j) external {
-        address vaultAddress = _getRandomSupportedVault(j, VaultType.Simple);
+    /// @notice This function simulates changes in the interest rate model
+    function setQuote(uint256 i, uint256 _j, uint256 price) external {
+        uint256 baseAsset = _getRandomBaseAsset(i);
 
-        MockERC20 _token = MockERC20(_getRandomBaseAsset(j));
-
-        _token.mint(address(this), amount);
-
-        _token.transfer(vaultAddress, amount);
+        oracle.setQuote(baseAsset, address(referenceAsset), price);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
