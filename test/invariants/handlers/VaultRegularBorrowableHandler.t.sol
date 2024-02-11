@@ -3,11 +3,16 @@ pragma solidity ^0.8.19;
 
 import {Actor} from "../utils/Actor.sol";
 import {VaultSimpleBeforeAfterHooks} from "../hooks/VaultSimpleBeforeAfterHooks.t.sol";
+import {VaultSimpleBorrowableBeforeAfterHooks} from "../hooks/VaultSimpleBorrowableBeforeAfterHooks.t.sol";
 import {BaseHandler, VaultRegularBorrowable} from "../base/BaseHandler.t.sol";
 
 /// @title VaultRegularBorrowableHandler
 /// @notice Handler test contract for the VaultRegularBorrowable actions
-contract VaultRegularBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
+contract VaultRegularBorrowableHandler is
+    BaseHandler,
+    VaultSimpleBeforeAfterHooks,
+    VaultSimpleBorrowableBeforeAfterHooks
+{
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -49,12 +54,16 @@ contract VaultRegularBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHoo
 
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
         _svBefore(vaultAddress);
+        _svbBefore(vaultAddress);
         (success, returnData) = actor.proxy(
-            vaultAddress, abi.encodeWithSelector(VaultRegularBorrowable.liquidate.selector, repayAssets, receiver)
+            vaultAddress,
+            abi.encodeWithSelector(VaultRegularBorrowable.liquidate.selector, receiver, collateral, repayAssets)
         );
 
         if (success) {
+            assert(false);
             _svAfter(vaultAddress);
+            _svbAfter(vaultAddress);
         }
     }
 

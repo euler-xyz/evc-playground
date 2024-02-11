@@ -35,7 +35,7 @@ contract PriceOracleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
 
     /// @notice This function simulates changes in the interest rate model
     function setQuote(uint256 i, uint256 _j, uint256 price) external {
-        uint256 baseAsset = _getRandomBaseAsset(i);
+        address baseAsset = _getRandomBaseAsset(i);
 
         oracle.setQuote(baseAsset, address(referenceAsset), price);
     }

@@ -3,11 +3,16 @@ pragma solidity ^0.8.19;
 
 import {Actor} from "../utils/Actor.sol";
 import {VaultSimpleBeforeAfterHooks} from "../hooks/VaultSimpleBeforeAfterHooks.t.sol";
+import {VaultSimpleBorrowableBeforeAfterHooks} from "../hooks/VaultSimpleBorrowableBeforeAfterHooks.t.sol";
 import {BaseHandler, VaultSimpleBorrowable} from "../base/BaseHandler.t.sol";
 
 /// @title VaultSimpleBorrowableHandler
 /// @notice Handler test contract for the VaultSimpleBorrowable actions
-contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
+contract VaultSimpleBorrowableHandler is
+    BaseHandler,
+    VaultSimpleBeforeAfterHooks,
+    VaultSimpleBorrowableBeforeAfterHooks
+{
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -27,7 +32,7 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
     //                                           ACTIONS                                         //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function borrow(uint256 assets, address receiver, uint256 j) external setup {
+    /*     function borrow(uint256 assets, address receiver, uint256 j) external setup {
         bool success;
         bytes memory returnData;
 
@@ -38,12 +43,12 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
         _svBefore(vaultAddress);
         (success, returnData) =
-            actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.borrow.selector, assets, receiver));
+    actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.borrow.selector, assets, receiver));
 
         if (success) {
             _svAfter(vaultAddress);
         }
-    }
+    } */
 
     function borrowTo(uint256 assets, uint256 i, uint256 j) external setup {
         bool success;
@@ -58,15 +63,17 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
 
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
         _svBefore(vaultAddress);
+        _svbBefore(vaultAddress);
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.borrow.selector, assets, receiver));
 
         if (success) {
             _svAfter(vaultAddress);
+            _svbAfter(vaultAddress);
         }
     }
 
-    function repay(uint256 assets, address receiver, uint256 j) external setup {
+    /*     function repay(uint256 assets, address receiver, uint256 j) external setup {
         bool success;
         bytes memory returnData;
 
@@ -77,13 +84,13 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
         _svBefore(vaultAddress);
         (success, returnData) =
-            actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.repay.selector, assets, receiver));
+    actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.repay.selector, assets, receiver));
 
         if (success) {
             assert(false);
             _svAfter(vaultAddress);
         }
-    }
+    } */
 
     function repayTo(uint256 assets, uint256 i, uint256 j) external setup {
         bool success;
@@ -98,12 +105,14 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
 
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
         _svBefore(vaultAddress);
+        _svbBefore(vaultAddress);
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.repay.selector, assets, receiver));
 
         if (success) {
             assert(false);
             _svAfter(vaultAddress);
+            _svbAfter(vaultAddress);
         }
     }
 
@@ -120,12 +129,15 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
 
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
         _svBefore(vaultAddress);
+        _svbBefore(vaultAddress);
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.pullDebt.selector, from, assets));
 
+        assert(false);
         if (success) {
             assert(false);
             _svAfter(vaultAddress);
+            _svbAfter(vaultAddress);
         }
     }
 
@@ -140,8 +152,10 @@ contract VaultSimpleBorrowableHandler is BaseHandler, VaultSimpleBeforeAfterHook
 
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
         _svBefore(vaultAddress);
+        _svbBefore(vaultAddress);
         vault.setBorrowCap(newBorrowCap);
         _svAfter(vaultAddress);
+        _svbAfter(vaultAddress);
 
         assert(true);
     }

@@ -40,19 +40,25 @@ abstract contract VaultSimpleBeforeAfterHooks is BaseTest {
     VaultSimpleVars svVars;
 
     function _svBefore(address _vault) internal {
+        // ERC4626
         VaultSimple sv = VaultSimple(_vault);
         svVars.totalSupplyBefore = sv.totalSupply();
+        // VaultBase
         svVars.reentrancyLockBefore = sv.getReentrancyLock();
         svVars.snapshotLengthBefore = sv.getSnapshotLength();
+        // VaultSimple
         svVars.totalAssetsBefore = sv.totalAssets();
         svVars.supplyCapBefore = sv.supplyCap();
     }
 
     function _svAfter(address _vault) internal {
+        // ERC4626
         VaultSimple sv = VaultSimple(_vault);
         svVars.totalSupplyAfter = sv.totalSupply();
+        // VaultBase
         svVars.reentrancyLockAfter = sv.getReentrancyLock();
         svVars.snapshotLengthAfter = sv.getSnapshotLength();
+        // VaultSimple
         svVars.totalAssetsAfter = sv.totalAssets();
         svVars.supplyCapAfter = sv.supplyCap();
 

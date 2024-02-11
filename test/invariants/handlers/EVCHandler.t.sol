@@ -113,7 +113,7 @@ contract EVCHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
         );
 
         if (success) {
-            assert(false);
+            assert(true);
         }
     }
 

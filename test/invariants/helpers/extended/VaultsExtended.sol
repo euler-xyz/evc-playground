@@ -40,6 +40,10 @@ contract VaultSimpleBorrowableExtended is VaultSimpleBorrowable, VaultBaseGetter
         string memory _name,
         string memory _symbol
     ) VaultSimpleBorrowable(_evc, _asset, _name, _symbol) {}
+
+    function getOwed(address _borrower) external view returns (uint256 owed_) {
+        owed_ = owed[_borrower];
+    }
 }
 
 /// @title VaultRegularBorrowableExtended
@@ -54,6 +58,10 @@ contract VaultRegularBorrowableExtended is VaultRegularBorrowable, VaultBaseGett
         string memory _name,
         string memory _symbol
     ) VaultRegularBorrowable(_evc, _asset, _irm, _oracle, _referenceAsset, _name, _symbol) {}
+
+    function getOwed(address _borrower) external view returns (uint256 owed_) {
+        owed_ = owed[_borrower];
+    }
 }
 
 /// @title VaultBorrowableWETHExtended
@@ -68,4 +76,8 @@ contract VaultBorrowableWETHExtended is VaultBorrowableWETH, VaultBaseGetters {
         string memory _name,
         string memory _symbol
     ) VaultBorrowableWETH(_evc, _asset, _irm, _oracle, _referenceAsset, _name, _symbol) {}
+
+    function getOwed(address _borrower) external view returns (uint256 owed_) {
+        owed_ = owed[_borrower];
+    }
 }
