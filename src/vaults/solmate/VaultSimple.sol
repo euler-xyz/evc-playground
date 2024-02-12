@@ -6,7 +6,7 @@ import "solmate/auth/Owned.sol";
 import "solmate/tokens/ERC4626.sol";
 import "solmate/utils/SafeTransferLib.sol";
 import "solmate/utils/FixedPointMathLib.sol";
-import "./VaultBase.sol";
+import "../VaultBase.sol";
 
 /// @title VaultSimple
 /// @dev It provides basic functionality for vaults.

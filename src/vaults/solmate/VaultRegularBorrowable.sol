@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.19;
 
-import "../interfaces/IIRM.sol";
-import "../interfaces/IPriceOracle.sol";
+import "../../interfaces/IIRM.sol";
+import "../../interfaces/IPriceOracle.sol";
 import "./VaultSimpleBorrowable.sol";
 
 /// @title VaultRegularBorrowable
