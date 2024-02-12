@@ -5,7 +5,7 @@ pragma solidity ^0.8.19;
 import "forge-std/Script.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
 import "evc/EthereumVaultConnector.sol";
-import "../src/vaults/VaultRegularBorrowable.sol";
+import "../src/vaults/solmate/VaultRegularBorrowable.sol";
 import "../src/view/BorrowableVaultLensForEVC.sol";
 import "../test/mocks/IRMMock.sol";
 import "../test/mocks/PriceOracleMock.sol";
