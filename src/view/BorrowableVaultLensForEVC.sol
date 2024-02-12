@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 import "solmate/utils/FixedPointMathLib.sol";
 import "evc/interfaces/IEthereumVaultConnector.sol";
-import "../vaults/VaultRegularBorrowable.sol";
+import "../vaults/solmate/VaultRegularBorrowable.sol";
 import "./Types.sol";
 
 contract BorrowableVaultLensForEVC {

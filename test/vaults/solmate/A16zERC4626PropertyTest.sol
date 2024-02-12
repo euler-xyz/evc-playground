@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import "erc4626-tests/ERC4626.test.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
 import "evc/EthereumVaultConnector.sol";
-import "../../src/vaults/VaultSimple.sol";
+import "../../../src/vaults/solmate/VaultSimple.sol";
 
 // source:
 // https://github.com/a16z/erc4626-tests

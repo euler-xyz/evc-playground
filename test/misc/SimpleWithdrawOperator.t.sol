@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import "forge-std/Test.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
 import "evc/EthereumVaultConnector.sol";
-import "../../src/vaults/VaultSimpleBorrowable.sol";
+import "../../src/vaults/solmate/VaultSimpleBorrowable.sol";
 import "../../src/operators/SimpleWithdrawOperator.sol";
 
 contract SimpleWithdrawOperatorTest is Test {

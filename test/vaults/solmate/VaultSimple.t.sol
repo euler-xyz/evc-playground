@@ -5,7 +5,7 @@ import "forge-std/Test.sol";
 import "solmate/test/utils/DSTestPlus.sol";
 import "solmate/test/utils/mocks/MockERC20.sol";
 import "evc/EthereumVaultConnector.sol";
-import "../../src/vaults/VaultSimple.sol";
+import "../../../src/vaults/solmate/VaultSimple.sol";
 
 contract VaultSimpleWithYield is VaultSimple {
     constructor(
