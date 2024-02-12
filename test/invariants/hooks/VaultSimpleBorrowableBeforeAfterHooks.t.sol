@@ -35,18 +35,16 @@ abstract contract VaultSimpleBorrowableBeforeAfterHooks is BaseTest {
         VaultSimpleBorrowable svb = VaultSimpleBorrowable(_vault);
         svbVars.borrowCapBefore = svb.borrowCap();
         svbVars.totalBorrowedBefore = svb.totalBorrowed();
-        svbVars.borrowCapBefore = svb.borrowCap();
-        svbVars.totalBorrowedBefore = svb.totalBorrowed();
     }
 
     function _svbAfter(address _vault) internal {
         VaultSimpleBorrowable svb = VaultSimpleBorrowable(_vault);
         svbVars.borrowCapAfter = svb.borrowCap();
         svbVars.totalBorrowedAfter = svb.totalBorrowed();
-        svbVars.borrowCapAfter = svb.borrowCap();
-        svbVars.totalBorrowedAfter = svb.totalBorrowed();
 
         // VaultSimple Post Conditions
+
+        assert_VaultSimpleBorrowable_PcA();
     }
 
     /*/////////////////////////////////////////////////////////////////////////////////////////////
@@ -55,9 +53,19 @@ abstract contract VaultSimpleBorrowableBeforeAfterHooks is BaseTest {
 
     VaultSimpleBorrowable
         Post Condition A: 
+    (borrowCapAfter != 0) && (totalBorrowedAfter >= totalBorrowedBefore) => borrowCapAfter >= totalBorrowedAfter
            
 
     */
 
     /////////////////////////////////////////////////////////////////////////////////////////////*/
+
+    function assert_VaultSimpleBorrowable_PcA() internal {
+        assertTrue(
+            (svbVars.totalBorrowedAfter > svbVars.totalBorrowedBefore && svbVars.borrowCapAfter != 0)
+                ? (svbVars.borrowCapAfter >= svbVars.totalBorrowedAfter)
+                : true,
+            "(totalBorrowedAfter > totalBorrowedBefore)"
+        );
+    }
 }
