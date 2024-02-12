@@ -8,11 +8,12 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 import {Actor} from "../utils/Actor.sol";
 import {ProtocolAssertions} from "../base/ProtocolAssertions.t.sol";
 import {BaseStorage, VaultSimple, VaultSimpleBorrowable, VaultRegularBorrowable} from "../base/BaseStorage.t.sol";
+import {HookAggregator} from "../hooks/HookAggregator.t.sol";
 
 /// @title BaseHandler
 /// @notice Contains common logic for all handlers
 /// @dev inherits all suite assertions since per-action assertions are implemented in the handlers
-contract BaseHandler is ProtocolAssertions {
+contract BaseHandler is ProtocolAssertions, HookAggregator {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

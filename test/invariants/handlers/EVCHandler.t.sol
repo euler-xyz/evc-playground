@@ -6,12 +6,11 @@ import {EthereumVaultConnector} from "evc/EthereumVaultConnector.sol";
 
 // Testing contracts
 import {Actor} from "../utils/Actor.sol";
-import {VaultSimpleBeforeAfterHooks} from "../hooks/VaultSimpleBeforeAfterHooks.t.sol";
 import {BaseHandler, EnumerableSet} from "../base/BaseHandler.t.sol";
 
 /// @title EVCHandler
 /// @notice Handler test contract for the EVC actions
-contract EVCHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
+contract EVCHandler is BaseHandler {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

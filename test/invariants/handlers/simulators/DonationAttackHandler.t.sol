@@ -6,12 +6,11 @@ import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 
 // Contracts
 import {Actor} from "../../utils/Actor.sol";
-import {VaultSimpleBeforeAfterHooks} from "../../hooks/VaultSimpleBeforeAfterHooks.t.sol";
 import {BaseHandler} from "../../base/BaseHandler.t.sol";
 
 /// @title DonationAttackHandler
 /// @notice Handler test contract for the  DonationAttack actions
-contract DonationAttackHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
+contract DonationAttackHandler is BaseHandler {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////

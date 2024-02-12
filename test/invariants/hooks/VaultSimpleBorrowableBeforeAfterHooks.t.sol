@@ -22,7 +22,7 @@ abstract contract VaultSimpleBorrowableBeforeAfterHooks is BaseTest {
     using Pretty for bool;
 
     struct VaultSimpleBorrowableVars {
-        // VaultsimpleBorrowable
+        // VaultSimpleBorrowable
         uint256 borrowCapBefore;
         uint256 borrowCapAfter;
         uint256 totalBorrowedBefore;

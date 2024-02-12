@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {VaultSimpleBeforeAfterHooks} from "../../hooks/VaultSimpleBeforeAfterHooks.t.sol";
 import {BaseHandler} from "../../base/BaseHandler.t.sol";
 
 /// @title IRMHandler
 /// @notice Handler test contract for the  IRM actions
-contract IRMHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
+contract IRMHandler is BaseHandler {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////

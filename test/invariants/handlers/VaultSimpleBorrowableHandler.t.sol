@@ -2,17 +2,11 @@
 pragma solidity ^0.8.19;
 
 import {Actor} from "../utils/Actor.sol";
-import {VaultSimpleBeforeAfterHooks} from "../hooks/VaultSimpleBeforeAfterHooks.t.sol";
-import {VaultSimpleBorrowableBeforeAfterHooks} from "../hooks/VaultSimpleBorrowableBeforeAfterHooks.t.sol";
 import {BaseHandler, VaultSimpleBorrowable} from "../base/BaseHandler.t.sol";
 
 /// @title VaultSimpleBorrowableHandler
 /// @notice Handler test contract for the VaultSimpleBorrowable actions
-contract VaultSimpleBorrowableHandler is
-    BaseHandler,
-    VaultSimpleBeforeAfterHooks,
-    VaultSimpleBorrowableBeforeAfterHooks
-{
+contract VaultSimpleBorrowableHandler is BaseHandler {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -41,12 +35,12 @@ contract VaultSimpleBorrowableHandler is
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
-        _svBefore(vaultAddress);
+        _before(vaultAddress, VaultType.SimpleBorrowable);
         (success, returnData) =
     actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.borrow.selector, assets, receiver));
 
         if (success) {
-            _svAfter(vaultAddress);
+            _after(vaultAddress, VaultType.SimpleBorrowable);
         }
     } */
 
@@ -62,14 +56,12 @@ contract VaultSimpleBorrowableHandler is
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
-        _svBefore(vaultAddress);
-        _svbBefore(vaultAddress);
+        _before(vaultAddress, VaultType.SimpleBorrowable);
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.borrow.selector, assets, receiver));
 
         if (success) {
-            _svAfter(vaultAddress);
-            _svbAfter(vaultAddress);
+            _after(vaultAddress, VaultType.SimpleBorrowable);
         }
     }
 
@@ -82,13 +74,13 @@ contract VaultSimpleBorrowableHandler is
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
-        _svBefore(vaultAddress);
+        _before(vaultAddress, VaultType.SimpleBorrowable);
         (success, returnData) =
     actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.repay.selector, assets, receiver));
 
         if (success) {
             assert(false);
-            _svAfter(vaultAddress);
+           _after(vaultAddress, VaultType.SimpleBorrowable);
         }
     } */
 
@@ -104,14 +96,12 @@ contract VaultSimpleBorrowableHandler is
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
-        _svBefore(vaultAddress);
-        _svbBefore(vaultAddress);
+        _before(vaultAddress, VaultType.SimpleBorrowable);
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.repay.selector, assets, receiver));
 
         if (success) {
-            _svAfter(vaultAddress);
-            _svbAfter(vaultAddress);
+            _after(vaultAddress, VaultType.SimpleBorrowable);
         }
     }
 
@@ -127,14 +117,12 @@ contract VaultSimpleBorrowableHandler is
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
-        _svBefore(vaultAddress);
-        _svbBefore(vaultAddress);
+        _before(vaultAddress, VaultType.SimpleBorrowable);
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.pullDebt.selector, from, assets));
 
         if (success) {
-            _svAfter(vaultAddress);
-            _svbAfter(vaultAddress);
+            _after(vaultAddress, VaultType.SimpleBorrowable);
         }
     }
 
@@ -148,11 +136,9 @@ contract VaultSimpleBorrowableHandler is
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
-        _svBefore(vaultAddress);
-        _svbBefore(vaultAddress);
+        _before(vaultAddress, VaultType.SimpleBorrowable);
         vault.setBorrowCap(newBorrowCap);
-        _svAfter(vaultAddress);
-        _svbAfter(vaultAddress);
+        _after(vaultAddress, VaultType.SimpleBorrowable);
 
         assert(true);
     }

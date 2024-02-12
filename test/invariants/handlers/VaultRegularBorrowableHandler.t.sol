@@ -6,17 +6,11 @@ import {ERC4626} from "solmate/tokens/ERC4626.sol";
 
 // Contracts
 import {Actor} from "../utils/Actor.sol";
-import {VaultSimpleBeforeAfterHooks} from "../hooks/VaultSimpleBeforeAfterHooks.t.sol";
-import {VaultSimpleBorrowableBeforeAfterHooks} from "../hooks/VaultSimpleBorrowableBeforeAfterHooks.t.sol";
 import {BaseHandler, VaultRegularBorrowable} from "../base/BaseHandler.t.sol";
 
 /// @title VaultRegularBorrowableHandler
 /// @notice Handler test contract for the VaultRegularBorrowable actions
-contract VaultRegularBorrowableHandler is
-    BaseHandler,
-    VaultSimpleBeforeAfterHooks,
-    VaultSimpleBorrowableBeforeAfterHooks
-{
+contract VaultRegularBorrowableHandler is BaseHandler {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -59,8 +53,7 @@ contract VaultRegularBorrowableHandler is
         repayAssets = clampBetween(repayAssets, 0, vault.debtOf(violator));
 
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
-        _svBefore(vaultAddress);
-        _svbBefore(vaultAddress);
+        _before(vaultAddress, VaultType.RegularBorrowable);
         (success, returnData) = actor.proxy(
             vaultAddress,
             abi.encodeWithSelector(VaultRegularBorrowable.liquidate.selector, violator, collateral, repayAssets)
@@ -68,8 +61,7 @@ contract VaultRegularBorrowableHandler is
 
         if (success) {
             assert(false);
-            _svAfter(vaultAddress);
-            _svbAfter(vaultAddress);
+            _after(vaultAddress, VaultType.RegularBorrowable);
         }
     }
 
@@ -93,11 +85,9 @@ contract VaultRegularBorrowableHandler is
         address vaultAddress = _getRandomSupportedVault(i, VaultType.RegularBorrowable);
 
         VaultRegularBorrowable vault = VaultRegularBorrowable(vaultAddress);
-        _svBefore(vaultAddress);
-        _svbBefore(vaultAddress);
+        _before(vaultAddress, VaultType.RegularBorrowable);
         vault.setCollateralFactor(ERC4626(address(vault)), collateralFactor);
-        _svAfter(vaultAddress);
-        _svbAfter(vaultAddress);
+        _after(vaultAddress, VaultType.RegularBorrowable);
 
         assert(true);
     }

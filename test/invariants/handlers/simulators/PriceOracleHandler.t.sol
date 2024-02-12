@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.19;
 
-import {VaultSimpleBeforeAfterHooks} from "../../hooks/VaultSimpleBeforeAfterHooks.t.sol";
 import {BaseHandler} from "../../base/BaseHandler.t.sol";
 
 /// @title PriceOracleHandler
 /// @notice Handler test contract for the  PriceOracle actions
-contract PriceOracleHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
+contract PriceOracleHandler is BaseHandler {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
