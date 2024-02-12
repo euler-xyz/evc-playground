@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 
 import "solmate/utils/SafeTransferLib.sol";
 import "evc/interfaces/IEthereumVaultConnector.sol";
-import "../vaults/VaultSimpleBorrowable.sol";
+import "../vaults/solmate/VaultSimpleBorrowable.sol";
 
 /// @title SimpleWithdrawOperator
 /// @notice This contract allows anyone, in exchange for a tip, to pull liquidity out

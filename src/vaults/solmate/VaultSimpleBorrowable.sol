@@ -24,7 +24,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     error OutstandingDebt();
 
     uint256 public borrowCap;
-    uint256 public totalBorrowed;
+    uint256 internal _totalBorrowed;
     mapping(address account => uint256 assets) internal owed;
 
     constructor(
@@ -39,6 +39,13 @@ contract VaultSimpleBorrowable is VaultSimple {
     function setBorrowCap(uint256 newBorrowCap) external onlyOwner {
         borrowCap = newBorrowCap;
         emit BorrowCapSet(newBorrowCap);
+    }
+
+    /// @notice Returns the total borrowed assets from the vault.
+    /// @return The total borrowed assets from the vault.
+    function totalBorrowed() public view virtual nonReentrantRO returns (uint256) {
+        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
+        return currentTotalBorrowed;
     }
 
     /// @notice Returns the debt of an account.
@@ -103,7 +110,7 @@ contract VaultSimpleBorrowable is VaultSimple {
         // validate the vault state here:
         (uint256 initialSupply, uint256 initialBorrowed) = abi.decode(oldSnapshot, (uint256, uint256));
         uint256 finalSupply = _convertToAssets(totalSupply, false);
-        uint256 finalBorrowed = totalBorrowed;
+        uint256 finalBorrowed = _totalBorrowed;
 
         // the supply cap can be implemented like this:
         if (supplyCap != 0 && finalSupply > supplyCap && finalSupply > initialSupply) {
@@ -267,7 +274,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @param assets The assets.
     function _increaseOwed(address account, uint256 assets) internal virtual {
         owed[account] = _debtOf(account) + assets;
-        totalBorrowed += assets;
+        _totalBorrowed += assets;
     }
 
     /// @notice Decreases the owed amount of an account.
@@ -275,7 +282,9 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @param assets The assets.
     function _decreaseOwed(address account, uint256 assets) internal virtual {
         owed[account] = _debtOf(account) - assets;
-        totalBorrowed -= assets;
+
+        uint256 __totalBorrowed = _totalBorrowed;
+        _totalBorrowed = __totalBorrowed >= assets ? __totalBorrowed - assets : 0;
     }
 
     /// @notice Accrues interest.
@@ -284,7 +293,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// needed so that it can be overriden by child contracts without a need to override other functions which use it.
     /// @return The current values of total borrowed and interest accumulator.
     function _accrueInterest() internal virtual returns (uint256, uint256) {
-        return (totalBorrowed, 0);
+        return (_totalBorrowed, 0);
     }
 
     /// @notice Calculates the accrued interest.
@@ -295,7 +304,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @return The total borrowed amount, the interest accumulator and a boolean value that indicates whether the data
     /// should be updated.
     function _accrueInterestCalculate() internal view virtual returns (uint256, uint256, bool) {
-        return (totalBorrowed, 0, false);
+        return (_totalBorrowed, 0, false);
     }
 
     /// @notice Updates the interest rate.

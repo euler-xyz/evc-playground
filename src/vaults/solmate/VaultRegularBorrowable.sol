@@ -2,8 +2,8 @@
 
 pragma solidity ^0.8.19;
 
-import "../interfaces/IIRM.sol";
-import "../interfaces/IPriceOracle.sol";
+import "../../interfaces/IIRM.sol";
+import "../../interfaces/IPriceOracle.sol";
 import "./VaultSimpleBorrowable.sol";
 
 /// @title VaultRegularBorrowable
@@ -330,7 +330,8 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         if (debt == 0) return 0;
 
         (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
-        return (debt * currentInterestAccumulator) / userInterestAccumulator[account];
+
+        return debt.mulDivUp(currentInterestAccumulator, userInterestAccumulator[account]);
     }
 
     /// @notice Accrues interest.
@@ -340,7 +341,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
             _accrueInterestCalculate();
 
         if (shouldUpdate) {
-            totalBorrowed = currentTotalBorrowed;
+            _totalBorrowed = currentTotalBorrowed;
             interestAccumulator = currentInterestAccumulator;
             lastInterestUpdate = block.timestamp;
         }
@@ -353,7 +354,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     /// should be updated.
     function _accrueInterestCalculate() internal view virtual override returns (uint256, uint256, bool) {
         uint256 timeElapsed = block.timestamp - lastInterestUpdate;
-        uint256 oldTotalBorrowed = totalBorrowed;
+        uint256 oldTotalBorrowed = _totalBorrowed;
         uint256 oldInterestAccumulator = interestAccumulator;
 
         if (timeElapsed == 0) {
@@ -370,7 +371,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
 
     /// @notice Updates the interest rate.
     function _updateInterest() internal virtual override {
-        uint256 borrowed = totalBorrowed;
+        uint256 borrowed = _totalBorrowed;
         uint256 poolAssets = _totalAssets + borrowed;
 
         uint32 utilisation;
