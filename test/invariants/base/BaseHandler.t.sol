@@ -45,7 +45,7 @@ contract BaseHandler is ProtocolAssertions {
     mapping(address => EnumerableSet.AddressSet) internal ghost_accountCollaterals;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    //                                      HELPERS                                              //
+    //                                         HELPERS                                           //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice Returns a random vault address that supports a specific vault type, this optimises the invariant suite

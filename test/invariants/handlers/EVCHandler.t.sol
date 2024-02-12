@@ -154,6 +154,21 @@ contract EVCHandler is BaseHandler, VaultSimpleBeforeAfterHooks {
         }
     }
 
+    function requireAccountStatusCheck(uint256 i) external setup {
+        bool success;
+        bytes memory returnData;
+
+        // Get one of the three actors randomly
+        address account = _getRandomActor(i);
+
+        evc.call(
+            address(evc),
+            address(0),
+            0,
+            abi.encodeWithSelector(EthereumVaultConnector.requireAccountStatusCheck.selector, account)
+        );
+    }
+
     //TODO:
     // - batch
     // - batchRevert

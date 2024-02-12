@@ -110,7 +110,6 @@ contract VaultSimpleBorrowableHandler is
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.repay.selector, assets, receiver));
 
         if (success) {
-            assert(false);
             _svAfter(vaultAddress);
             _svbAfter(vaultAddress);
         }
@@ -133,9 +132,7 @@ contract VaultSimpleBorrowableHandler is
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.pullDebt.selector, from, assets));
 
-        assert(false);
         if (success) {
-            assert(false);
             _svAfter(vaultAddress);
             _svbAfter(vaultAddress);
         }
