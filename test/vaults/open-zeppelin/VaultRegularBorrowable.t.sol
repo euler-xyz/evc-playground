@@ -10,7 +10,7 @@ import {PriceOracleMock} from "../../mocks/PriceOracleMock.sol";
 
 contract VaultRegularBorrowableTest is Test {
     error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
-     
+
     IEVC evc;
     MockERC20 referenceAsset;
     MockERC20 liabilityAsset;
