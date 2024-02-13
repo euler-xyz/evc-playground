@@ -4,11 +4,13 @@ pragma solidity ^0.8.19;
 import "forge-std/Test.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import "evc/EthereumVaultConnector.sol";
-import "../../../src/vaults/solmate/VaultRegularBorrowable.sol";
+import "../../../src/vaults/open-zeppelin/VaultRegularBorrowable.sol";
 import {IRMMock} from "../../mocks/IRMMock.sol";
 import {PriceOracleMock} from "../../mocks/PriceOracleMock.sol";
 
 contract VaultRegularBorrowableTest is Test {
+    error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
+     
     IEVC evc;
     MockERC20 referenceAsset;
     MockERC20 liabilityAsset;
@@ -30,12 +32,13 @@ contract VaultRegularBorrowableTest is Test {
         irm = new IRMMock();
         oracle = new PriceOracleMock();
 
-        liabilityVault =
-            new VaultRegularBorrowable(evc, liabilityAsset, irm, oracle, referenceAsset, "Liability Vault", "LV");
+        liabilityVault = new VaultRegularBorrowable(
+            evc, IERC20(address(liabilityAsset)), irm, oracle, ERC20(address(referenceAsset)), "Liability Vault", "LV"
+        );
 
-        collateralVault1 = new VaultSimple(evc, collateralAsset1, "Collateral Vault 1", "CV1");
+        collateralVault1 = new VaultSimple(evc, IERC20(address(collateralAsset1)), "Collateral Vault 1", "CV1");
 
-        collateralVault2 = new VaultSimple(evc, collateralAsset2, "Collateral Vault 2", "CV2");
+        collateralVault2 = new VaultSimple(evc, IERC20(address(collateralAsset2)), "Collateral Vault 2", "CV2");
 
         irm.setInterestRate(10); // 10% APY
         oracle.setQuote(address(liabilityAsset), address(referenceAsset), 1e17); // 1 LA = 0.1 RA
@@ -108,7 +111,7 @@ contract VaultRegularBorrowableTest is Test {
 
         // collateral still not enabled, hence borrow unsuccessful
         vm.prank(bob);
-        vm.expectRevert(abi.encodeWithSelector(VaultSimpleBorrowable.AccountUnhealthy.selector));
+        vm.expectRevert(abi.encodeWithSelector(VaultRegularBorrowable.AccountUnhealthy.selector));
         liabilityVault.borrow(35e18, bob);
 
         vm.prank(bob);
@@ -116,7 +119,7 @@ contract VaultRegularBorrowableTest is Test {
 
         // too much borrowed because only one collateral enabled, hence borrow unsuccessful
         vm.prank(bob);
-        vm.expectRevert(abi.encodeWithSelector(VaultSimpleBorrowable.AccountUnhealthy.selector));
+        vm.expectRevert(abi.encodeWithSelector(VaultRegularBorrowable.AccountUnhealthy.selector));
         liabilityVault.borrow(35e18, bob);
 
         vm.prank(bob);
@@ -124,7 +127,7 @@ contract VaultRegularBorrowableTest is Test {
 
         // too much borrowed, hence borrow unsuccessful
         vm.prank(bob);
-        vm.expectRevert(abi.encodeWithSelector(VaultSimpleBorrowable.AccountUnhealthy.selector));
+        vm.expectRevert(abi.encodeWithSelector(VaultRegularBorrowable.AccountUnhealthy.selector));
         liabilityVault.borrow(35e18 + 0.01e18, bob);
 
         // finally borrow is successful
@@ -140,7 +143,7 @@ contract VaultRegularBorrowableTest is Test {
         assertEq(liabilityAsset.balanceOf(bob), 35e18);
         assertEq(liabilityVault.debtOf(bob), 35e18 + 3.680982126514837396e18);
         assertEq(liabilityVault.maxWithdraw(alice), 15e18);
-        vm.expectRevert(abi.encodeWithSelector(VaultSimpleBorrowable.AccountUnhealthy.selector));
+        vm.expectRevert(abi.encodeWithSelector(VaultRegularBorrowable.AccountUnhealthy.selector));
         evc.requireAccountStatusCheck(bob);
 
         // bob repays only some of his debt, his account is still unhealthy
@@ -152,7 +155,7 @@ contract VaultRegularBorrowableTest is Test {
         assertEq(liabilityAsset.balanceOf(bob), 35e18 - 2.680982126514837396e18);
         assertEq(liabilityVault.debtOf(bob), 35e18 + 1e18);
         assertEq(liabilityVault.maxWithdraw(alice), 15e18 + 2.680982126514837396e18);
-        vm.expectRevert(abi.encodeWithSelector(VaultSimpleBorrowable.AccountUnhealthy.selector));
+        vm.expectRevert(abi.encodeWithSelector(VaultRegularBorrowable.AccountUnhealthy.selector));
         evc.requireAccountStatusCheck(bob);
 
         // alice kicks in to liquidate bob. first enable controller and collaterals
@@ -170,7 +173,7 @@ contract VaultRegularBorrowableTest is Test {
 
         // liquidation fails multiple times as alice tries to liquidate too much
         vm.prank(alice);
-        vm.expectRevert(stdError.arithmeticError);
+        vm.expectRevert(abi.encodeWithSelector(ERC20InsufficientBalance.selector, bob, 100e18, 309e18));
         liabilityVault.liquidate(bob, address(collateralVault1), 30e18);
 
         vm.prank(alice);
@@ -335,19 +338,19 @@ contract VaultRegularBorrowableTest is Test {
             targetContract: address(liabilityVault),
             onBehalfOfAccount: bob,
             value: 0,
-            data: abi.encodeWithSelector(VaultSimpleBorrowable.borrow.selector, 35e18 + 0.01e18, bob)
+            data: abi.encodeWithSelector(VaultRegularBorrowable.borrow.selector, 35e18 + 0.01e18, bob)
         });
 
         // it will revert because of the borrow amount being to high
         vm.prank(bob);
-        vm.expectRevert(abi.encodeWithSelector(VaultSimpleBorrowable.AccountUnhealthy.selector));
+        vm.expectRevert(abi.encodeWithSelector(VaultRegularBorrowable.AccountUnhealthy.selector));
         evc.batch(items);
 
         items[5] = IEVC.BatchItem({
             targetContract: address(liabilityVault),
             onBehalfOfAccount: bob,
             value: 0,
-            data: abi.encodeWithSelector(VaultSimpleBorrowable.borrow.selector, 35e18, bob)
+            data: abi.encodeWithSelector(VaultRegularBorrowable.borrow.selector, 35e18, bob)
         });
 
         // now it will succeed
@@ -380,7 +383,7 @@ contract VaultRegularBorrowableTest is Test {
         assertEq(liabilityAsset.balanceOf(bob), 35e18);
         assertEq(liabilityVault.debtOf(bob), 35e18 + 3.680982126514837396e18);
         assertEq(liabilityVault.maxWithdraw(alice), 15e18);
-        vm.expectRevert(abi.encodeWithSelector(VaultSimpleBorrowable.AccountUnhealthy.selector));
+        vm.expectRevert(abi.encodeWithSelector(VaultRegularBorrowable.AccountUnhealthy.selector));
         evc.requireAccountStatusCheck(bob);
 
         // bob repays only some of his debt, his account is still unhealthy
@@ -392,7 +395,7 @@ contract VaultRegularBorrowableTest is Test {
         assertEq(liabilityAsset.balanceOf(bob), 35e18 - 2.680982126514837396e18);
         assertEq(liabilityVault.debtOf(bob), 35e18 + 1e18);
         assertEq(liabilityVault.maxWithdraw(alice), 15e18 + 2.680982126514837396e18);
-        vm.expectRevert(abi.encodeWithSelector(VaultSimpleBorrowable.AccountUnhealthy.selector));
+        vm.expectRevert(abi.encodeWithSelector(VaultRegularBorrowable.AccountUnhealthy.selector));
         evc.requireAccountStatusCheck(bob);
 
         // alice kicks in to liquidate bob, repay the debt and withdraw seized collateral
@@ -431,13 +434,13 @@ contract VaultRegularBorrowableTest is Test {
             targetContract: address(liabilityVault),
             onBehalfOfAccount: alice,
             value: 0,
-            data: abi.encodeWithSelector(VaultSimpleBorrowable.repay.selector, 6e18, alice)
+            data: abi.encodeWithSelector(VaultRegularBorrowable.repay.selector, 6e18, alice)
         });
         items[6] = IEVC.BatchItem({
             targetContract: address(liabilityVault),
             onBehalfOfAccount: alice,
             value: 0,
-            data: abi.encodeWithSelector(VaultSimpleBorrowable.disableController.selector)
+            data: abi.encodeWithSelector(VaultRegularBorrowable.disableController.selector)
         });
         items[7] = IEVC.BatchItem({
             targetContract: address(evc),
@@ -493,13 +496,13 @@ contract VaultRegularBorrowableTest is Test {
             targetContract: address(liabilityVault),
             onBehalfOfAccount: bob,
             value: 0,
-            data: abi.encodeWithSelector(VaultSimpleBorrowable.repay.selector, 30e18, bob)
+            data: abi.encodeWithSelector(VaultRegularBorrowable.repay.selector, 30e18, bob)
         });
         items[1] = IEVC.BatchItem({
             targetContract: address(liabilityVault),
             onBehalfOfAccount: bob,
             value: 0,
-            data: abi.encodeWithSelector(VaultSimpleBorrowable.disableController.selector)
+            data: abi.encodeWithSelector(VaultRegularBorrowable.disableController.selector)
         });
         items[2] = IEVC.BatchItem({
             targetContract: address(evc),

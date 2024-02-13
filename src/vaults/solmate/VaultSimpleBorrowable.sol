@@ -43,7 +43,7 @@ contract VaultSimpleBorrowable is VaultSimple {
 
     /// @notice Returns the total borrowed assets from the vault.
     /// @return The total borrowed assets from the vault.
-    function totalBorrowed() public view virtual nonReentrantRO returns (uint256) {
+    function totalBorrowed() public view virtual returns (uint256) {
         (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
         return currentTotalBorrowed;
     }
@@ -51,7 +51,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @notice Returns the debt of an account.
     /// @param account The account to check.
     /// @return The debt of the account.
-    function debtOf(address account) public view virtual nonReentrantRO returns (uint256) {
+    function debtOf(address account) public view virtual returns (uint256) {
         return _debtOf(account);
     }
 
@@ -59,7 +59,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @dev This function is overridden to take into account the fact that some of the assets may be borrowed.
     /// @param owner The owner of the assets.
     /// @return The maximum amount that can be withdrawn.
-    function maxWithdraw(address owner) public view virtual override nonReentrantRO returns (uint256) {
+    function maxWithdraw(address owner) public view virtual override returns (uint256) {
         uint256 totAssets = _totalAssets;
         uint256 ownerAssets = _convertToAssets(balanceOf[owner], false);
 
@@ -70,7 +70,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @dev This function is overridden to take into account the fact that some of the assets may be borrowed.
     /// @param owner The owner of the assets.
     /// @return The maximum amount that can be redeemed.
-    function maxRedeem(address owner) public view virtual override nonReentrantRO returns (uint256) {
+    function maxRedeem(address owner) public view virtual override returns (uint256) {
         uint256 totAssets = _totalAssets;
         uint256 ownerShares = balanceOf[owner];
 
