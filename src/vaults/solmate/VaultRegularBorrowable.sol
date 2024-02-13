@@ -21,7 +21,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     uint256 internal lastInterestUpdate;
     uint256 internal interestAccumulator;
     mapping(address account => uint256) internal userInterestAccumulator;
-    mapping(ERC4626 vault => uint256) internal collateralFactor;
+    mapping(address asset => uint256) internal collateralFactor;
 
     // IRM
     IIRM public irm;
@@ -73,15 +73,15 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         oracle = _oracle;
     }
 
-    /// @notice Sets the collateral factor of a vault.
-    /// @param vault The vault.
+    /// @notice Sets the collateral factor of an asset.
+    /// @param _asset The asset.
     /// @param _collateralFactor The new collateral factor.
-    function setCollateralFactor(ERC4626 vault, uint256 _collateralFactor) external onlyOwner {
+    function setCollateralFactor(address _asset, uint256 _collateralFactor) external onlyOwner {
         if (_collateralFactor > COLLATERAL_FACTOR_SCALE) {
             revert InvalidCollateralFactor();
         }
 
-        collateralFactor[vault] = _collateralFactor;
+        collateralFactor[_asset] = _collateralFactor;
     }
 
     /// @notice Gets the current interest rate of the vault.
@@ -96,11 +96,11 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         return interestRate;
     }
 
-    /// @notice Gets the collateral factor of a vault.
-    /// @param vault The vault.
+    /// @notice Gets the collateral factor of an asset.
+    /// @param _asset The asset.
     /// @return The collateral factor.
-    function getCollateralFactor(ERC4626 vault) external view returns (uint256) {
-        return collateralFactor[vault];
+    function getCollateralFactor(address _asset) external view returns (uint256) {
+        return collateralFactor[_asset];
     }
 
     /// @notice Checks the status of an account.
@@ -148,7 +148,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
 
         createVaultSnapshot();
 
-        uint256 seizeShares = _calculateSharesToSeize(violator, collateral, repayAssets);
+        uint256 seizeAssets = _calculateAssetsToSeize(violator, collateral, repayAssets);
 
         _decreaseOwed(violator, repayAssets);
         _increaseOwed(msgSender, repayAssets);
@@ -163,14 +163,14 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
                 revert CollateralDisabled();
             }
 
-            balanceOf[violator] -= seizeShares;
-            balanceOf[msgSender] += seizeShares;
+            balanceOf[violator] -= seizeAssets;
+            balanceOf[msgSender] += seizeAssets;
 
-            emit Transfer(violator, msgSender, seizeShares);
+            emit Transfer(violator, msgSender, seizeAssets);
         } else {
             // if external assets are being seized, the EVC will take care of safety
             // checks during the collateral control
-            liquidateCollateralShares(collateral, violator, msgSender, seizeShares);
+            liquidateCollateralShares(collateral, violator, msgSender, seizeAssets);
 
             // there's a possibility that the liquidation does not bring the violator back to
             // a healthy state or the liquidator chooses not to repay enough to bring the violator
@@ -210,33 +210,29 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
 
         // Calculate the aggregated value of the collateral in terms of the reference asset
         for (uint256 i = 0; i < collaterals.length; ++i) {
-            ERC4626 collateral = ERC4626(collaterals[i]);
+            address collateral = collaterals[i];
             uint256 cf = collateralFactor[collateral];
 
             // Collaterals with a collateral factor of 0 are worthless
             if (cf != 0) {
-                uint256 collateralShares = collateral.balanceOf(account);
+                uint256 collateralAssets = ERC20(collateral).balanceOf(account);
 
-                if (collateralShares > 0) {
-                    uint256 collateralAssets = collateral.convertToAssets(collateralShares);
-
+                if (collateralAssets > 0) {
                     collateralValue += (
-                        IPriceOracle(oracle).getQuote(
-                            collateralAssets, address(collateral.asset()), address(referenceAsset)
-                        ) * cf
+                        IPriceOracle(oracle).getQuote(collateralAssets, collateral, address(referenceAsset)) * cf
                     ) / COLLATERAL_FACTOR_SCALE;
                 }
             }
         }
     }
 
-    /// @notice Calculates the amount of shares to seize from a violator's account during a liquidation event.
+    /// @notice Calculates the amount of assets to seize from a violator's account during a liquidation event.
     /// @dev This function is used during the liquidation process to determine the amount of collateral to seize.
     /// @param violator The address of the violator's account.
     /// @param collateral The address of the collateral to be seized.
     /// @param repayAssets The amount of assets the liquidator is attempting to repay.
     /// @return The amount of collateral shares to seize from the violator's account.
-    function _calculateSharesToSeize(
+    function _calculateAssetsToSeize(
         address violator,
         address collateral,
         uint256 repayAssets
@@ -244,7 +240,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         // do not allow to seize the assets for collateral without a collateral factor.
         // note that a user can enable any address as collateral, even if it's not recognized
         // as such (cf == 0)
-        uint256 cf = collateralFactor[ERC4626(collateral)];
+        uint256 cf = collateralFactor[collateral];
         if (cf == 0) {
             revert CollateralDisabled();
         }
@@ -285,21 +281,17 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         }
 
         // the liquidator will be transferred the collateral value of the repaid debt + the liquidation incentive
-        address collateralAsset = address(ERC4626(collateral).asset());
-        uint256 collateralUnit = 10 ** ERC20(collateralAsset).decimals();
-
         uint256 seizeValue = (repayValue * (100 + liquidationIncentive)) / 100;
+        uint256 shareUnit = 10 ** ERC20(collateral).decimals();
 
-        uint256 seizeAssets = (seizeValue * collateralUnit)
-            / IPriceOracle(oracle).getQuote(collateralUnit, collateralAsset, address(referenceAsset));
+        uint256 seizeAssets =
+            (seizeValue * shareUnit) / IPriceOracle(oracle).getQuote(shareUnit, collateral, address(referenceAsset));
 
-        uint256 seizeShares = ERC4626(collateral).convertToShares(seizeAssets);
-
-        if (seizeShares == 0) {
+        if (seizeAssets == 0) {
             revert RepayAssetsInsufficient();
         }
 
-        return seizeShares;
+        return seizeAssets;
     }
 
     /// @notice Increases the owed amount of an account.

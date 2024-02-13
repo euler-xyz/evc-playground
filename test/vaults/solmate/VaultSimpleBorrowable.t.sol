@@ -18,7 +18,7 @@ contract VaultSimpleBorrowableTest is Test {
     }
 
     function test_SimpleBorrowRepay(address alice, uint128 randomAmount) public {
-        vm.assume(alice != address(0) && alice != address(evc));
+        vm.assume(alice != address(0) && alice != address(evc) && alice != address(vault));
         vm.assume(randomAmount > 10);
 
         uint256 amount = uint256(randomAmount);
@@ -78,7 +78,7 @@ contract VaultSimpleBorrowableTest is Test {
     }
 
     function test_SimpleBorrowRepayWithBatch(address alice, uint128 randomAmount) public {
-        vm.assume(alice != address(0));
+        vm.assume(alice != address(0) && alice != address(evc) && alice != address(vault));
         vm.assume(randomAmount > 10);
 
         uint256 amount = uint256(randomAmount);
