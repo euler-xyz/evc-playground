@@ -70,7 +70,7 @@ contract VaultRegularBorrowableHandler is BaseHandler {
         uint256 warpAmount_ = _bound(seed_, 0, 10 days);
 
         vm.warp(block.timestamp + warpAmount_);
-    }
+    }]
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                         OWNER ACTIONS                                     //

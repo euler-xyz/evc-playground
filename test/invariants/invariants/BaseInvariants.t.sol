@@ -19,6 +19,7 @@ abstract contract BaseInvariants is HandlerAggregator {
     BaseInvariants
         Invariant A: reentrancyLock == REENTRANCY_UNLOCKED
         Invariant B: snapshot == 0
+        TODO: at most we can only have one liability between calls
 
     */
 
