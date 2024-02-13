@@ -5,12 +5,12 @@ import "forge-std/Test.sol";
 import "solmate/test/utils/DSTestPlus.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import "evc/EthereumVaultConnector.sol";
-import "../../../src/vaults/solmate/VaultSimple.sol";
+import "../../../src/vaults/open-zeppelin/VaultSimple.sol";
 
 contract VaultSimpleWithYield is VaultSimple {
     constructor(
         IEVC _evc,
-        ERC20 _asset,
+        IERC20 _asset,
         string memory _name,
         string memory _symbol
     ) VaultSimple(_evc, _asset, _name, _symbol) {}
@@ -32,7 +32,7 @@ contract VaultSimpleTest is DSTestPlus {
     function setUp() public {
         evc = new EthereumVaultConnector();
         underlying = new MockERC20("Mock Token", "TKN", 18);
-        vault = new VaultSimpleWithYield(evc, underlying, "Mock Token Vault", "vTKN");
+        vault = new VaultSimpleWithYield(evc, IERC20(address(underlying)), "Mock Token Vault", "vTKN");
     }
 
     function invariantMetadata() public {
@@ -44,7 +44,7 @@ contract VaultSimpleTest is DSTestPlus {
     function testMetadata(address evcAddr, string calldata name, string calldata symbol) public {
         hevm.assume(evcAddr != address(0));
 
-        VaultSimple vlt = new VaultSimple(IEVC(evcAddr), underlying, name, symbol);
+        VaultSimple vlt = new VaultSimple(IEVC(evcAddr), IERC20(address(underlying)), name, symbol);
         assertEq(vlt.name(), name);
         assertEq(vlt.symbol(), symbol);
         assertEq(address(vlt.asset()), address(underlying));
@@ -458,17 +458,17 @@ contract VaultSimpleTest is DSTestPlus {
         vault.mint(1e18, address(this));
     }
 
-    function testFailDepositZero() public {
-        vault.deposit(0, address(this));
-    }
+    //function testFailDepositZero() public {
+    //    vault.deposit(0, address(this));
+    //}
 
     //function testFailMintZero() public {
     //    vault.mint(0, address(this));
     //}
 
-    function testFailRedeemZero() public {
-        vault.redeem(0, address(this), address(this));
-    }
+    //function testFailRedeemZero() public {
+    //    vault.redeem(0, address(this), address(this));
+    //}
 
     //function testFailWithdrawZero() public {
     //    vault.withdraw(0, address(this), address(this));

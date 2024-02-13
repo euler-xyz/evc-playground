@@ -2,7 +2,6 @@
 
 pragma solidity ^0.8.19;
 
-import "solmate/tokens/ERC20.sol";
 import "evc/utils/EVCUtil.sol";
 
 /// @title EVCClient
@@ -107,8 +106,9 @@ abstract contract EVCClient is EVCUtil {
         uint256 shares
     ) internal {
         // Control the collateral in order to transfer shares from the violator's vault to the liquidator.
-        bytes memory result =
-            evc.controlCollateral(vault, liquidated, 0, abi.encodeCall(ERC20.transfer, (liquidator, shares)));
+        bytes memory result = evc.controlCollateral(
+            vault, liquidated, 0, abi.encodeWithSignature("transfer(address,uint256)", liquidator, shares)
+        );
 
         if (!(result.length == 0 || abi.decode(result, (bool)))) {
             revert SharesSeizureFailed();

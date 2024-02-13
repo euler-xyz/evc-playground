@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.19;
 
-import "erc4626-tests/ERC4626.test.sol";
-import "solmate/test/utils/mocks/MockERC20.sol";
+import {ERC4626Test} from "erc4626-tests/ERC4626.test.sol";
+import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import "evc/EthereumVaultConnector.sol";
 import "../../../src/vaults/solmate/VaultSimple.sol";
 
