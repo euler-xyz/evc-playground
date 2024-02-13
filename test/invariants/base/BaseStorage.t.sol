@@ -5,10 +5,10 @@ pragma solidity ^0.8.19;
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 
 // Contracts
-import {VaultSimple} from "src/vaults/VaultSimple.sol";
-import {VaultSimpleBorrowable} from "src/vaults/VaultSimpleBorrowable.sol";
-import {VaultRegularBorrowable} from "src/vaults/VaultRegularBorrowable.sol";
-import {VaultBorrowableWETH} from "src/vaults/VaultBorrowableWETH.sol";
+import {VaultSimple} from "src/vaults/solmate/VaultSimple.sol";
+import {VaultSimpleBorrowable} from "src/vaults/solmate/VaultSimpleBorrowable.sol";
+import {VaultRegularBorrowable} from "src/vaults/solmate/VaultRegularBorrowable.sol";
+import {VaultBorrowableWETH} from "src/vaults/solmate/VaultBorrowableWETH.sol";
 import {IRMMock} from "test/mocks/IRMMock.sol";
 import {PriceOracleMock} from "test/mocks/PriceOracleMock.sol";
 
