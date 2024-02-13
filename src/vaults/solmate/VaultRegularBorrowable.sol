@@ -364,7 +364,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         uint256 newInterestAccumulator =
             (FixedPointMathLib.rpow(uint256(interestRate) + ONE, timeElapsed, ONE) * oldInterestAccumulator) / ONE;
 
-        uint256 newTotalBorrowed = (oldTotalBorrowed * newInterestAccumulator) / oldInterestAccumulator;
+        uint256 newTotalBorrowed = oldTotalBorrowed.mulDivUp(newInterestAccumulator, oldInterestAccumulator);
 
         return (newTotalBorrowed, newInterestAccumulator, true);
     }
