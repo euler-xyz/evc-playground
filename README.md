@@ -5,7 +5,7 @@
 
 The Ethereum Vault Connector (EVC) is a foundational layer designed to facilitate the core functionality required for a lending market. It serves as a base building block for various protocols, providing a robust and flexible framework for developers to build upon. The EVC primarily mediates between vaults, contracts that implement the ERC-4626 interface and contain additional logic for interfacing with other vaults. The EVC not only provides a common base ecosystem but also reduces complexity in the core lending/borrowing contracts, allowing them to focus on their differentiating factors.
 
-For more information about the EVC refer to the [EVC WHITEPAPER](https://github.com/euler-xyz/ethereum-vault-connector/blob/master/docs/whitepaper.md) and the [EVC SPECS](https://github.com/euler-xyz/ethereum-vault-connector/blob/master/docs/specs.md).
+For more information about the EVC refer to the [EVC website](https://evc.wtf).
 
 
 ## EVC Playground
@@ -29,11 +29,15 @@ This repository serves as a sandbox for exploring the EVC. It includes various e
 |   ├── SimpleConditionsEnforcer.sol
 │   └── TipsPiggyBank.sol
 └── vaults
-    ├── VaultBase.sol
-    ├── VaultBorrowableWETH.sol
-    ├── VaultRegularBorrowable.sol
-    ├── VaultSimple.sol
-    └── VaultSimpleBorrowable.sol
+    ├── open-zeppelin
+    |   ├── VaultRegularBorrowable.sol
+    |   └── VaultSimple.sol
+    ├── solmate
+    |   ├── VaultBorrowableWETH.sol
+    |   ├── VaultRegularBorrowable.sol
+    |   ├── VaultSimple.sol
+    |   └── VaultSimpleBorrowable.sol
+    └── VaultBase.sol
 ```
 
 ---
@@ -42,11 +46,13 @@ This repository serves as a sandbox for exploring the EVC. It includes various e
 
 ### EVC-interoperable Vaults
 
-If you're interested in building a vault that is interoperable with the EVC, you should start by looking at the [EVCClient](/src/utils/EVCClient.sol) contract and the contracts in the [vaults directory](/src/vaults).
+If you're interested in building a vault that is interoperable with the EVC, you should start by looking at the [EVCClient](/src/utils/EVCClient.sol) contract and the contracts in the [`vaults` directory](/src/vaults).
 
 The `EVCClient` contract is an abstract base contract for interacting with the EVC. It inherits from [`EVCUtil`](https://github.com/euler-xyz/ethereum-vault-connector/blob/master/src/utils/EVCUtil.sol) contract and provides utility functions for authenticating callers in the context of the EVC, scheduling and forgiving status checks, and liquidating collateral shares.
 
 The `VaultBase` is an abstract base contract that all EVC-interoperable vaults inherit from. It provides standard modifiers for reentrancy protection and account/vault status checks scheduling. It declares functions that must be defined in the child contract in order to correctly implement controller release, vault snapshotting and account/vaults status checks.
+
+You will find two directories in the [`vaults` directory](/src/vaults). The [`open-zeppelin`](/src/vaults/open-zeppelin) directory contains vaults that are based on Open-Zeppelin implementation of the ERC-4626. The [`solmate`](/src/vaults/solmate) directory contains vaults that are based on Solmate implementation of the ERC-4626.
 
 The `VaultSimple` contract is a simple vault that implements the ERC-4626 interface. It provides basic functionality for a vault. The contract showcases a pattern that should be followed in order to properly use EVC's authentication features for non-borrowing operations (when it doesn't matter whether the user has enabled a controller). It implements a simple vault status check based on a pre- and post-operation snapshots. Due to non-borrowing nature of the vault, the account status check is implemented as always valid.
 
