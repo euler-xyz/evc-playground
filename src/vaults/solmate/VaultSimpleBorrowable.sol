@@ -128,24 +128,12 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @param account The account to check.
     /// @param collaterals The collaterals of the account.
     function doCheckAccountStatus(address account, address[] calldata collaterals) internal view virtual override {
-        uint256 liabilityAssets = _debtOf(account);
+        (, uint256 liabilityValue, uint256 collateralValue) =
+            _calculateLiabilityAndCollateral(account, collaterals, true);
 
-        if (liabilityAssets == 0) return;
-
-        // in this simple example, let's say that it's only possible to borrow against
-        // the same asset up to 90% of its value
-        for (uint256 i = 0; i < collaterals.length; ++i) {
-            if (collaterals[i] == address(this)) {
-                uint256 collateral = _convertToAssets(balanceOf[account], false);
-                uint256 maxLiability = (collateral * 9) / 10;
-
-                if (liabilityAssets <= maxLiability) {
-                    return;
-                }
-            }
+        if (liabilityValue > collateralValue) {
+            revert AccountUnhealthy();
         }
-
-        revert AccountUnhealthy();
     }
 
     /// @notice Disables the controller.
@@ -159,6 +147,20 @@ contract VaultSimpleBorrowable is VaultSimple {
         } else {
             revert OutstandingDebt();
         }
+    }
+
+    /// @notice Retrieves the liability and collateral value of a given account.
+    /// @dev Account status is considered healthy if the collateral value is greater than or equal to the liability.
+    /// @param account The address of the account to retrieve the liability and collateral value for.
+    /// @return liabilityValue The total liability value of the account.
+    /// @return collateralValue The total collateral value of the account.
+    function getAccountLiabilityStatus(address account)
+        external
+        view
+        virtual
+        returns (uint256 liabilityValue, uint256 collateralValue)
+    {
+        (, liabilityValue, collateralValue) = _calculateLiabilityAndCollateral(account, getCollaterals(account), false);
     }
 
     /// @notice Borrows assets.
@@ -242,6 +244,38 @@ contract VaultSimpleBorrowable is VaultSimple {
         requireAccountAndVaultStatusCheck(msgSender);
 
         return true;
+    }
+
+    /// @notice Calculates the liability and collateral of an account.
+    /// @param account The account.
+    /// @param collaterals The collaterals of the account.
+    /// @param skipCollateralIfNoLiability A flag indicating whether to skip collateral calculation if the account has
+    /// no liability.
+    /// @return liabilityAssets The liability assets.
+    /// @return liabilityValue The liability value.
+    /// @return collateralValue The risk-adjusted collateral value.
+    function _calculateLiabilityAndCollateral(
+        address account,
+        address[] memory collaterals,
+        bool skipCollateralIfNoLiability
+    ) internal view virtual returns (uint256 liabilityAssets, uint256 liabilityValue, uint256 collateralValue) {
+        liabilityAssets = _debtOf(account);
+
+        if (liabilityAssets == 0 && skipCollateralIfNoLiability) {
+            return (0, 0, 0);
+        } else if (liabilityAssets > 0) {
+            // pricing doesn't matter
+            liabilityValue = liabilityAssets;
+        }
+
+        // in this simple example, let's say that it's only possible to borrow against
+        // the same asset up to 90% of its value
+        for (uint256 i = 0; i < collaterals.length; ++i) {
+            if (collaterals[i] == address(this)) {
+                collateralValue = _convertToAssets(balanceOf[account], false) * 9 / 10;
+                break;
+            }
+        }
     }
 
     /// @dev This function is overridden to take into account the fact that some of the assets may be borrowed.
