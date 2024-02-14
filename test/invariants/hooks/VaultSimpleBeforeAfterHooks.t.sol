@@ -10,12 +10,12 @@ import {Pretty, Strings} from "../utils/Pretty.sol";
 import {VaultSimple} from "test/invariants/Setup.t.sol";
 
 // Test Contracts
-import {BaseTest} from "../base/BaseTest.t.sol";
+import {BaseHooks} from "../base/BaseHooks.t.sol";
 
 /// @title VaultSimple Before After Hooks
 /// @notice Helper contract for before and after hooks
 /// @dev This contract is inherited by handlers
-abstract contract VaultSimpleBeforeAfterHooks is BaseTest {
+abstract contract VaultSimpleBeforeAfterHooks is BaseHooks {
     using Strings for string;
     using Pretty for uint256;
     using Pretty for int256;
@@ -63,7 +63,6 @@ abstract contract VaultSimpleBeforeAfterHooks is BaseTest {
         svVars.supplyCapAfter = sv.supplyCap();
 
         // VaultSimple Post Conditions
-
         assert_VaultSimple_PcA();
     }
 
@@ -75,6 +74,7 @@ abstract contract VaultSimpleBeforeAfterHooks is BaseTest {
         Post Condition A: 
             (supplyCapAfter != 0) && (totalSupplyAfter >= totalSupplyBefore) => supplyCapAfter >= totalSupplyAfter
             if pirceBefore == priceAfter => no bad debt TODO: implement bad debt invariant
+            
         */
 
     /////////////////////////////////////////////////////////////////////////////////////////////*/

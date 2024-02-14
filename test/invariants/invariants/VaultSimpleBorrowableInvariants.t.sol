@@ -17,6 +17,7 @@ abstract contract VaultSimpleBorrowableInvariants is HandlerAggregator {
 
     VaultSimpleBorrowable
         Invariant A: totalBorrowed >= any account owed balance
+        Invariant B: totalBorrowed == sum of all user debt
     */
 
     /////////////////////////////////////////////////////////////////////////////////////////////*/
@@ -26,6 +27,18 @@ abstract contract VaultSimpleBorrowableInvariants is HandlerAggregator {
             VaultSimpleBorrowable(_vault).totalBorrowed(),
             VaultSimpleBorrowable(_vault).getOwed(_borrower),
             string.concat("VaultSimpleBorrowable_invariantA: ", vaultNames[_vault])
+        );
+    }
+
+    function assert_VaultSimpleBorrowable_invariantB(address _vault) internal {
+        uint256 totalDebt;
+        for (uint256 i; i < NUMBER_OF_ACTORS; i++) {
+            totalDebt += VaultSimpleBorrowable(_vault).debtOf(address(actorAddresses[i]));
+        }
+        assertEq(
+            VaultSimpleBorrowable(_vault).totalBorrowed(),
+            totalDebt,
+            string.concat("VaultSimpleBorrowable_invariantB: ", vaultNames[_vault])
         );
     }
 }

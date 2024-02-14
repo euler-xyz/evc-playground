@@ -33,7 +33,7 @@ contract PriceOracleHandler is BaseHandler {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @notice This function simulates changes in the interest rate model
-    function setQuote(uint256 i, uint256 _j, uint256 price) external {
+    function setQuote(uint256 i, uint256 price) external {
         address baseAsset = _getRandomBaseAsset(i);
 
         oracle.setQuote(baseAsset, address(referenceAsset), price);

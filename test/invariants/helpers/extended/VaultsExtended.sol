@@ -63,6 +63,14 @@ contract VaultRegularBorrowableExtended is VaultRegularBorrowable, VaultBaseGett
         owed_ = owed[_borrower];
     }
 
+    function getLiabilityAndCollateral(address _account)
+        external
+        view
+        returns (uint256 liability_, uint256 collateral_)
+    {
+        (, liability_, collateral_) = _calculateLiabilityAndCollateral(_account, getCollaterals(_account));
+    }
+
     function getInterestAccumulator() external view returns (uint256 interestAccumulator_) {
         interestAccumulator_ = interestAccumulator;
     }

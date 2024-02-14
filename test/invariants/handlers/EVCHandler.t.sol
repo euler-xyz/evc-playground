@@ -154,13 +154,12 @@ contract EVCHandler is BaseHandler {
     }
 
     function requireAccountStatusCheck(uint256 i) external setup {
-        bool success;
         bytes memory returnData;
 
         // Get one of the three actors randomly
         address account = _getRandomActor(i);
 
-        evc.call(
+        returnData = evc.call(
             address(evc),
             address(0),
             0,

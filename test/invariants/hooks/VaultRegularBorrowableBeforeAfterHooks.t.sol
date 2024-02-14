@@ -10,12 +10,12 @@ import {Pretty, Strings} from "../utils/Pretty.sol";
 import {VaultRegularBorrowable} from "test/invariants/Setup.t.sol";
 
 // Test Contracts
-import {BaseTest} from "../base/BaseTest.t.sol";
+import {BaseHooks} from "../base/BaseHooks.t.sol";
 
 /// @title VaultRegularBorrowable Before After Hooks
 /// @notice Helper contract for before and after hooks
 /// @dev This contract is inherited by handlers
-abstract contract VaultRegularBorrowableBeforeAfterHooks is BaseTest {
+abstract contract VaultRegularBorrowableBeforeAfterHooks is BaseHooks {
     using Strings for string;
     using Pretty for uint256;
     using Pretty for int256;
@@ -25,6 +25,10 @@ abstract contract VaultRegularBorrowableBeforeAfterHooks is BaseTest {
         // VaultRegularBorrowable
         uint256 interestAccumulatorBefore;
         uint256 interestAccumulatorAfter;
+        uint256 liabilityValueBefore;
+        uint256 liabilityValueAfter;
+        uint256 collateralValueBefore;
+        uint256 collateralValueAfter;
     }
 
     VaultRegularBorrowableBeforeAfterHooksVars rvbVars;
@@ -32,14 +36,17 @@ abstract contract VaultRegularBorrowableBeforeAfterHooks is BaseTest {
     function _rvbBefore(address _vault) internal {
         VaultRegularBorrowable rvb = VaultRegularBorrowable(_vault);
         rvbVars.interestAccumulatorBefore = rvb.getInterestAccumulator();
+        (rvbVars.liabilityValueBefore, rvbVars.collateralValueBefore) = rvb.getLiabilityAndCollateral(address(actor));
     }
 
     function _rvbAfter(address _vault) internal {
         VaultRegularBorrowable rvb = VaultRegularBorrowable(_vault);
         rvbVars.interestAccumulatorAfter = rvb.getInterestAccumulator();
+        (rvbVars.liabilityValueAfter, rvbVars.collateralValueAfter) = rvb.getLiabilityAndCollateral(address(actor));
 
         // VaultSimple Post Conditions
         assert_rvbPostConditionA();
+        assert_rvbPostConditionB();
     }
 
     /*/////////////////////////////////////////////////////////////////////////////////////////////
@@ -48,8 +55,8 @@ abstract contract VaultRegularBorrowableBeforeAfterHooks is BaseTest {
 
     VaultRegularBorrowable
         Post Condition A: Interest rate monotonically increases
-           
-
+        Post Condition B: A healthy account cant never be left unhealthy after a transaction
+        
     */
 
     /////////////////////////////////////////////////////////////////////////////////////////////*/
@@ -60,5 +67,11 @@ abstract contract VaultRegularBorrowableBeforeAfterHooks is BaseTest {
             rvbVars.interestAccumulatorBefore,
             "Interest rate must monotonically increase"
         );
+    }
+
+    function assert_rvbPostConditionB() internal {
+        if (isAccountHealthy(rvbVars.liabilityValueBefore, rvbVars.collateralValueBefore)) {
+            assertTrue(isAccountHealthy(rvbVars.liabilityValueAfter, rvbVars.collateralValueAfter), "Account is unhealthy");
+        }
     }
 }

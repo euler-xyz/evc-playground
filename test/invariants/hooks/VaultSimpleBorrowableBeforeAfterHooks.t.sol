@@ -10,12 +10,12 @@ import {Pretty, Strings} from "../utils/Pretty.sol";
 import {VaultSimpleBorrowable} from "test/invariants/Setup.t.sol";
 
 // Test Contracts
-import {BaseTest} from "../base/BaseTest.t.sol";
+import {BaseHooks} from "../base/BaseHooks.t.sol";
 
 /// @title VaultSimpleBorrowable Before After Hooks
 /// @notice Helper contract for before and after hooks
 /// @dev This contract is inherited by handlers
-abstract contract VaultSimpleBorrowableBeforeAfterHooks is BaseTest {
+abstract contract VaultSimpleBorrowableBeforeAfterHooks is BaseHooks {
     using Strings for string;
     using Pretty for uint256;
     using Pretty for int256;
@@ -27,6 +27,10 @@ abstract contract VaultSimpleBorrowableBeforeAfterHooks is BaseTest {
         uint256 borrowCapAfter;
         uint256 totalBorrowedBefore;
         uint256 totalBorrowedAfter;
+        bool controllerDisabledBefore;
+        bool controllerDisabledAfter;
+        uint256 userDebtBefore;
+        uint256 userDebtAfter;
     }
 
     VaultSimpleBorrowableVars svbVars;
@@ -35,16 +39,20 @@ abstract contract VaultSimpleBorrowableBeforeAfterHooks is BaseTest {
         VaultSimpleBorrowable svb = VaultSimpleBorrowable(_vault);
         svbVars.borrowCapBefore = svb.borrowCap();
         svbVars.totalBorrowedBefore = svb.totalBorrowed();
+        svbVars.controllerDisabledBefore = evc.isControllerEnabled(address(actor), _vault);
+        svbVars.userDebtBefore = svb.debtOf(address(actor));
     }
 
     function _svbAfter(address _vault) internal {
         VaultSimpleBorrowable svb = VaultSimpleBorrowable(_vault);
         svbVars.borrowCapAfter = svb.borrowCap();
         svbVars.totalBorrowedAfter = svb.totalBorrowed();
+        svbVars.controllerDisabledAfter = evc.isControllerEnabled(address(actor), _vault);
+        svbVars.userDebtAfter = svb.debtOf(address(actor));
 
         // VaultSimple Post Conditions
-
         assert_VaultSimpleBorrowable_PcA();
+        assert_VaultSimpleBorrowable_PcB();
     }
 
     /*/////////////////////////////////////////////////////////////////////////////////////////////
@@ -54,7 +62,7 @@ abstract contract VaultSimpleBorrowableBeforeAfterHooks is BaseTest {
     VaultSimpleBorrowable
         Post Condition A: 
     (borrowCapAfter != 0) && (totalBorrowedAfter >= totalBorrowedBefore) => borrowCapAfter >= totalBorrowedAfter
-           
+        Post Condition B: Controller cannot be disabled if there is any liability       
 
     */
 
@@ -67,5 +75,11 @@ abstract contract VaultSimpleBorrowableBeforeAfterHooks is BaseTest {
                 : true,
             "(totalBorrowedAfter > totalBorrowedBefore)"
         );
+    }
+
+    function assert_VaultSimpleBorrowable_PcB() internal {
+        if (svbVars.userDebtBefore > 0) {
+            assertEq(svbVars.controllerDisabledAfter, false, "Controller cannot be disabled if there is any liability");
+        }
     }
 }

@@ -34,6 +34,32 @@ abstract contract Invariants is
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                     ERC4626                                           //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    function echidna_invariant_ERC4626_assets_invariantAB() public targetVaultsFrom(VaultType.Simple) returns (bool) {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            assert_ERC4626_assets_invariantA(vaults[i]);
+            assert_ERC4626_assets_invariantB(vaults[i]);
+        }
+        return true;
+    }
+    /*
+    function echidna_invariant_ERC4626_invariantC(uint256 _amount) public returns (bool) {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            assert_ERC4626_assets_invariantC(vaults[i], _amount);
+        }
+        return true;
+    }
+
+    function echidna_invariant_ERC4626_invariantD(uint256 _amount) public returns (bool) {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            assert_ERC4626_assets_invariantD(vaults[i], _amount);
+        }
+        return true;
+    } */
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                 VAULT SIMPLE INVARIANTS                                   //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -56,7 +82,7 @@ abstract contract Invariants is
     //                            VAULT SIMPLE BORROWABLE INVARIANTS                             //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function echidna_invariant_VaultSimpleBorrowable_invariantA()
+    function echidna_invariant_VaultSimpleBorrowable_invariantAB()
         public
         targetVaultsFrom(VaultType.SimpleBorrowable)
         returns (bool)
@@ -65,6 +91,7 @@ abstract contract Invariants is
             for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
                 assert_VaultSimpleBorrowable_invariantA(vaults[i], actorAddresses[j]);
             }
+            assert_VaultSimpleBorrowable_invariantB(vaults[i]);
         }
         return true;
     }
