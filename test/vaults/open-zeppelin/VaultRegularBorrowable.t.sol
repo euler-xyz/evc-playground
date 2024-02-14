@@ -68,7 +68,7 @@ contract VaultRegularBorrowableTest is Test {
         collateralAsset2.approve(address(collateralVault2), type(uint256).max);
     }
 
-    function test_RegularBorrowRepayx(address alice, address bob) public {
+    function test_RegularBorrowRepay(address alice, address bob) public {
         vm.assume(alice != address(0) && bob != address(0) && !evc.haveCommonOwner(alice, bob));
         vm.assume(
             alice != address(evc) && alice != address(liabilityVault) && alice != address(collateralVault1)
