@@ -31,25 +31,29 @@ contract BorrowableVaultLensForEVC {
         });
     }
 
-    function getVaultUserInfo(address account, address vault) external view returns (ERC4626UserInfo memory) {
+    function getVaultUserInfo(address account, address vault) external view returns (VaultUserInfo memory) {
         uint256 shares = ERC4626(vault).balanceOf(account);
+        (uint256 liabilityValue, uint256 collateralValue) =
+            VaultRegularBorrowable(vault).getAccountLiabilityStatus(account);
 
-        return ERC4626UserInfo({
+        return VaultUserInfo({
             account: account,
             vault: vault,
             shares: shares,
             assets: ERC4626(vault).convertToAssets(shares),
             borrowed: VaultRegularBorrowable(vault).debtOf(account),
+            liabilityValue: liabilityValue,
+            collateralValue: collateralValue,
             isController: evc.isControllerEnabled(account, vault),
             isCollateral: evc.isCollateralEnabled(account, vault)
         });
     }
 
-    function getVaultInfo(address vault) external view returns (ERC4626VaultInfo memory) {
+    function getVaultInfo(address vault) external view returns (VaultInfo memory) {
         address asset = address(ERC4626(vault).asset());
         uint256 interestRateSPY = VaultRegularBorrowable(vault).getInterestRate();
 
-        return ERC4626VaultInfo({
+        return VaultInfo({
             vault: vault,
             vaultName: getStringOrBytes32(vault, ERC20(vault).name.selector),
             vaultSymbol: getStringOrBytes32(vault, ERC20(vault).symbol.selector),

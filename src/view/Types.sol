@@ -9,17 +9,19 @@ struct EVCUserInfo {
     address[] enabledCollaterals;
 }
 
-struct ERC4626UserInfo {
+struct VaultUserInfo {
     address account;
     address vault;
     uint256 shares;
     uint256 assets;
     uint256 borrowed;
+    uint256 liabilityValue;
+    uint256 collateralValue;
     bool isController;
     bool isCollateral;
 }
 
-struct ERC4626VaultInfo {
+struct VaultInfo {
     address vault;
     string vaultName;
     string vaultSymbol;
