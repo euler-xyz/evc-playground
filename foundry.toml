@@ -7,9 +7,9 @@ remappings = [
     "ds-test/=lib/forge-std/lib/ds-test/src/",
     "forge-std/=lib/forge-std/src/",
     "solmate/=lib/solmate/src/",
-    "evc/=lib/ethereum-vault-connector/src/",
+    "openzeppelin/=lib/openzeppelin-contracts/contracts/",
     "erc4626-tests/=lib/erc4626-tests/",
-    "openzeppelin/=lib/openzeppelin-contracts/contracts/"
+    "evc/=lib/ethereum-vault-connector/src/"
 ]
 
 [profile.default.fuzz]

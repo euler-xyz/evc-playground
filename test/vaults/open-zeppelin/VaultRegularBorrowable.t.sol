@@ -46,9 +46,9 @@ contract VaultRegularBorrowableTest is Test {
 
         irm.setInterestRate(10); // 10% APY
 
-        oracle.setResolvedVault(address(liabilityVault));
-        oracle.setResolvedVault(address(collateralVault1));
-        oracle.setResolvedVault(address(collateralVault2));
+        oracle.setResolvedAsset(address(liabilityVault));
+        oracle.setResolvedAsset(address(collateralVault1));
+        oracle.setResolvedAsset(address(collateralVault2));
         oracle.setPrice(address(liabilityAsset), address(referenceAsset), 1e17); // 1 LA = 0.1 RA
         oracle.setPrice(address(collateralAsset1), address(referenceAsset), 1e16); // 1 CA1 = 0.01 RA
         oracle.setPrice(address(collateralAsset2), address(referenceAsset), 1e17); // 1 CA2 = 0.1 RA
@@ -142,7 +142,7 @@ contract VaultRegularBorrowableTest is Test {
         assertEq(liabilityAsset.balanceOf(bob), 35e18);
         assertEq(liabilityVault.debtOf(bob), 35e18);
         assertEq(liabilityVault.maxWithdraw(alice), 15e18);
-        /*
+        
         // jump one year ahead, bob's liability increased by 10% APY.
         // his account is no longer healthy
         vm.warp(block.timestamp + 365 days);
@@ -282,7 +282,7 @@ contract VaultRegularBorrowableTest is Test {
         assertEq(collateralAsset2.balanceOf(address(alice)), 6.18e6);
         assertEq(collateralAsset2.balanceOf(address(bob)), 100e6 - 6.18e6);
         assertEq(collateralVault2.maxWithdraw(alice), 0);
-        assertEq(collateralVault2.maxWithdraw(bob), 0);*/
+        assertEq(collateralVault2.maxWithdraw(bob), 0);
     }
 
     function test_RegularBorrowRepayWithBatch(address alice, address bob) public {

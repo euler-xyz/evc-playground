@@ -40,15 +40,16 @@ contract ERC20WrapperForEVCTest is Test {
         collateralVault1 = new VaultSimple(evc, IERC20(address(collateralAsset1)), "Collateral Vault 1", "CV1");
 
         wrappedCollateralAsset2 =
-            new ERC20WrapperForEVC(evc, address(collateralAsset2), "Wrapped Collateral Asset 2", "WCA2");
+            new ERC20WrapperForEVC(evc, IERC20(address(collateralAsset2)), "Wrapped Collateral Asset 2", "WCA2");
 
         irm.setInterestRate(10); // 10% APY
 
-        oracle.setResolvedVault(address(liabilityVault));
-        oracle.setResolvedVault(address(collateralVault1));
+        oracle.setResolvedAsset(address(liabilityVault));
+        oracle.setResolvedAsset(address(collateralVault1));
+        oracle.setResolvedAsset(address(wrappedCollateralAsset2));
         oracle.setPrice(address(liabilityAsset), address(referenceAsset), 1e17); // 1 LA = 0.1 RA
         oracle.setPrice(address(collateralAsset1), address(referenceAsset), 1e16); // 1 CA1 = 0.01 RA
-        oracle.setPrice(address(wrappedCollateralAsset2), address(referenceAsset), 1e17); // 1 CA2 = 0.1 RA
+        oracle.setPrice(address(collateralAsset2), address(referenceAsset), 1e17); // 1 CA2 = 0.1 RA
     }
 
     function mintAndApprove(address alice, address bob) public {

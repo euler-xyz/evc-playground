@@ -7,8 +7,8 @@ import "solmate/test/utils/mocks/MockERC20.sol";
 import "evc/EthereumVaultConnector.sol";
 import "../src/vaults/solmate/VaultRegularBorrowable.sol";
 import "../src/view/BorrowableVaultLensForEVC.sol";
-import "../test/mocks/IRMMock.sol";
-import "../test/mocks/PriceOracleMock.sol";
+import {IRMMock} from "../test/mocks/IRMMock.sol";
+import {PriceOracleMock} from "../test/mocks/PriceOracleMock.sol";
 
 /// @title Deployment script
 /// @notice This script is used for deploying the EVC and a couple vaults for testing purposes
@@ -66,9 +66,9 @@ contract Deployment is Script {
         vault3.setCollateralFactor(address(vault2), 80); // cf = 0.8
 
         // setup the price oracle
-        oracle.setResolvedVault(address(vault1));
-        oracle.setResolvedVault(address(vault2));
-        oracle.setResolvedVault(address(vault3));
+        oracle.setResolvedAsset(address(vault1));
+        oracle.setResolvedAsset(address(vault2));
+        oracle.setResolvedAsset(address(vault3));
 
         // deploy the lens
         BorrowableVaultLensForEVC lens = new BorrowableVaultLensForEVC(evc);
