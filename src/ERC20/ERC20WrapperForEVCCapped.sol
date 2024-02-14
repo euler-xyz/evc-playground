@@ -14,7 +14,7 @@ contract ERC20WrapperForEVCCapped is ERC20WrapperForEVC {
 
     constructor(
         IEVC _evc_,
-        address _underlying_,
+        IERC20 _underlying_,
         string memory _name_,
         string memory _symbol_,
         uint256 _supplyCap_

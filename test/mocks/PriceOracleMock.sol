@@ -1,19 +1,29 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 pragma solidity ^0.8.19;
 
-import "solmate/tokens/ERC4626.sol";
+import "openzeppelin/interfaces/IERC4626.sol";
+import "../../src/ERC20/ERC20WrapperForEVC.sol";
 import "../../src/interfaces/IPriceOracle.sol";
 
 contract PriceOracleMock is IPriceOracle {
-    mapping(address vault => address asset) public resolvedVaults;
+    uint256 internal constant ADDRESS_MASK = (1 << 160) - 1;
+    uint256 internal constant VAULT_MASK = 1 << 160;
+
+    type AssetInfo is uint256;
+
+    mapping(address asset => AssetInfo) public resolvedAssets;
     mapping(address base => mapping(address quote => uint256)) internal prices;
 
     function name() external pure returns (string memory) {
         return "PriceOracleMock";
     }
 
-    function setResolvedVault(address vault) external {
-        resolvedVaults[vault] = address(ERC4626(vault).asset());
+    function setResolvedAsset(address asset) external {
+        try IERC4626(asset).asset() returns (address underlying) {
+            resolvedAssets[asset] = _setAssetInfo(underlying, true);
+        } catch {
+            resolvedAssets[asset] = _setAssetInfo(ERC20WrapperForEVC(asset).underlying(), false);
+        }
     }
 
     function setPrice(address base, address quote, uint256 priceValue) external {
@@ -48,6 +58,14 @@ contract PriceOracleMock is IPriceOracle {
         askOut = bidOut;
     }
 
+    function _getAssetInfo(AssetInfo self) internal pure returns (address, bool) {
+        return (address(uint160(AssetInfo.unwrap(self) & ADDRESS_MASK)), AssetInfo.unwrap(self) & VAULT_MASK != 0);
+    }
+
+    function _setAssetInfo(address asset, bool isVault) internal pure returns (AssetInfo) {
+        return AssetInfo.wrap(uint160(asset) | (isVault ? VAULT_MASK : 0));
+    }
+
     function _resolveOracle(
         uint256 amount,
         address base,
@@ -61,17 +79,17 @@ contract PriceOracleMock is IPriceOracle {
         if (price > 0) return (amount, base, quote, price);
 
         // 2. Recursively resolve `base`.
-        address baseAsset = resolvedVaults[base];
-        if (baseAsset != address(0)) {
-            amount = ERC4626(base).convertToAssets(amount);
-            return _resolveOracle(amount, baseAsset, quote);
+        (address underlying, bool isVault) = _getAssetInfo(resolvedAssets[base]);
+        if (underlying != address(0)) {
+            amount = isVault ? IERC4626(base).convertToAssets(amount) : amount;
+            return _resolveOracle(amount, underlying, quote);
         }
 
         // 3. Recursively resolve `quote`.
-        address quoteAsset = resolvedVaults[quote];
-        if (quoteAsset != address(0)) {
-            amount = ERC4626(quote).convertToShares(amount);
-            return _resolveOracle(amount, base, quoteAsset);
+        (underlying, isVault) = _getAssetInfo(resolvedAssets[quote]);
+        if (underlying != address(0)) {
+            amount = isVault ? IERC4626(quote).convertToShares(amount) : amount;
+            return _resolveOracle(amount, base, underlying);
         }
 
         revert PO_NoPath();

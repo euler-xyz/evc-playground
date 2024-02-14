@@ -3,13 +3,14 @@
 pragma solidity ^0.8.19;
 
 import "openzeppelin/token/ERC20/ERC20.sol";
+import "openzeppelin/utils/ReentrancyGuard.sol";
 import "evc/utils/EVCUtil.sol";
 
 /// @title ERC20CollateralForEVC
 /// @notice It extends the ERC20 token standard to add the EVC authentication and account status checks so that the
 /// token contract can be used as collateral in the EVC ecosystem.
-abstract contract ERC20CollateralForEVC is EVCUtil, ERC20 {
-    constructor(IEVC _evc, string memory _name, string memory _symbol) EVCUtil(_evc) ERC20(_name, _symbol) {}
+abstract contract ERC20CollateralForEVC is EVCUtil, ERC20, ReentrancyGuard {
+    constructor(IEVC _evc_, string memory _name_, string memory _symbol_) EVCUtil(_evc_) ERC20(_name_, _symbol_) {}
 
     /// @notice Modifier to require an account status check on the EVC.
     /// @dev Calls `requireAccountStatusCheck` function from EVC for the specified account after the function body.
@@ -19,14 +20,6 @@ abstract contract ERC20CollateralForEVC is EVCUtil, ERC20 {
         evc.requireAccountStatusCheck(account);
     }
 
-    /// @notice Retrieves the message sender in the context of the EVC.
-    /// @dev This function returns the account on behalf of which the current operation is being performed, which is
-    /// either msg.sender or the account authenticated by the EVC.
-    /// @return The address of the message sender.
-    function _msgSender() internal view virtual override (EVCUtil, Context) returns (address) {
-        return EVCUtil._msgSender();
-    }
-
     /// @notice Transfers a certain amount of tokens to a recipient.
     /// @param to The recipient of the transfer.
     /// @param amount The amount shares to transfer.
@@ -34,7 +27,7 @@ abstract contract ERC20CollateralForEVC is EVCUtil, ERC20 {
     function transfer(
         address to,
         uint256 amount
-    ) public virtual override callThroughEVC requireAccountStatusCheck(_msgSender()) returns (bool) {
+    ) public virtual override callThroughEVC nonReentrant requireAccountStatusCheck(_msgSender()) returns (bool) {
         return super.transfer(to, amount);
     }
 
@@ -47,7 +40,15 @@ abstract contract ERC20CollateralForEVC is EVCUtil, ERC20 {
         address from,
         address to,
         uint256 amount
-    ) public virtual override callThroughEVC requireAccountStatusCheck(from) returns (bool) {
+    ) public virtual override callThroughEVC nonReentrant requireAccountStatusCheck(from) returns (bool) {
         return super.transferFrom(from, to, amount);
+    }
+
+    /// @notice Retrieves the message sender in the context of the EVC.
+    /// @dev This function returns the account on behalf of which the current operation is being performed, which is
+    /// either msg.sender or the account authenticated by the EVC.
+    /// @return The address of the message sender.
+    function _msgSender() internal view virtual override (EVCUtil, Context) returns (address) {
+        return EVCUtil._msgSender();
     }
 }

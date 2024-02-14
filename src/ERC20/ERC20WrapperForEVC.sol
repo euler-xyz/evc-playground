@@ -11,27 +11,27 @@ import "./ERC20CollateralForEVC.sol";
 contract ERC20WrapperForEVC is ERC20CollateralForEVC {
     error ERC20WrapperForEVC_InvalidAddress();
 
-    address private immutable _underlying;
+    IERC20 private immutable _underlying;
     uint8 private immutable _decimals;
 
     constructor(
         IEVC _evc_,
-        address _underlying_,
+        IERC20 _underlying_,
         string memory _name_,
         string memory _symbol_
     ) ERC20CollateralForEVC(_evc_, _name_, _symbol_) {
-        if (_underlying_ == address(this)) {
+        if (address(_underlying_) == address(this)) {
             revert ERC20WrapperForEVC_InvalidAddress();
         }
 
         _underlying = _underlying_;
-        _decimals = IERC20Metadata(_underlying_).decimals();
+        _decimals = IERC20Metadata(address(_underlying_)).decimals();
     }
 
     /// @notice Returns the address of the underlying ERC20 token.
     /// @return The address of the underlying token.
     function underlying() external view returns (address) {
-        return _underlying;
+        return address(_underlying);
     }
 
     /// @notice Returns the number of decimals of the wrapper token.
@@ -45,7 +45,7 @@ contract ERC20WrapperForEVC is ERC20CollateralForEVC {
     /// @param amount The amount of the underlying token to wrap.
     /// @param receiver The address to receive the wrapped tokens.
     /// @return True if the operation was successful.
-    function wrap(uint256 amount, address receiver) public virtual returns (bool) {
+    function wrap(uint256 amount, address receiver) public virtual nonReentrant returns (bool) {
         if (receiver == address(this)) {
             revert ERC20WrapperForEVC_InvalidAddress();
         }
@@ -63,7 +63,7 @@ contract ERC20WrapperForEVC is ERC20CollateralForEVC {
     function unwrap(
         uint256 amount,
         address receiver
-    ) public virtual callThroughEVC requireAccountStatusCheck(_msgSender()) returns (bool) {
+    ) public virtual callThroughEVC nonReentrant requireAccountStatusCheck(_msgSender()) returns (bool) {
         if (receiver == address(this)) {
             revert ERC20WrapperForEVC_InvalidAddress();
         }
