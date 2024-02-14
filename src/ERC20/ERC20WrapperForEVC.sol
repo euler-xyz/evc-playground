@@ -45,7 +45,7 @@ contract ERC20WrapperForEVC is ERC20CollateralForEVC {
     /// @param amount The amount of the underlying token to wrap.
     /// @param receiver The address to receive the wrapped tokens.
     /// @return True if the operation was successful.
-    function wrap(uint256 amount, address receiver) external returns (bool) {
+    function wrap(uint256 amount, address receiver) public virtual returns (bool) {
         if (receiver == address(this)) {
             revert ERC20WrapperForEVC_InvalidAddress();
         }
@@ -63,7 +63,7 @@ contract ERC20WrapperForEVC is ERC20CollateralForEVC {
     function unwrap(
         uint256 amount,
         address receiver
-    ) external callThroughEVC requireAccountStatusCheck(_msgSender()) returns (bool) {
+    ) public virtual callThroughEVC requireAccountStatusCheck(_msgSender()) returns (bool) {
         if (receiver == address(this)) {
             revert ERC20WrapperForEVC_InvalidAddress();
         }
