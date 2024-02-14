@@ -103,19 +103,6 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         return collateralFactor[vault];
     }
 
-    /// @notice Checks the status of an account.
-    /// @param account The account.
-    /// @param collaterals The collaterals of the account.
-    function doCheckAccountStatus(address account, address[] calldata collaterals) internal view virtual override {
-        if (_debtOf(account) > 0) {
-            (, uint256 liabilityValue, uint256 collateralValue) = _calculateLiabilityAndCollateral(account, collaterals);
-
-            if (liabilityValue > collateralValue) {
-                revert AccountUnhealthy();
-            }
-        }
-    }
-
     /// @notice Liquidates a violator account.
     /// @param violator The violator account.
     /// @param collateral The collateral of the violator.
@@ -196,17 +183,30 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     /// @notice Calculates the liability and collateral of an account.
     /// @param account The account.
     /// @param collaterals The collaterals of the account.
+    /// @param skipCollateralIfNoLiability A flag indicating whether to skip collateral calculation if the account has
+    /// no liability.
     /// @return liabilityAssets The liability assets.
     /// @return liabilityValue The liability value.
     /// @return collateralValue The risk-adjusted collateral value.
     function _calculateLiabilityAndCollateral(
         address account,
-        address[] memory collaterals
-    ) internal view returns (uint256 liabilityAssets, uint256 liabilityValue, uint256 collateralValue) {
+        address[] memory collaterals,
+        bool skipCollateralIfNoLiability
+    )
+        internal
+        view
+        virtual
+        override
+        returns (uint256 liabilityAssets, uint256 liabilityValue, uint256 collateralValue)
+    {
         liabilityAssets = _debtOf(account);
 
-        // Calculate the value of the liability in terms of the reference asset
-        liabilityValue = IPriceOracle(oracle).getQuote(liabilityAssets, address(asset), address(referenceAsset));
+        if (liabilityAssets == 0 && skipCollateralIfNoLiability) {
+            return (0, 0, 0);
+        } else if (liabilityAssets > 0) {
+            // Calculate the value of the liability in terms of the reference asset
+            liabilityValue = IPriceOracle(oracle).getQuote(liabilityAssets, address(asset), address(referenceAsset));
+        }
 
         // Calculate the aggregated value of the collateral in terms of the reference asset
         for (uint256 i = 0; i < collaterals.length; ++i) {
@@ -250,7 +250,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         }
 
         (uint256 liabilityAssets, uint256 liabilityValue, uint256 collateralValue) =
-            _calculateLiabilityAndCollateral(violator, getCollaterals(violator));
+            _calculateLiabilityAndCollateral(violator, getCollaterals(violator), true);
 
         // trying to repay more than the violator owes
         if (repayAssets > liabilityAssets) {
