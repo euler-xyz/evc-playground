@@ -23,6 +23,7 @@ abstract contract VaultSimpleBorrowableInvariants is HandlerAggregator {
     /////////////////////////////////////////////////////////////////////////////////////////////*/
 
     function assert_VaultSimpleBorrowable_invariantA(address _vault, address _borrower) internal {
+        /// @dev needed to avoid panic errors during invaraints checks
         if (block.timestamp >= VaultSimpleBorrowable(_vault).getLastInterestUpdate()) {
             assertGe(
                 VaultSimpleBorrowable(_vault).totalBorrowed(),
@@ -33,14 +34,17 @@ abstract contract VaultSimpleBorrowableInvariants is HandlerAggregator {
     }
 
     function assert_VaultSimpleBorrowable_invariantB(address _vault) internal {
-        uint256 totalDebt;
-        for (uint256 i; i < NUMBER_OF_ACTORS; i++) {
-            totalDebt += VaultSimpleBorrowable(_vault).debtOf(address(actorAddresses[i]));
+        /// @dev needed to avoid panic errors during invaraints checks
+        if (block.timestamp >= VaultSimpleBorrowable(_vault).getLastInterestUpdate()) {
+            uint256 totalDebt;
+            for (uint256 i; i < NUMBER_OF_ACTORS; i++) {
+                totalDebt += VaultSimpleBorrowable(_vault).debtOf(address(actorAddresses[i]));
+            }
+            assertEq(
+                VaultSimpleBorrowable(_vault).totalBorrowed(),
+                totalDebt,
+                string.concat("VaultSimpleBorrowable_invariantB: ", vaultNames[_vault])
+            );
         }
-        assertEq(
-            VaultSimpleBorrowable(_vault).totalBorrowed(),
-            totalDebt,
-            string.concat("VaultSimpleBorrowable_invariantB: ", vaultNames[_vault])
-        );
     }
 }

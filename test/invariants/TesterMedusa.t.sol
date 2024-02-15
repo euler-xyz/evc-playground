@@ -32,19 +32,115 @@ contract TesterMedusa is Invariants, Setup {
     //                                 MEDUSA ONLY INVARIANTS                                    //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    function echidna_invariant_ERC4626_invariantC(uint256 _amount) public returns (bool) {
+    function echidna_invariant_ERC4626_invariantC(uint256 _amount)
+        public
+        targetVaultsFrom(VaultType.Simple)
+        returns (bool)
+    {
         for (uint256 i = limitVault; i < vaults.length; i++) {
             assert_ERC4626_assets_invariantC(vaults[i], _amount);
         }
         return true;
     }
 
-    function echidna_invariant_ERC4626_invariantD(uint256 _amount) public returns (bool) {
+    function echidna_invariant_ERC4626_invariantD(uint256 _amount)
+        public
+        targetVaultsFrom(VaultType.Simple)
+        returns (bool)
+    {
         for (uint256 i = limitVault; i < vaults.length; i++) {
             assert_ERC4626_assets_invariantD(vaults[i], _amount);
         }
         return true;
     }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                         ERC4626                                           //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    function echidna_invariant_ERC4626_deposit_invariantaABC(uint256 _amount)
+        public
+        targetVaultsFrom(VaultType.Simple)
+        returns (bool)
+    {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
+                assert_ERC4626_deposit_invariantA(vaults[i], actorAddresses[j]);
+            }
+            assert_ERC4626_deposit_invariantB(vaults[i], _amount);
+            assert_ERC4626_deposit_invariantC(vaults[i], _amount);
+        }
+        return true;
+    }
+
+    function echidna_invariant_ERC4626_mint_invariantaABC(uint256 _amount)
+        public
+        targetVaultsFrom(VaultType.Simple)
+        returns (bool)
+    {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
+                assert_ERC4626_mint_invariantA(vaults[i], actorAddresses[j]);
+            }
+            assert_ERC4626_mint_invariantB(vaults[i], _amount);
+            assert_ERC4626_mint_invariantC(vaults[i], _amount);
+        }
+        return true;
+    }
+
+    function echidna_invariant_ERC4626_withdraw_invariantaABC(uint256 _amount)
+        public
+        targetVaultsFrom(VaultType.Simple)
+        returns (bool)
+    {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
+                assert_ERC4626_withdraw_invariantA(vaults[i], actorAddresses[j]);
+            }
+            assert_ERC4626_withdraw_invariantB(vaults[i], _amount);
+            assert_ERC4626_withdraw_invariantC(vaults[i], _amount);
+        }
+        return true;
+    }
+
+    function echidna_invariant_ERC4626_redeem_invariantaABC(uint256 _amount)
+        public
+        targetVaultsFrom(VaultType.Simple)
+        returns (bool)
+    {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
+                assert_ERC4626_redeem_invariantA(vaults[i], actorAddresses[j]);
+            }
+            assert_ERC4626_redeem_invariantB(vaults[i], _amount);
+            assert_ERC4626_redeem_invariantC(vaults[i], _amount);
+        }
+        return true;
+    }
+
+    // roundtrip invariants
+
+    function echidna_invarian_ERC4626_roundtrip_invariantA(uint256 _amount)
+        public
+        targetVaultsFrom(VaultType.Simple)
+        returns (bool)
+    {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            assert_ERC4626_roundtrip_invariantA(vaults[i], _amount);
+            assert_ERC4626_roundtrip_invariantB(vaults[i], _amount);
+            assert_ERC4626_roundtrip_invariantC(vaults[i], _amount);
+            assert_ERC4626_roundtrip_invariantD(vaults[i], _amount);
+            assert_ERC4626_roundtrip_invariantE(vaults[i], _amount);
+            assert_ERC4626_roundtrip_invariantF(vaults[i], _amount);
+            assert_ERC4626_roundtrip_invariantG(vaults[i], _amount);
+            assert_ERC4626_roundtrip_invariantH(vaults[i], _amount);
+        }
+        return true;
+    }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                                                                           //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
 
     /// @dev Needed in order for foundry to recognise the contract as a test, faster debugging
     function testAux() public {}

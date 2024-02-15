@@ -46,14 +46,14 @@ abstract contract VaultSimpleInvariants is HandlerAggregator {
                 same transaction
 
         withdraw:
-            Invariant A: MUST NOT revert
+            Invariant A: maxWithdraw MUST NOT revert
             Invariant B: previewWithdraw MUST return close to and no fewer than shares burned at withdraw if 
                 called in the same transaction
             Invariant C: withdraw should return the same or fewer shares as previewWithdraw if called in the 
                 same transaction
         
         redeem:
-            Invariant A: MUST NOT revert
+            Invariant A: maxRedeem MUST NOT revert
             Invariant B: previewRedeem MUST return close to and no more than assets redeemed at redeem if 
                 called in the same transaction
             Invariant C: redeem should return the same or more assets as previewRedeem if called in the 
@@ -99,7 +99,9 @@ abstract contract VaultSimpleInvariants is HandlerAggregator {
     function assert_VaultSimple_invariantB(address _vault) internal {
         uint256 totalSupply = VaultSimple(_vault).totalSupply();
 
-        assertEq(totalSupply, ghost_sumBalances[_vault], string.concat("VaultSimple_invariantB: ", vaultNames[_vault]));
+        assertEq(
+            totalSupply, ghost_sumSharesBalances[_vault], string.concat("VaultSimple_invariantB: ", vaultNames[_vault])
+        );
     }
 
     function assert_VaultSimple_invariantC(address _vault, address _account) internal returns (uint256 balanceOf) {
@@ -167,5 +169,191 @@ abstract contract VaultSimpleInvariants is HandlerAggregator {
                 notFirstLoop = true;
             }
         }
+    }
+
+    // deposit
+
+    function assert_ERC4626_deposit_invariantA(address _vault, address _account) internal {
+        try IERC4626(_vault).maxDeposit(_account) {}
+        catch Error(string memory reason) {
+            fail(string.concat("ERC4626_deposit_invariantA: ", reason));
+        }
+    }
+
+    function assert_ERC4626_deposit_invariantB(address _vault, uint256 _assets) internal {
+        uint256 shares = IERC4626(_vault).previewDeposit(_assets);
+
+        assertLe(
+            shares,
+            IERC4626(_vault).deposit(_assets, address(this)),
+            string.concat("ERC4626_deposit_invariantB: ", vaultNames[_vault])
+        );
+    }
+
+    function assert_ERC4626_deposit_invariantC(address _vault, uint256 _assets) internal {
+        uint256 shares = IERC4626(_vault).deposit(_assets, address(this));
+
+        assertGe(
+            shares,
+            IERC4626(_vault).previewDeposit(_assets),
+            string.concat("ERC4626_deposit_invariantC: ", vaultNames[_vault])
+        );
+    }
+
+    // mint
+
+    function assert_ERC4626_mint_invariantA(address _vault, address _account) internal {
+        try IERC4626(_vault).maxMint(_account) {}
+        catch Error(string memory reason) {
+            fail(string.concat("ERC4626_mint_invariantA: ", reason));
+        }
+    }
+
+    function assert_ERC4626_mint_invariantB(address _vault, uint256 _shares) internal {
+        uint256 assets = IERC4626(_vault).previewMint(_shares);
+
+        assertGe(
+            assets,
+            IERC4626(_vault).mint(_shares, address(this)),
+            string.concat("ERC4626_mint_invariantB: ", vaultNames[_vault])
+        );
+    }
+
+    function assert_ERC4626_mint_invariantC(address _vault, uint256 _shares) internal {
+        uint256 assets = IERC4626(_vault).mint(_shares, address(this));
+
+        assertLe(
+            assets,
+            IERC4626(_vault).previewMint(_shares),
+            string.concat("ERC4626_mint_invariantC: ", vaultNames[_vault])
+        );
+    }
+
+    // withdraw
+
+    function assert_ERC4626_withdraw_invariantA(address _vault, address _account) internal {
+        try IERC4626(_vault).maxWithdraw(_account) {}
+        catch Error(string memory reason) {
+            fail(string.concat("ERC4626_withdraw_invariantA: ", reason));
+        }
+    }
+
+    function assert_ERC4626_withdraw_invariantB(address _vault, uint256 _assets) internal {
+        IERC4626(_vault).deposit(_assets, address(this));
+        uint256 shares = IERC4626(_vault).previewWithdraw(_assets);
+
+        assertGe(
+            shares,
+            IERC4626(_vault).withdraw(_assets, address(this), address(this)),
+            string.concat("ERC4626_withdraw_invariantB: ", vaultNames[_vault])
+        );
+    }
+
+    function assert_ERC4626_withdraw_invariantC(address _vault, uint256 _assets) internal {
+        IERC4626(_vault).deposit(_assets, address(this));
+        uint256 shares = IERC4626(_vault).withdraw(_assets, address(this), address(this));
+
+        assertLe(
+            shares,
+            IERC4626(_vault).previewWithdraw(_assets),
+            string.concat("ERC4626_withdraw_invariantC: ", vaultNames[_vault])
+        );
+    }
+
+    // redeem
+
+    function assert_ERC4626_redeem_invariantA(address _vault, address _account) internal {
+        try IERC4626(_vault).maxRedeem(_account) {}
+        catch Error(string memory reason) {
+            fail(string.concat("ERC4626_redeem_invariantA: ", reason));
+        }
+    }
+
+    function assert_ERC4626_redeem_invariantB(address _vault, uint256 _shares) internal {
+        uint256 assets = IERC4626(_vault).previewRedeem(_shares);
+        IERC4626(_vault).mint(_shares, address(this));
+
+        assertLe(
+            assets,
+            IERC4626(_vault).redeem(_shares, address(this), address(this)),
+            string.concat("ERC4626_redeem_invariantB: ", vaultNames[_vault])
+        );
+    }
+
+    function assert_ERC4626_redeem_invariantC(address _vault, uint256 _shares) internal {
+        IERC4626(_vault).mint(_shares, address(this));
+        uint256 assets = IERC4626(_vault).redeem(_shares, address(this), address(this));
+
+        assertGe(
+            assets,
+            IERC4626(_vault).previewRedeem(_shares),
+            string.concat("ERC4626_redeem_invariantC: ", vaultNames[_vault])
+        );
+    }
+
+    // roundtrip
+
+    function assert_ERC4626_roundtrip_invariantA(address _vault, uint256 _assets) internal {
+        uint256 shares = IERC4626(_vault).deposit(_assets, address(this));
+
+        uint256 redeemedAssets = IERC4626(_vault).redeem(shares, address(this), address(this));
+
+        assertLe(redeemedAssets, _assets, string.concat("ERC4626_roundtrip_invariantA: ", vaultNames[_vault]));
+    }
+
+    function assert_ERC4626_roundtrip_invariantB(address _vault, uint256 _assets) internal {
+        uint256 shares = IERC4626(_vault).deposit(_assets, address(this));
+
+        uint256 withdrawnShares = IERC4626(_vault).withdraw(_assets, address(this), address(this));
+
+        assertGe(withdrawnShares, shares, string.concat("ERC4626_roundtrip_invariantB: ", vaultNames[_vault]));
+    }
+
+    function assert_ERC4626_roundtrip_invariantC(address _vault, uint256 _shares) internal {
+        uint256 redeemedAssets = IERC4626(_vault).redeem(_shares, address(this), address(this));
+
+        uint256 mintedShares = IERC4626(_vault).deposit(redeemedAssets, address(this));
+
+        assertLe(mintedShares, _shares, string.concat("ERC4626_roundtrip_invariantC: ", vaultNames[_vault]));
+    }
+
+    function assert_ERC4626_roundtrip_invariantD(address _vault, uint256 _shares) internal {
+        uint256 redeemedAssets = IERC4626(_vault).redeem(_shares, address(this), address(this));
+
+        uint256 depositedAssets = IERC4626(_vault).mint(_shares, address(this));
+
+        assertGe(depositedAssets, redeemedAssets, string.concat("ERC4626_roundtrip_invariantD: ", vaultNames[_vault]));
+    }
+
+    function assert_ERC4626_roundtrip_invariantE(address _vault, uint256 _shares) internal {
+        uint256 depositedAssets = IERC4626(_vault).mint(_shares, address(this));
+
+        uint256 withdrawnShares = IERC4626(_vault).withdraw(depositedAssets, address(this), address(this));
+
+        assertGe(withdrawnShares, _shares, string.concat("ERC4626_roundtrip_invariantE: ", vaultNames[_vault]));
+    }
+
+    function assert_ERC4626_roundtrip_invariantF(address _vault, uint256 _shares) internal {
+        uint256 depositedAssets = IERC4626(_vault).mint(_shares, address(this));
+
+        uint256 redeemedAssets = IERC4626(_vault).redeem(_shares, address(this), address(this));
+
+        assertLe(redeemedAssets, depositedAssets, string.concat("ERC4626_roundtrip_invariantF: ", vaultNames[_vault]));
+    }
+
+    function assert_ERC4626_roundtrip_invariantG(address _vault, uint256 _assets) internal {
+        uint256 redeemedShares = IERC4626(_vault).withdraw(_assets, address(this), address(this));
+
+        uint256 depositedAssets = IERC4626(_vault).mint(redeemedShares, address(this));
+
+        assertGe(depositedAssets, _assets, string.concat("ERC4626_roundtrip_invariantG: ", vaultNames[_vault]));
+    }
+
+    function assert_ERC4626_roundtrip_invariantH(address _vault, uint256 _assets) internal {
+        uint256 redeemedShares = IERC4626(_vault).withdraw(_assets, address(this), address(this));
+
+        uint256 mintedShares = IERC4626(_vault).deposit(_assets, address(this));
+
+        assertLe(mintedShares, redeemedShares, string.concat("ERC4626_assets_invariantH: ", vaultNames[_vault]));
     }
 }
