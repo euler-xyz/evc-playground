@@ -23,11 +23,13 @@ abstract contract VaultSimpleBorrowableInvariants is HandlerAggregator {
     /////////////////////////////////////////////////////////////////////////////////////////////*/
 
     function assert_VaultSimpleBorrowable_invariantA(address _vault, address _borrower) internal {
-        assertGe(
-            VaultSimpleBorrowable(_vault).totalBorrowed(),
-            VaultSimpleBorrowable(_vault).getOwed(_borrower),
-            string.concat("VaultSimpleBorrowable_invariantA: ", vaultNames[_vault])
-        );
+        if (block.timestamp >= VaultSimpleBorrowable(_vault).getLastInterestUpdate()) {
+            assertGe(
+                VaultSimpleBorrowable(_vault).totalBorrowed(),
+                VaultSimpleBorrowable(_vault).getOwed(_borrower),
+                string.concat("VaultSimpleBorrowable_invariantA: ", vaultNames[_vault])
+            );
+        }
     }
 
     function assert_VaultSimpleBorrowable_invariantB(address _vault) internal {

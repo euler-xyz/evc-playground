@@ -71,7 +71,7 @@ abstract contract VaultRegularBorrowableBeforeAfterHooks is BaseHooks {
 
     function assert_rvbPostConditionB() internal {
         if (isAccountHealthy(rvbVars.liabilityValueBefore, rvbVars.collateralValueBefore)) {
-            assertTrue(isAccountHealthy(rvbVars.liabilityValueAfter, rvbVars.collateralValueAfter), "Account is unhealthy");
+            assertTrue(isAccountHealthy(rvbVars.liabilityValueAfter, rvbVars.collateralValueAfter), "Account cannot be left unhealthy");
         }
     }
 }

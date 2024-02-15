@@ -28,6 +28,24 @@ contract TesterMedusa is Invariants, Setup {
         _setUpHandlers();
     }
 
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                 MEDUSA ONLY INVARIANTS                                    //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    function echidna_invariant_ERC4626_invariantC(uint256 _amount) public returns (bool) {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            assert_ERC4626_assets_invariantC(vaults[i], _amount);
+        }
+        return true;
+    }
+
+    function echidna_invariant_ERC4626_invariantD(uint256 _amount) public returns (bool) {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            assert_ERC4626_assets_invariantD(vaults[i], _amount);
+        }
+        return true;
+    }
+
     /// @dev Needed in order for foundry to recognise the contract as a test, faster debugging
     function testAux() public {}
 }
