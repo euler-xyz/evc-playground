@@ -34,7 +34,7 @@ abstract contract Invariants is
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    //                                     ERC4626                                           //
+    //                                         ERC4626                                           //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     function echidna_invariant_ERC4626_assets_invariantAB() public targetVaultsFrom(VaultType.Simple) returns (bool) {
@@ -44,20 +44,7 @@ abstract contract Invariants is
         }
         return true;
     }
-    /*
-    function echidna_invariant_ERC4626_invariantC(uint256 _amount) public returns (bool) {
-        for (uint256 i = limitVault; i < vaults.length; i++) {
-            assert_ERC4626_assets_invariantC(vaults[i], _amount);
-        }
-        return true;
-    }
 
-    function echidna_invariant_ERC4626_invariantD(uint256 _amount) public returns (bool) {
-        for (uint256 i = limitVault; i < vaults.length; i++) {
-            assert_ERC4626_assets_invariantD(vaults[i], _amount);
-        }
-        return true;
-    } */
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                 VAULT SIMPLE INVARIANTS                                   //
@@ -66,7 +53,7 @@ abstract contract Invariants is
     function echidna_invariant_VaultSimple_invariantABCD() public targetVaultsFrom(VaultType.Simple) returns (bool) {
         for (uint256 i = limitVault; i < vaults.length; i++) {
             //assert_VaultSimple_invariantA(vaults[i]);
-            //assert_VaultSimple_invariantB(vaults[i]);
+            assert_VaultSimple_invariantB(vaults[i]);
 
             uint256 _sumBalanceOf;
             for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
@@ -91,7 +78,7 @@ abstract contract Invariants is
             for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
                 assert_VaultSimpleBorrowable_invariantA(vaults[i], actorAddresses[j]);
             }
-            //assert_VaultSimpleBorrowable_invariantB(vaults[i]);
+            assert_VaultSimpleBorrowable_invariantB(vaults[i]);
         }
         return true;
     }
