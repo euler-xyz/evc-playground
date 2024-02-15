@@ -36,13 +36,13 @@ abstract contract VaultRegularBorrowableBeforeAfterHooks is BaseHooks {
     function _rvbBefore(address _vault) internal {
         VaultRegularBorrowable rvb = VaultRegularBorrowable(_vault);
         rvbVars.interestAccumulatorBefore = rvb.getInterestAccumulator();
-        (rvbVars.liabilityValueBefore, rvbVars.collateralValueBefore) = rvb.getLiabilityAndCollateral(address(actor));
+        (rvbVars.liabilityValueBefore, rvbVars.collateralValueBefore) = rvb.getAccountLiabilityStatus(address(actor));
     }
 
     function _rvbAfter(address _vault) internal {
         VaultRegularBorrowable rvb = VaultRegularBorrowable(_vault);
         rvbVars.interestAccumulatorAfter = rvb.getInterestAccumulator();
-        (rvbVars.liabilityValueAfter, rvbVars.collateralValueAfter) = rvb.getLiabilityAndCollateral(address(actor));
+        (rvbVars.liabilityValueAfter, rvbVars.collateralValueAfter) = rvb.getAccountLiabilityStatus(address(actor));
 
         // VaultSimple Post Conditions
         assert_rvbPostConditionA();
@@ -56,7 +56,7 @@ abstract contract VaultRegularBorrowableBeforeAfterHooks is BaseHooks {
     VaultRegularBorrowable
         Post Condition A: Interest rate monotonically increases
         Post Condition B: A healthy account cant never be left unhealthy after a transaction
-        
+
     */
 
     /////////////////////////////////////////////////////////////////////////////////////////////*/
