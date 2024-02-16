@@ -7,8 +7,8 @@ import "solmate/test/utils/mocks/MockERC20.sol";
 import "evc/EthereumVaultConnector.sol";
 import "../src/vaults/solmate/VaultRegularBorrowable.sol";
 import "../src/view/BorrowableVaultLensForEVC.sol";
-import "../test/mocks/IRMMock.sol";
-import "../test/mocks/PriceOracleMock.sol";
+import {IRMMock} from "../test/mocks/IRMMock.sol";
+import {PriceOracleMock} from "../test/mocks/PriceOracleMock.sol";
 
 /// @title Deployment script
 /// @notice This script is used for deploying the EVC and a couple vaults for testing purposes
@@ -41,9 +41,9 @@ contract Deployment is Script {
         PriceOracleMock oracle = new PriceOracleMock();
 
         // setup the price oracle
-        oracle.setQuote(address(asset1), address(asset1), 1e18); // 1 A1 = 1 A1
-        oracle.setQuote(address(asset2), address(asset1), 1e16); // 1 A2 = 0.01 A1
-        oracle.setQuote(address(asset3), address(asset1), 1e18); // 1 A3 = 1 A1
+        oracle.setPrice(address(asset1), address(asset1), 1e18); // 1 A1 = 1 A1
+        oracle.setPrice(address(asset2), address(asset1), 1e16); // 1 A2 = 0.01 A1
+        oracle.setPrice(address(asset3), address(asset1), 1e18); // 1 A3 = 1 A1
 
         // deploy vaults
         VaultRegularBorrowable vault1 =
@@ -56,14 +56,19 @@ contract Deployment is Script {
             new VaultRegularBorrowable(evc, asset3, irm, oracle, asset1, "Vault Asset 3", "VA3");
 
         // setup the vaults
-        vault1.setCollateralFactor(vault1, 95); // cf = 0.95, self-collateralization
+        vault1.setCollateralFactor(address(vault1), 95); // cf = 0.95, self-collateralization
 
-        vault2.setCollateralFactor(vault2, 95); // cf = 0.95, self-collateralization
-        vault2.setCollateralFactor(vault1, 50); // cf = 0.50
+        vault2.setCollateralFactor(address(vault2), 95); // cf = 0.95, self-collateralization
+        vault2.setCollateralFactor(address(vault1), 50); // cf = 0.50
 
-        vault3.setCollateralFactor(vault3, 95); // cf = 0.95, self-collateralization
-        vault3.setCollateralFactor(vault1, 50); // cf = 0.50
-        vault3.setCollateralFactor(vault2, 80); // cf = 0.8
+        vault3.setCollateralFactor(address(vault3), 95); // cf = 0.95, self-collateralization
+        vault3.setCollateralFactor(address(vault1), 50); // cf = 0.50
+        vault3.setCollateralFactor(address(vault2), 80); // cf = 0.8
+
+        // setup the price oracle
+        oracle.setResolvedAsset(address(vault1));
+        oracle.setResolvedAsset(address(vault2));
+        oracle.setResolvedAsset(address(vault3));
 
         // deploy the lens
         BorrowableVaultLensForEVC lens = new BorrowableVaultLensForEVC(evc);

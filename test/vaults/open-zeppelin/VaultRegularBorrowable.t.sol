@@ -41,11 +41,13 @@ contract VaultRegularBorrowableTest is Test {
         collateralVault2 = new VaultSimple(evc, IERC20(address(collateralAsset2)), "Collateral Vault 2", "CV2");
 
         irm.setInterestRate(10); // 10% APY
-        oracle.setQuote(address(liabilityAsset), address(referenceAsset), 1e17); // 1 LA = 0.1 RA
 
-        oracle.setQuote(address(collateralAsset1), address(referenceAsset), 1e16); // 1 CA1 = 0.01 RA
-
-        oracle.setQuote(address(collateralAsset2), address(referenceAsset), 1e17); // 1 CA2 = 0.1 RA
+        oracle.setResolvedAsset(address(liabilityVault));
+        oracle.setResolvedAsset(address(collateralVault1));
+        oracle.setResolvedAsset(address(collateralVault2));
+        oracle.setPrice(address(liabilityAsset), address(referenceAsset), 1e17); // 1 LA = 0.1 RA
+        oracle.setPrice(address(collateralAsset1), address(referenceAsset), 1e16); // 1 CA1 = 0.01 RA
+        oracle.setPrice(address(collateralAsset2), address(referenceAsset), 1e17); // 1 CA2 = 0.1 RA
     }
 
     function mintAndApprove(address alice, address bob) public {
@@ -79,9 +81,9 @@ contract VaultRegularBorrowableTest is Test {
 
         mintAndApprove(alice, bob);
 
-        liabilityVault.setCollateralFactor(liabilityVault, 100); // cf = 1, self-collateralization
-        liabilityVault.setCollateralFactor(collateralVault1, 100); // cf = 1
-        liabilityVault.setCollateralFactor(collateralVault2, 50); // cf = 0.5
+        liabilityVault.setCollateralFactor(address(liabilityVault), 100); // cf = 1, self-collateralization
+        liabilityVault.setCollateralFactor(address(collateralVault1), 100); // cf = 1
+        liabilityVault.setCollateralFactor(address(collateralVault2), 50); // cf = 0.5
 
         // alice deposits 50 LA
         vm.prank(alice);
@@ -292,9 +294,9 @@ contract VaultRegularBorrowableTest is Test {
 
         mintAndApprove(alice, bob);
 
-        liabilityVault.setCollateralFactor(liabilityVault, 100); // cf = 1, self-collateralization
-        liabilityVault.setCollateralFactor(collateralVault1, 100); // cf = 1
-        liabilityVault.setCollateralFactor(collateralVault2, 50); // cf = 0.5
+        liabilityVault.setCollateralFactor(address(liabilityVault), 100); // cf = 1, self-collateralization
+        liabilityVault.setCollateralFactor(address(collateralVault1), 100); // cf = 1
+        liabilityVault.setCollateralFactor(address(collateralVault2), 50); // cf = 0.5
 
         // alice deposits 50 LA
         vm.prank(alice);
