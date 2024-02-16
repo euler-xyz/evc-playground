@@ -13,16 +13,16 @@ abstract contract ERC20Collateral is EVCUtil, ERC20, ReentrancyGuard {
     constructor(IEVC _evc_, string memory _name_, string memory _symbol_) EVCUtil(_evc_) ERC20(_name_, _symbol_) {}
 
     /// @notice Transfers a certain amount of tokens to a recipient.
-    /// @dev Overriden to support EVC batching.
+    /// @dev Overriden to add re-entrancy protection.
     /// @param to The recipient of the transfer.
     /// @param amount The amount shares to transfer.
     /// @return A boolean indicating whether the transfer was successful.
-    function transfer(address to, uint256 amount) public virtual override callThroughEVC nonReentrant returns (bool) {
+    function transfer(address to, uint256 amount) public virtual override nonReentrant returns (bool) {
         return super.transfer(to, amount);
     }
 
     /// @notice Transfers a certain amount of tokens from a sender to a recipient.
-    /// @dev Overriden to support EVC batching.
+    /// @dev Overriden to add re-entrancy protection.
     /// @param from The sender of the transfer.
     /// @param to The recipient of the transfer.
     /// @param amount The amount of shares to transfer.
@@ -31,7 +31,7 @@ abstract contract ERC20Collateral is EVCUtil, ERC20, ReentrancyGuard {
         address from,
         address to,
         uint256 amount
-    ) public virtual override callThroughEVC nonReentrant returns (bool) {
+    ) public virtual override nonReentrant returns (bool) {
         return super.transferFrom(from, to, amount);
     }
 
@@ -39,7 +39,9 @@ abstract contract ERC20Collateral is EVCUtil, ERC20, ReentrancyGuard {
     /// (or `to`) is the zero address. All customizations to transfers, mints, and burns should be done by overriding
     /// this function.
     /// @dev Overriden to require account status checks on transfers from non-zero addresses. The account status check
-    /// must be required on any operation that reduces user's balance.
+    /// must be required on any operation that reduces user's balance. Note that the user balance cannot be modified
+    /// after the account status check is required. If that's the case, the contract must be modified so that the
+    /// account status check is required as the very last operation of the function.
     /// @param from The address from which tokens are transferred or burned.
     /// @param to The address to which tokens are transferred or minted.
     /// @param value The amount of tokens to transfer, mint, or burn.

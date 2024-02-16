@@ -60,7 +60,7 @@ contract ERC20WrapperCollateral is ERC20Collateral {
     /// @param amount The amount of this ERC20 token to unwrap.
     /// @param receiver The address to receive the underlying tokens.
     /// @return True if the operation was successful.
-    function unwrap(uint256 amount, address receiver) public virtual callThroughEVC nonReentrant returns (bool) {
+    function unwrap(uint256 amount, address receiver) public virtual nonReentrant returns (bool) {
         if (receiver == address(this)) {
             revert ERC20WrapperCollateral_InvalidAddress();
         }

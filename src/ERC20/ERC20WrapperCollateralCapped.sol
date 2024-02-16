@@ -62,10 +62,7 @@ contract ERC20WrapperCollateralCapped is ERC20WrapperCollateral {
     /// @param amount The amount of the underlying token to wrap.
     /// @param receiver The address to receive the wrapped tokens.
     /// @return True if the operation was successful.
-    function wrap(
-        uint256 amount,
-        address receiver
-    ) public virtual override callThroughEVC requireSupplyCapCheck returns (bool) {
+    function wrap(uint256 amount, address receiver) public virtual override requireSupplyCapCheck returns (bool) {
         return super.wrap(amount, receiver);
     }
 
@@ -73,10 +70,7 @@ contract ERC20WrapperCollateralCapped is ERC20WrapperCollateral {
     /// @param amount The amount of this ERC20 token to unwrap.
     /// @param receiver The address to receive the underlying tokens.
     /// @return True if the operation was successful.
-    function unwrap(
-        uint256 amount,
-        address receiver
-    ) public virtual override callThroughEVC requireSupplyCapCheck returns (bool) {
+    function unwrap(uint256 amount, address receiver) public virtual override requireSupplyCapCheck returns (bool) {
         return super.unwrap(amount, receiver);
     }
 }
