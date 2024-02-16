@@ -2,7 +2,7 @@
 pragma solidity ^0.8.19;
 
 import "openzeppelin/interfaces/IERC4626.sol";
-import "../../src/ERC20/ERC20WrapperCollateral.sol";
+import "../../src/ERC20/ERC20CollateralWrapper.sol";
 import "../../src/interfaces/IPriceOracle.sol";
 
 contract PriceOracleMock is IPriceOracle {
@@ -22,7 +22,7 @@ contract PriceOracleMock is IPriceOracle {
         try IERC4626(asset).asset() returns (address underlying) {
             resolvedAssets[asset] = _setAssetInfo(underlying, true);
         } catch {
-            resolvedAssets[asset] = _setAssetInfo(ERC20WrapperCollateral(asset).underlying(), false);
+            resolvedAssets[asset] = _setAssetInfo(ERC20CollateralWrapper(asset).underlying(), false);
         }
     }
 

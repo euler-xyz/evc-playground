@@ -2,12 +2,12 @@
 
 pragma solidity ^0.8.19;
 
-import "./ERC20WrapperCollateral.sol";
+import "./ERC20CollateralWrapper.sol";
 
 /// @title ERC20WrapperForEVCCapped
-/// @notice It extends the ERC20WrapperCollateral contract by adding a supply cap to the wrapped token.
-contract ERC20WrapperCollateralCapped is ERC20WrapperCollateral {
-    error ERC20WrapperCollateralCapped_SupplyCapExceeded();
+/// @notice It extends the ERC20CollateralWrapper contract by adding a supply cap to the wrapped token.
+contract ERC20CollateralWrapperCapped is ERC20CollateralWrapper {
+    error ERC20CollateralWrapperCapped_SupplyCapExceeded();
 
     uint256 private immutable _supplyCap;
     bytes private _totalSupplySnapshot;
@@ -18,7 +18,7 @@ contract ERC20WrapperCollateralCapped is ERC20WrapperCollateral {
         string memory _name_,
         string memory _symbol_,
         uint256 _supplyCap_
-    ) ERC20WrapperCollateral(_evc_, _underlying_, _name_, _symbol_) {
+    ) ERC20CollateralWrapper(_evc_, _underlying_, _name_, _symbol_) {
         _supplyCap = _supplyCap_;
     }
 
@@ -51,7 +51,7 @@ contract ERC20WrapperCollateralCapped is ERC20WrapperCollateral {
         uint256 finalSupply = totalSupply();
 
         if (finalSupply > _supplyCap && finalSupply > initialSupply) {
-            revert ERC20WrapperCollateralCapped_SupplyCapExceeded();
+            revert ERC20CollateralWrapperCapped_SupplyCapExceeded();
         }
 
         delete _totalSupplySnapshot;
