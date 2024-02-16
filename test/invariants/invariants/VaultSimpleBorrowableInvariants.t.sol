@@ -22,29 +22,28 @@ abstract contract VaultSimpleBorrowableInvariants is HandlerAggregator {
 
     /////////////////////////////////////////////////////////////////////////////////////////////*/
 
-    function assert_VaultSimpleBorrowable_invariantA(address _vault, address _borrower) internal {
+    function assert_VaultSimpleBorrowable_invariantA(
+        address _vault,
+        address _borrower
+    ) internal monotonicTimestamp(_vault) {
         /// @dev needed to avoid panic errors during invaraints checks
-        if (block.timestamp >= VaultSimpleBorrowable(_vault).getLastInterestUpdate()) {
-            assertGe(
-                VaultSimpleBorrowable(_vault).totalBorrowed(),
-                VaultSimpleBorrowable(_vault).getOwed(_borrower),
-                string.concat("VaultSimpleBorrowable_invariantA: ", vaultNames[_vault])
-            );
-        }
+        assertGe(
+            VaultSimpleBorrowable(_vault).totalBorrowed(),
+            VaultSimpleBorrowable(_vault).getOwed(_borrower),
+            string.concat("VaultSimpleBorrowable_invariantA: ", vaultNames[_vault])
+        );
     }
 
-    function assert_VaultSimpleBorrowable_invariantB(address _vault) internal {
+    function assert_VaultSimpleBorrowable_invariantB(address _vault) internal monotonicTimestamp(_vault) {
         /// @dev needed to avoid panic errors during invaraints checks
-        if (block.timestamp >= VaultSimpleBorrowable(_vault).getLastInterestUpdate()) {
-            uint256 totalDebt;
-            for (uint256 i; i < NUMBER_OF_ACTORS; i++) {
-                totalDebt += VaultSimpleBorrowable(_vault).debtOf(address(actorAddresses[i]));
-            }
-            assertEq(
-                VaultSimpleBorrowable(_vault).totalBorrowed(),
-                totalDebt,
-                string.concat("VaultSimpleBorrowable_invariantB: ", vaultNames[_vault])
-            );
+        uint256 totalDebt;
+        for (uint256 i; i < NUMBER_OF_ACTORS; i++) {
+            totalDebt += VaultSimpleBorrowable(_vault).debtOf(address(actorAddresses[i]));
         }
+        assertEq(
+            VaultSimpleBorrowable(_vault).totalBorrowed(),
+            totalDebt,
+            string.concat("VaultSimpleBorrowable_invariantB: ", vaultNames[_vault])
+        );
     }
 }

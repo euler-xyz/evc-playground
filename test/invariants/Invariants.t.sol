@@ -45,6 +45,36 @@ abstract contract Invariants is
         return true;
     }
 
+    function echidna_invariant_ERC4626_invariantC() public targetVaultsFrom(VaultType.Simple) returns (bool) {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            assert_ERC4626_assets_invariantC(vaults[i]);
+        }
+        return true;
+    }
+
+    function echidna_invariant_ERC4626_invariantD() public targetVaultsFrom(VaultType.Simple) returns (bool) {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            assert_ERC4626_assets_invariantD(vaults[i]);
+        }
+        return true;
+    }
+
+    function echidna_invariant_ERC4626_depositMintWithdrawRedeem_invariantA()
+        public
+        targetVaultsFrom(VaultType.Simple)
+        returns (bool)
+    {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
+                assert_ERC4626_deposit_invariantA(vaults[i], actorAddresses[j]);
+                assert_ERC4626_mint_invariantA(vaults[i], actorAddresses[j]);
+                assert_ERC4626_withdraw_invariantA(vaults[i], actorAddresses[j]);
+                assert_ERC4626_redeem_invariantA(vaults[i], actorAddresses[j]);
+            }
+        }
+        return true;
+    }
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                 VAULT SIMPLE INVARIANTS                                   //
     ///////////////////////////////////////////////////////////////////////////////////////////////

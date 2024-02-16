@@ -29,6 +29,10 @@ contract VaultSimpleExtended is VaultSimple, VaultBaseGetters {
         string memory _name,
         string memory _symbol
     ) VaultSimple(_evc, _asset, _name, _symbol) {}
+
+    function getLastInterestUpdate() external view returns (uint256 lastInterestUpdate_) {
+        lastInterestUpdate_ = 0;
+    }
 }
 
 /// @title VaultSimpleBorrowableExtended

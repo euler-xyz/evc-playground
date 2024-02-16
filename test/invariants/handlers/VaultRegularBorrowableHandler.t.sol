@@ -65,13 +65,6 @@ contract VaultRegularBorrowableHandler is BaseHandler {
         }
     }
 
-    /// @notice Advances the time of the protocol
-    function warp(uint256 seed_) public {
-        uint256 warpAmount_ = _bound(seed_, 0, 10 days);
-
-        vm.warp(block.timestamp + warpAmount_);
-    }
-
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                         OWNER ACTIONS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////

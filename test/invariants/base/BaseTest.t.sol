@@ -13,6 +13,14 @@ import {StdAsserts} from "../utils/StdAsserts.sol";
 // Base
 import {BaseStorage} from "./BaseStorage.t.sol";
 
+// Contracts
+import {
+    VaultSimpleExtended as VaultSimple,
+    VaultSimpleBorrowableExtended as VaultSimpleBorrowable,
+    VaultRegularBorrowableExtended as VaultRegularBorrowable,
+    VaultBorrowableWETHExtended as VaultBorrowableWETH
+} from "test/invariants/helpers/extended/VaultsExtended.sol";
+
 /// @notice Base contract for all test contracts extends BaseStorage
 /// @dev Provides setup modifier and cheat code setup
 /// @dev inherits Storage, Testing constants assertions and utils needed for testing
@@ -28,6 +36,14 @@ abstract contract BaseTest is BaseStorage, PropertiesConstants, StdAsserts, StdU
         actor = actors[msg.sender];
         _;
         actor = Actor(payable(address(0)));
+    }
+
+    /// @dev Solves medusa backward time warp issue
+    modifier monotonicTimestamp(address _vault) virtual {
+        if (block.timestamp < VaultSimple(_vault).getLastInterestUpdate()) {
+            vm.warp(VaultSimple(_vault).getLastInterestUpdate());
+        }
+        _;
     }
 
     /// @dev sets the bottom limit index af the vaults array that the property will be tested against

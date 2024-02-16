@@ -37,20 +37,6 @@ contract ERC20Handler is BaseHandler {
     //                                           ACTIONS                                         //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    /*     function approve(address spender, uint256 amount) external setup {
-        bool success;
-        bytes memory returnData;
-
-        address erc20Address = _getRandomSupportedVault(VaultType.Simple);
-
-        (success, returnData) =
-            actor.proxy(erc20Address, abi.encodeWithSelector(ERC20.approve.selector, spender, amount));
-
-        if (success) {
-            assert(true);
-        }
-    } */
-
     function approveTo(uint256 i, uint256 j, uint256 amount) external setup {
         bool success;
         bytes memory returnData;

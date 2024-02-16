@@ -39,7 +39,7 @@ contract Setup is BaseTest {
         referenceAssets.push(address(referenceAsset));
 
         // Deploy base assets
-        liabilityAsset = new MockERC20("Liability Asset", "LA", 18);//TODO: add two liabilityes
+        liabilityAsset = new MockERC20("Liability Asset", "LA", 18);//TODO: add two liabilities
         collateralAsset1 = new MockERC20("Collateral Asset 1", "CA1", 18);
         collateralAsset2 = new MockERC20("Collateral Asset 2", "CA2", 6);
         baseAssets.push(address(liabilityAsset));
