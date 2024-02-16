@@ -6,10 +6,10 @@ import "openzeppelin/token/ERC20/ERC20.sol";
 import "openzeppelin/utils/ReentrancyGuard.sol";
 import "evc/utils/EVCUtil.sol";
 
-/// @title ERC20CollateralForEVC
+/// @title ERC20Collateral
 /// @notice It extends the ERC20 token standard to add the EVC authentication and account status checks so that the
 /// token contract can be used as collateral in the EVC ecosystem.
-abstract contract ERC20CollateralForEVC is EVCUtil, ERC20, ReentrancyGuard {
+abstract contract ERC20Collateral is EVCUtil, ERC20, ReentrancyGuard {
     constructor(IEVC _evc_, string memory _name_, string memory _symbol_) EVCUtil(_evc_) ERC20(_name_, _symbol_) {}
 
     /// @notice Transfers a certain amount of tokens to a recipient.

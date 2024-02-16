@@ -3,13 +3,13 @@
 pragma solidity ^0.8.19;
 
 import {SafeERC20} from "openzeppelin/token/ERC20/utils/SafeERC20.sol";
-import "./ERC20CollateralForEVC.sol";
+import "./ERC20Collateral.sol";
 
-/// @title ERC20WrapperForEVC
-/// @notice It extends the ERC20CollateralForEVC contract so that any ERC20 token can be wrapped and used as collateral
+/// @title ERC20WrapperCollateral
+/// @notice It extends the ERC20Collateral contract so that any ERC20 token can be wrapped and used as collateral
 /// in the EVC ecosystem.
-contract ERC20WrapperForEVC is ERC20CollateralForEVC {
-    error ERC20WrapperForEVC_InvalidAddress();
+contract ERC20WrapperCollateral is ERC20Collateral {
+    error ERC20WrapperCollateral_InvalidAddress();
 
     IERC20 private immutable _underlying;
     uint8 private immutable _decimals;
@@ -19,9 +19,9 @@ contract ERC20WrapperForEVC is ERC20CollateralForEVC {
         IERC20 _underlying_,
         string memory _name_,
         string memory _symbol_
-    ) ERC20CollateralForEVC(_evc_, _name_, _symbol_) {
+    ) ERC20Collateral(_evc_, _name_, _symbol_) {
         if (address(_underlying_) == address(this)) {
-            revert ERC20WrapperForEVC_InvalidAddress();
+            revert ERC20WrapperCollateral_InvalidAddress();
         }
 
         _underlying = _underlying_;
@@ -47,7 +47,7 @@ contract ERC20WrapperForEVC is ERC20CollateralForEVC {
     /// @return True if the operation was successful.
     function wrap(uint256 amount, address receiver) public virtual nonReentrant returns (bool) {
         if (receiver == address(this)) {
-            revert ERC20WrapperForEVC_InvalidAddress();
+            revert ERC20WrapperCollateral_InvalidAddress();
         }
 
         SafeERC20.safeTransferFrom(IERC20(_underlying), _msgSender(), address(this), amount);
@@ -62,7 +62,7 @@ contract ERC20WrapperForEVC is ERC20CollateralForEVC {
     /// @return True if the operation was successful.
     function unwrap(uint256 amount, address receiver) public virtual callThroughEVC nonReentrant returns (bool) {
         if (receiver == address(this)) {
-            revert ERC20WrapperForEVC_InvalidAddress();
+            revert ERC20WrapperCollateral_InvalidAddress();
         }
 
         address sender = _msgSender();
