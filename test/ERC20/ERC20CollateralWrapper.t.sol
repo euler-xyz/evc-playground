@@ -5,11 +5,11 @@ import "forge-std/Test.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import "evc/EthereumVaultConnector.sol";
 import "../../src/vaults/open-zeppelin/VaultRegularBorrowable.sol";
-import "../../src/ERC20/ERC20WrapperCollateral.sol";
+import "../../src/ERC20/ERC20CollateralWrapper.sol";
 import {IRMMock} from "../mocks/IRMMock.sol";
 import {PriceOracleMock} from "../mocks/PriceOracleMock.sol";
 
-contract ERC20WrapperCollateralTest is Test {
+contract ERC20CollateralWrapperTest is Test {
     error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
 
     IEVC evc;
@@ -22,7 +22,7 @@ contract ERC20WrapperCollateralTest is Test {
 
     VaultRegularBorrowable liabilityVault;
     VaultSimple collateralVault1;
-    ERC20WrapperCollateral wrappedCollateralAsset2;
+    ERC20CollateralWrapper wrappedCollateralAsset2;
 
     function setUp() public {
         evc = new EthereumVaultConnector();
@@ -40,7 +40,7 @@ contract ERC20WrapperCollateralTest is Test {
         collateralVault1 = new VaultSimple(evc, IERC20(address(collateralAsset1)), "Collateral Vault 1", "CV1");
 
         wrappedCollateralAsset2 =
-            new ERC20WrapperCollateral(evc, IERC20(address(collateralAsset2)), "Wrapped Collateral Asset 2", "WCA2");
+            new ERC20CollateralWrapper(evc, IERC20(address(collateralAsset2)), "Wrapped Collateral Asset 2", "WCA2");
 
         irm.setInterestRate(10); // 10% APY
 
@@ -320,7 +320,7 @@ contract ERC20WrapperCollateralTest is Test {
             targetContract: address(wrappedCollateralAsset2),
             onBehalfOfAccount: bob,
             value: 0,
-            data: abi.encodeWithSelector(ERC20WrapperCollateral.wrap.selector, 50e6, bob)
+            data: abi.encodeWithSelector(ERC20CollateralWrapper.wrap.selector, 50e6, bob)
         });
         items[2] = IEVC.BatchItem({
             targetContract: address(evc),
@@ -472,7 +472,7 @@ contract ERC20WrapperCollateralTest is Test {
             targetContract: address(wrappedCollateralAsset2),
             onBehalfOfAccount: alice,
             value: 0,
-            data: abi.encodeWithSelector(ERC20WrapperCollateral.unwrap.selector, 6.18e6, alice)
+            data: abi.encodeWithSelector(ERC20CollateralWrapper.unwrap.selector, 6.18e6, alice)
         });
 
         vm.prank(alice);
@@ -534,7 +534,7 @@ contract ERC20WrapperCollateralTest is Test {
             targetContract: address(wrappedCollateralAsset2),
             onBehalfOfAccount: bob,
             value: 0,
-            data: abi.encodeWithSelector(ERC20WrapperCollateral.unwrap.selector, 50e6 - 6.18e6, bob)
+            data: abi.encodeWithSelector(ERC20CollateralWrapper.unwrap.selector, 50e6 - 6.18e6, bob)
         });
 
         vm.prank(bob);

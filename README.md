@@ -20,8 +20,8 @@ This repository serves as a sandbox for exploring the EVC. It includes various e
 .
 ├── ERC20
 │   ├── ERC20Collateral.sol
-│   ├── ERC20WrapperCollateral.sol
-│   └── ERC20WrapperCollateralCapped.sol
+│   ├── ERC20CollateralWrapper.sol
+│   └── ERC20CollateralWrapperCapped.sol
 ├── interfaces
 │   ├── IIRM.sol
 │   └── IPriceOracle.sol
@@ -85,7 +85,7 @@ An alternative path to creating a collateral-only asset is to create an `ERC20Co
 
 Whenever the user's balance decreases (outgoing transfer/token burn), the token contract calls into the EVC to check whether the outstanding loan rules are not violated. With an addition of a simple modifier which routes transfer calls through the EVC, mentioned account status checks can be deferred until the end of a batch of multiple operations, allowing a user to freely use their tokens within a batch as long as their account is solvent at the end. `ERC20Collateral` also makes the token compatible with EVC sub-accounts system out of the box.
 
-Existing `ERC20` tokens that are not compatible with the EVC may make use of the `ERC20WrapperCollateral` and `ERC20WrapperCollateralCapped` contracts. `ERC20WrapperCollateral` is a simple wrapper contract that gives an existing token `ERC20Collateral` functionality. `ERC20WrapperCollateralCapped` is a simple wrapper contract that gives an existing token `ERC20Collateral` functionality and adds a supply cap to the wrapped token.
+Existing `ERC20` tokens that are not compatible with the EVC may make use of the `ERC20CollateralWrapper` and `ERC20CollateralWrapperCapped` contracts. `ERC20CollateralWrapper` is a simple wrapper contract that gives an existing token `ERC20Collateral` functionality. `ERC20CollateralWrapperCapped` is a simple wrapper contract that gives an existing token `ERC20Collateral` functionality and adds a supply cap to the wrapped token.
 
 ### Gasless transactions
 
