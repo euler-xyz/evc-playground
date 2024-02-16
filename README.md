@@ -18,6 +18,10 @@ This repository serves as a sandbox for exploring the EVC. It includes various e
 
 ```
 .
+├── ERC20
+│   ├── ERC20Collateral.sol
+│   ├── ERC20WrapperCollateral.sol
+│   └── ERC20WrapperCollateralCapped.sol
 ├── interfaces
 │   ├── IIRM.sol
 │   └── IPriceOracle.sol
@@ -50,17 +54,17 @@ If you're interested in building a vault that is interoperable with the EVC, you
 
 The `EVCClient` contract is an abstract base contract for interacting with the EVC. It inherits from [`EVCUtil`](https://github.com/euler-xyz/ethereum-vault-connector/blob/master/src/utils/EVCUtil.sol) contract and provides utility functions for authenticating callers in the context of the EVC, scheduling and forgiving status checks, and liquidating collateral shares.
 
-The `VaultBase` is an abstract base contract that all EVC-interoperable vaults inherit from. It provides standard modifiers for reentrancy protection and account/vault status checks scheduling. It declares functions that must be defined in the child contract in order to correctly implement controller release, vault snapshotting and account/vaults status checks.
+The `VaultBase` is an abstract base contract that all EVC-interoperable vaults inherit from. It provides standard modifiers for re-entrancy protection and account/vault status checks scheduling. It declares functions that must be defined in the child contract in order to correctly implement controller release, vault snapshotting and account/vaults status checks.
 
 You will find two directories in the [`vaults` directory](/src/vaults). The [`open-zeppelin`](/src/vaults/open-zeppelin) directory contains vaults that are based on Open-Zeppelin implementation of the ERC-4626. The [`solmate`](/src/vaults/solmate) directory contains vaults that are based on Solmate implementation of the ERC-4626.
 
-The `VaultSimple` contract is a simple vault that implements the ERC-4626 interface. It provides basic functionality for a vault. The contract showcases a pattern that should be followed in order to properly use EVC's authentication features for non-borrowing operations (when it doesn't matter whether the user has enabled a controller). It implements a simple vault status check based on a pre- and post-operation snapshots. Due to non-borrowing nature of the vault, the account status check is implemented as always valid.
+The `VaultSimple` contract is a simple vault that implements the ERC-4626 interface. It provides basic functionality for a so called collateral-only vault which may be accepted as collateral by other vaults in the EVC ecosystem. The contract showcases a pattern that should be followed in order to properly use EVC's authentication features for non-borrowing operations (when it doesn't matter whether the user has enabled a controller). It implements a simple vault status check based on a pre- and post-operation snapshots. Due to non-borrowing nature of the vault, the account status check is implemented as always valid.
 
-The `VaultSimpleBorrowable` contract is a simple vault that extents the `VaultSimple` functionality by adding a borrowing functionality (but no interest accrual). The contract showcases a pattern that should be followed in order to properly use EVC's authentication features for borrowing operations (when it matters whether the user has enabled a controller). It implements a simple vault status check based on a pre- and post-operation snapshots and a simple account status check.
+The `VaultSimpleBorrowable` contract is a simple vault that extends the `VaultSimple` functionality by adding a borrowing functionality (but no interest accrual). The contract showcases a pattern that should be followed in order to properly use EVC's authentication features for borrowing operations (when it matters whether the user has enabled a controller). It implements a simple vault status check based on a pre- and post-operation snapshots and a simple account status check.
 
 The `VaultRegularBorrowable` contract is a vault that extends the `VaultSimpleBorrowable` functionality by adding recognized collaterals, price oracle integration and interest accrual. It implements a simple liquidation pattern that showcases the EVC's `controlCollateral` functionality that is used in order to seize violator's collateral shares.
 
-The `VaultBorrowableWETH` contract is a vault that extends the `VaultRegularBorrowable` functionality by adding a special function for handling ETH deposits into a WETH vault. It showcases EVC `call` callback pattern for a `payable` function.
+The `VaultBorrowableWETH` contract is a vault that extends the `VaultRegularBorrowable` functionality by adding a special function for handling ETH for a WETH vault. It showcases EVC `call` callback pattern for a `payable` function.
 
 Areas of experimentation for vaults:
 1. Real World Assets (RWA) lending
@@ -72,6 +76,16 @@ Areas of experimentation for vaults:
 1. collateral types
 1. oracles
 1. interest rate models
+
+### ERC20 Collateral for the EVC
+
+If you're interested in an alternative path to make an asset suitable to become collateral for the EVC ecosystem vaults, you should look at the contracts in the [`ERC20` directory](/src/ERC20).
+
+An alternative path to creating a collateral-only asset is to create an `ERC20Collateral` token, which is a simple extension to the `ERC20` token standard to enforce compatibility with the EVC. Users are no longer required to deposit their tokens into vaults in order to use them as collateral, they can do so directly from their wallet. This helps them retain their governance rights and other token privileges.
+
+Whenever the user's balance decreases (outgoing transfer/token burn), the token contract calls into the EVC to check whether the outstanding loan rules are not violated. With an addition of a simple modifier which routes transfer calls through the EVC, mentioned account status checks can be deferred until the end of a batch of multiple operations, allowing a user to freely use their tokens within a batch as long as their account is solvent at the end. `ERC20Collateral` also makes the token compatible with EVC sub-accounts system out of the box.
+
+Existing `ERC20` tokens that are not compatible with the EVC may make use of the `ERC20WrapperCollateral` and `ERC20WrapperCollateralCapped` contracts. `ERC20WrapperCollateral` is a simple wrapper contract that gives an existing token `ERC20Collateral` functionality. `ERC20WrapperCollateralCapped` is a simple wrapper contract that gives an existing token `ERC20Collateral` functionality and adds a supply cap to the wrapped token.
 
 ### Gasless transactions
 
