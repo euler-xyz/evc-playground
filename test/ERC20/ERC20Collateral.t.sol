@@ -5,31 +5,52 @@ import "forge-std/Test.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import "evc/EthereumVaultConnector.sol";
 import "../../src/vaults/open-zeppelin/VaultRegularBorrowable.sol";
-import "../../src/ERC20/ERC20WrapperForEVC.sol";
+import "../../src/ERC20/ERC20Collateral.sol";
 import {IRMMock} from "../mocks/IRMMock.sol";
 import {PriceOracleMock} from "../mocks/PriceOracleMock.sol";
 
-contract ERC20WrapperForEVCTest is Test {
+// ERC20Collateral is abstract hence we need to create a contract that inherits from it
+contract MockERC20Collateral is ERC20Collateral {
+    uint8 private immutable _decimals;
+
+    constructor(
+        IEVC _evc,
+        string memory _name_,
+        string memory _symbol_,
+        uint8 _decimals_
+    ) ERC20Collateral(_evc, _name_, _symbol_) {
+        _decimals = _decimals_;
+    }
+
+    function decimals() public view override returns (uint8) {
+        return _decimals;
+    }
+
+    function mint(address account, uint256 amount) public {
+        _mint(account, amount);
+    }
+}
+
+contract ERC20CollateralTest is Test {
     error ERC20InsufficientBalance(address sender, uint256 balance, uint256 needed);
 
     IEVC evc;
     MockERC20 referenceAsset;
     MockERC20 liabilityAsset;
     MockERC20 collateralAsset1;
-    MockERC20 collateralAsset2;
+    MockERC20Collateral collateralAsset2;
     IRMMock irm;
     PriceOracleMock oracle;
 
     VaultRegularBorrowable liabilityVault;
     VaultSimple collateralVault1;
-    ERC20WrapperForEVC wrappedCollateralAsset2;
 
     function setUp() public {
         evc = new EthereumVaultConnector();
         referenceAsset = new MockERC20("Reference Asset", "RA", 18);
         liabilityAsset = new MockERC20("Liability Asset", "LA", 18);
         collateralAsset1 = new MockERC20("Collateral Asset 1", "CA1", 18);
-        collateralAsset2 = new MockERC20("Collateral Asset 2", "CA2", 6);
+        collateralAsset2 = new MockERC20Collateral(evc, "Collateral Asset 2", "CA2", 6);
         irm = new IRMMock();
         oracle = new PriceOracleMock();
 
@@ -39,14 +60,10 @@ contract ERC20WrapperForEVCTest is Test {
 
         collateralVault1 = new VaultSimple(evc, IERC20(address(collateralAsset1)), "Collateral Vault 1", "CV1");
 
-        wrappedCollateralAsset2 =
-            new ERC20WrapperForEVC(evc, IERC20(address(collateralAsset2)), "Wrapped Collateral Asset 2", "WCA2");
-
         irm.setInterestRate(10); // 10% APY
 
         oracle.setResolvedAsset(address(liabilityVault));
         oracle.setResolvedAsset(address(collateralVault1));
-        oracle.setResolvedAsset(address(wrappedCollateralAsset2));
         oracle.setPrice(address(liabilityAsset), address(referenceAsset), 1e17); // 1 LA = 0.1 RA
         oracle.setPrice(address(collateralAsset1), address(referenceAsset), 1e16); // 1 CA1 = 0.01 RA
         oracle.setPrice(address(collateralAsset2), address(referenceAsset), 1e17); // 1 CA2 = 0.1 RA
@@ -65,27 +82,24 @@ contract ERC20WrapperForEVCTest is Test {
 
         vm.prank(bob);
         collateralAsset1.approve(address(collateralVault1), type(uint256).max);
-
-        vm.prank(bob);
-        collateralAsset2.approve(address(wrappedCollateralAsset2), type(uint256).max);
     }
 
     function test_RegularBorrowRepay(address alice, address bob) public {
         vm.assume(alice != address(0) && bob != address(0) && !evc.haveCommonOwner(alice, bob));
         vm.assume(
             alice != address(evc) && alice != address(liabilityVault) && alice != address(collateralVault1)
-                && alice != address(wrappedCollateralAsset2)
+                && alice != address(collateralAsset2)
         );
         vm.assume(
             bob != address(evc) && bob != address(liabilityVault) && bob != address(collateralVault1)
-                && bob != address(wrappedCollateralAsset2)
+                && bob != address(collateralAsset2)
         );
 
         mintAndApprove(alice, bob);
 
         liabilityVault.setCollateralFactor(address(liabilityVault), 100); // cf = 1, self-collateralization
         liabilityVault.setCollateralFactor(address(collateralVault1), 100); // cf = 1
-        liabilityVault.setCollateralFactor(address(wrappedCollateralAsset2), 50); // cf = 0.5
+        liabilityVault.setCollateralFactor(address(collateralAsset2), 50); // cf = 0.5
 
         // alice deposits 50 LA
         vm.prank(alice);
@@ -99,11 +113,11 @@ contract ERC20WrapperForEVCTest is Test {
         assertEq(collateralAsset1.balanceOf(bob), 0);
         assertEq(collateralVault1.maxWithdraw(bob), 100e18);
 
-        // bob wraps 50 CA2 into 50 WCA2 which lets him borrow 25 LA
+        // bob transfers some CA2 to alice and after that he holds 50 CA2 which which lets him borrow 25 LA
         vm.prank(bob);
-        wrappedCollateralAsset2.wrap(50e6, bob);
+        collateralAsset2.transfer(alice, 50e6);
+        assertEq(collateralAsset2.balanceOf(alice), 50e6);
         assertEq(collateralAsset2.balanceOf(bob), 50e6);
-        assertEq(wrappedCollateralAsset2.balanceOf(bob), 50e6);
 
         // controller and collateral not enabled, hence borrow unsuccessful
         vm.prank(bob);
@@ -127,7 +141,7 @@ contract ERC20WrapperForEVCTest is Test {
         liabilityVault.borrow(35e18, bob);
 
         vm.prank(bob);
-        evc.enableCollateral(bob, address(wrappedCollateralAsset2));
+        evc.enableCollateral(bob, address(collateralAsset2));
 
         // too much borrowed, hence borrow unsuccessful
         vm.prank(bob);
@@ -173,7 +187,7 @@ contract ERC20WrapperForEVCTest is Test {
         evc.enableCollateral(alice, address(collateralVault1));
 
         vm.prank(alice);
-        evc.enableCollateral(alice, address(wrappedCollateralAsset2));
+        evc.enableCollateral(alice, address(collateralAsset2));
 
         // liquidation fails multiple times as alice tries to liquidate too much
         vm.prank(alice);
@@ -182,26 +196,24 @@ contract ERC20WrapperForEVCTest is Test {
 
         vm.prank(alice);
         vm.expectRevert(VaultRegularBorrowable.RepayAssetsExceeded.selector);
-        liabilityVault.liquidate(bob, address(wrappedCollateralAsset2), 30e18);
+        liabilityVault.liquidate(bob, address(collateralAsset2), 30e18);
 
         // finally liquidation is successful
         vm.prank(alice);
-        liabilityVault.liquidate(bob, address(wrappedCollateralAsset2), 6e18);
+        liabilityVault.liquidate(bob, address(collateralAsset2), 6e18);
 
         assertEq(liabilityAsset.balanceOf(bob), 35e18 - 2.680982126514837396e18); // bob's LA balance stays unchanged
         assertEq(liabilityVault.debtOf(bob), 30e18); // bob's debt decreased by 6 LA due to liquidation
         assertEq(collateralVault1.maxWithdraw(bob), 100e18); // bob's CA1 deposit stays unchanged
-        assertEq(wrappedCollateralAsset2.balanceOf(bob), 50e6 - 6.18e6); // bob's WCA2 balance decreased by 6.18 CA2 due
-            // to
-            // liquidation
+        assertEq(collateralAsset2.balanceOf(bob), 50e6 - 6.18e6); // bob's CA2 balance decreased by 6.18 CA2 due
+            // to liquidation
         assertEq(liabilityVault.debtOf(alice), 6e18); // alices's debt increased to 6 LA due to liquidation (she took on
             // bob's debt)
         assertEq(liabilityVault.maxWithdraw(alice), 15e18 + 2.680982126514837396e18); // alice's ability to withdraw LA
             // didn't change
         assertEq(collateralVault1.maxWithdraw(alice), 0); // alices's CA1 deposit stays unchanged
-        assertEq(wrappedCollateralAsset2.balanceOf(alice), 6.18e6); // alices's WCA2 balance increased by 6.18 CA2 due
-            // to
-            // liquidation (she took on bob's collateral)
+        assertEq(collateralAsset2.balanceOf(alice), 50e6 + 6.18e6); // alices's CA2 balance increased by 6.18 CA2 due
+            // to liquidation (she took on bob's collateral)
         evc.requireAccountStatusCheck(alice);
         evc.requireAccountStatusCheck(bob);
 
@@ -222,13 +234,7 @@ contract ERC20WrapperForEVCTest is Test {
         evc.disableCollateral(alice, address(collateralVault1));
 
         vm.prank(alice);
-        evc.disableCollateral(alice, address(wrappedCollateralAsset2));
-
-        // then alice unwraps the collateral seized
-        vm.prank(alice);
-        wrappedCollateralAsset2.unwrap(6.18e6, alice);
-        assertEq(collateralAsset2.balanceOf(alice), 6.18e6);
-        assertEq(wrappedCollateralAsset2.balanceOf(alice), 0);
+        evc.disableCollateral(alice, address(collateralAsset2));
 
         // bob repays the rest of his debt
         vm.prank(bob);
@@ -244,18 +250,13 @@ contract ERC20WrapperForEVCTest is Test {
         evc.disableCollateral(bob, address(collateralVault1));
 
         vm.prank(bob);
-        evc.disableCollateral(bob, address(wrappedCollateralAsset2));
+        evc.disableCollateral(bob, address(collateralAsset2));
 
-        // finally, bob withdraws and unwraps his collaterals
+        // finally, bob withdraws his collateral
         vm.prank(bob);
         collateralVault1.withdraw(100e18, bob, bob);
         assertEq(collateralAsset1.balanceOf(bob), 100e18);
         assertEq(collateralVault1.maxWithdraw(bob), 0);
-
-        vm.prank(bob);
-        wrappedCollateralAsset2.unwrap(50e6 - 6.18e6, bob);
-        assertEq(collateralAsset2.balanceOf(bob), 100e6 - 6.18e6);
-        assertEq(wrappedCollateralAsset2.balanceOf(bob), 0);
 
         // alice withdraws her LA deposit, account for rounding
         vm.prank(alice);
@@ -278,29 +279,27 @@ contract ERC20WrapperForEVCTest is Test {
         assertEq(collateralVault1.maxWithdraw(alice), 0);
         assertEq(collateralVault1.maxWithdraw(bob), 0);
 
-        assertEq(wrappedCollateralAsset2.totalSupply(), 0);
-        assertEq(collateralAsset2.balanceOf(address(alice)), 6.18e6);
-        assertEq(collateralAsset2.balanceOf(address(bob)), 100e6 - 6.18e6);
-        assertEq(wrappedCollateralAsset2.balanceOf(alice), 0);
-        assertEq(wrappedCollateralAsset2.balanceOf(bob), 0);
+        assertEq(collateralAsset2.totalSupply(), 100e6);
+        assertEq(collateralAsset2.balanceOf(address(alice)), 50e6 + 6.18e6);
+        assertEq(collateralAsset2.balanceOf(address(bob)), 50e6 - 6.18e6);
     }
 
     function test_RegularBorrowRepayWithBatch(address alice, address bob) public {
         vm.assume(alice != address(0) && bob != address(0) && !evc.haveCommonOwner(alice, bob));
         vm.assume(
             alice != address(evc) && alice != address(liabilityVault) && alice != address(collateralVault1)
-                && alice != address(wrappedCollateralAsset2)
+                && alice != address(collateralAsset2)
         );
         vm.assume(
             bob != address(evc) && bob != address(liabilityVault) && bob != address(collateralVault1)
-                && bob != address(wrappedCollateralAsset2)
+                && bob != address(collateralAsset2)
         );
 
         mintAndApprove(alice, bob);
 
         liabilityVault.setCollateralFactor(address(liabilityVault), 100); // cf = 1, self-collateralization
         liabilityVault.setCollateralFactor(address(collateralVault1), 100); // cf = 1
-        liabilityVault.setCollateralFactor(address(wrappedCollateralAsset2), 50); // cf = 0.5
+        liabilityVault.setCollateralFactor(address(collateralAsset2), 50); // cf = 0.5
 
         // alice deposits 50 LA
         vm.prank(alice);
@@ -308,7 +307,7 @@ contract ERC20WrapperForEVCTest is Test {
         assertEq(liabilityAsset.balanceOf(alice), 50e18);
         assertEq(liabilityVault.maxWithdraw(alice), 50e18);
 
-        // bob deposits and wraps collaterals, enables them, enables controller and borrows
+        // bob deposits collateral, enables collaterals, transfers some CA2 to alice, enables controller and borrows
         IEVC.BatchItem[] memory items = new IEVC.BatchItem[](6);
         items[0] = IEVC.BatchItem({
             targetContract: address(collateralVault1),
@@ -317,10 +316,10 @@ contract ERC20WrapperForEVCTest is Test {
             data: abi.encodeWithSelector(VaultSimple.deposit.selector, 100e18, bob)
         });
         items[1] = IEVC.BatchItem({
-            targetContract: address(wrappedCollateralAsset2),
+            targetContract: address(collateralAsset2),
             onBehalfOfAccount: bob,
             value: 0,
-            data: abi.encodeWithSelector(ERC20WrapperForEVC.wrap.selector, 50e6, bob)
+            data: abi.encodeWithSelector(ERC20.transfer.selector, alice, 50e6)
         });
         items[2] = IEVC.BatchItem({
             targetContract: address(evc),
@@ -338,7 +337,7 @@ contract ERC20WrapperForEVCTest is Test {
             targetContract: address(evc),
             onBehalfOfAccount: address(0),
             value: 0,
-            data: abi.encodeWithSelector(IEVC.enableCollateral.selector, bob, address(wrappedCollateralAsset2))
+            data: abi.encodeWithSelector(IEVC.enableCollateral.selector, bob, address(collateralAsset2))
         });
         items[5] = IEVC.BatchItem({
             targetContract: address(liabilityVault),
@@ -377,11 +376,9 @@ contract ERC20WrapperForEVCTest is Test {
         assertEq(collateralVault1.maxWithdraw(alice), 0);
         assertEq(collateralVault1.maxWithdraw(bob), 100e18);
 
-        assertEq(wrappedCollateralAsset2.totalSupply(), 50e6);
-        assertEq(collateralAsset2.balanceOf(address(alice)), 0);
+        assertEq(collateralAsset2.totalSupply(), 100e6);
+        assertEq(collateralAsset2.balanceOf(address(alice)), 50e6);
         assertEq(collateralAsset2.balanceOf(address(bob)), 50e6);
-        assertEq(wrappedCollateralAsset2.balanceOf(alice), 0);
-        assertEq(wrappedCollateralAsset2.balanceOf(bob), 50e6);
 
         // jump one year ahead, bob's liability increased by 10% APY.
         // his account is no longer healthy
@@ -405,7 +402,7 @@ contract ERC20WrapperForEVCTest is Test {
         evc.requireAccountStatusCheck(bob);
 
         // alice kicks in to liquidate bob, repay the debt and withdraw seized collateral
-        items = new IEVC.BatchItem[](11);
+        items = new IEVC.BatchItem[](10);
         items[0] = IEVC.BatchItem({
             targetContract: address(evc),
             onBehalfOfAccount: address(0),
@@ -428,15 +425,13 @@ contract ERC20WrapperForEVCTest is Test {
             targetContract: address(evc),
             onBehalfOfAccount: address(0),
             value: 0,
-            data: abi.encodeWithSelector(IEVC.enableCollateral.selector, alice, address(wrappedCollateralAsset2))
+            data: abi.encodeWithSelector(IEVC.enableCollateral.selector, alice, address(collateralAsset2))
         });
         items[4] = IEVC.BatchItem({
             targetContract: address(liabilityVault),
             onBehalfOfAccount: alice,
             value: 0,
-            data: abi.encodeWithSelector(
-                VaultRegularBorrowable.liquidate.selector, bob, address(wrappedCollateralAsset2), 6e18
-                )
+            data: abi.encodeWithSelector(VaultRegularBorrowable.liquidate.selector, bob, address(collateralAsset2), 6e18)
         });
         items[5] = IEVC.BatchItem({
             targetContract: address(liabilityVault),
@@ -466,13 +461,7 @@ contract ERC20WrapperForEVCTest is Test {
             targetContract: address(evc),
             onBehalfOfAccount: address(0),
             value: 0,
-            data: abi.encodeWithSelector(IEVC.disableCollateral.selector, alice, address(wrappedCollateralAsset2))
-        });
-        items[10] = IEVC.BatchItem({
-            targetContract: address(wrappedCollateralAsset2),
-            onBehalfOfAccount: alice,
-            value: 0,
-            data: abi.encodeWithSelector(ERC20WrapperForEVC.unwrap.selector, 6.18e6, alice)
+            data: abi.encodeWithSelector(IEVC.disableCollateral.selector, alice, address(collateralAsset2))
         });
 
         vm.prank(alice);
@@ -492,14 +481,12 @@ contract ERC20WrapperForEVCTest is Test {
         assertEq(collateralVault1.maxWithdraw(alice), 0);
         assertEq(collateralVault1.maxWithdraw(bob), 100e18);
 
-        assertEq(wrappedCollateralAsset2.totalSupply(), 50e6 - 6.18e6);
-        assertEq(collateralAsset2.balanceOf(address(alice)), 6.18e6);
-        assertEq(collateralAsset2.balanceOf(address(bob)), 50e6);
-        assertEq(wrappedCollateralAsset2.balanceOf(alice), 0);
-        assertEq(wrappedCollateralAsset2.balanceOf(bob), 50e6 - 6.18e6);
+        assertEq(collateralAsset2.totalSupply(), 100e6);
+        assertEq(collateralAsset2.balanceOf(address(alice)), 50e6 + 6.18e6);
+        assertEq(collateralAsset2.balanceOf(address(bob)), 50e6 - 6.18e6);
 
         // bob repays his debt and withdraws his collaterals
-        items = new IEVC.BatchItem[](6);
+        items = new IEVC.BatchItem[](5);
         items[0] = IEVC.BatchItem({
             targetContract: address(liabilityVault),
             onBehalfOfAccount: bob,
@@ -522,19 +509,13 @@ contract ERC20WrapperForEVCTest is Test {
             targetContract: address(evc),
             onBehalfOfAccount: address(0),
             value: 0,
-            data: abi.encodeWithSelector(IEVC.disableCollateral.selector, bob, address(wrappedCollateralAsset2))
+            data: abi.encodeWithSelector(IEVC.disableCollateral.selector, bob, address(collateralAsset2))
         });
         items[4] = IEVC.BatchItem({
             targetContract: address(collateralVault1),
             onBehalfOfAccount: bob,
             value: 0,
             data: abi.encodeWithSelector(VaultSimple.withdraw.selector, 100e18, bob, bob)
-        });
-        items[5] = IEVC.BatchItem({
-            targetContract: address(wrappedCollateralAsset2),
-            onBehalfOfAccount: bob,
-            value: 0,
-            data: abi.encodeWithSelector(ERC20WrapperForEVC.unwrap.selector, 50e6 - 6.18e6, bob)
         });
 
         vm.prank(bob);
@@ -559,10 +540,8 @@ contract ERC20WrapperForEVCTest is Test {
         assertEq(collateralVault1.maxWithdraw(alice), 0);
         assertEq(collateralVault1.maxWithdraw(bob), 0);
 
-        assertEq(wrappedCollateralAsset2.totalSupply(), 0);
-        assertEq(collateralAsset2.balanceOf(address(alice)), 6.18e6);
-        assertEq(collateralAsset2.balanceOf(address(bob)), 100e6 - 6.18e6);
-        assertEq(wrappedCollateralAsset2.balanceOf(alice), 0);
-        assertEq(wrappedCollateralAsset2.balanceOf(bob), 0);
+        assertEq(collateralAsset2.totalSupply(), 100e6);
+        assertEq(collateralAsset2.balanceOf(address(alice)), 50e6 + 6.18e6);
+        assertEq(collateralAsset2.balanceOf(address(bob)), 50e6 - 6.18e6);
     }
 }
