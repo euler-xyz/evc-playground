@@ -60,16 +60,15 @@ contract ERC20WrapperForEVC is ERC20CollateralForEVC {
     /// @param amount The amount of this ERC20 token to unwrap.
     /// @param receiver The address to receive the underlying tokens.
     /// @return True if the operation was successful.
-    function unwrap(
-        uint256 amount,
-        address receiver
-    ) public virtual callThroughEVC nonReentrant requireAccountStatusCheck(_msgSender()) returns (bool) {
+    function unwrap(uint256 amount, address receiver) public virtual callThroughEVC nonReentrant returns (bool) {
         if (receiver == address(this)) {
             revert ERC20WrapperForEVC_InvalidAddress();
         }
 
-        _burn(_msgSender(), amount);
+        address sender = _msgSender();
+        _burn(sender, amount);
         SafeERC20.safeTransfer(IERC20(_underlying), _getAccountOwner(receiver), amount);
+        evc.requireAccountStatusCheck(sender);
 
         return true;
     }

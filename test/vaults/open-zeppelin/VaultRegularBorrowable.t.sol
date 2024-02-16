@@ -138,7 +138,7 @@ contract VaultRegularBorrowableTest is Test {
         assertEq(liabilityAsset.balanceOf(bob), 35e18);
         assertEq(liabilityVault.debtOf(bob), 35e18);
         assertEq(liabilityVault.maxWithdraw(alice), 15e18);
-        
+
         // jump one year ahead, bob's liability increased by 10% APY.
         // his account is no longer healthy
         vm.warp(block.timestamp + 365 days);
