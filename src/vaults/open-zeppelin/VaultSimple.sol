@@ -11,7 +11,7 @@ import "../VaultBase.sol";
 /// @notice In this contract, the EVC is authenticated before any action that may affect the state of the vault or an
 /// account. This is done to ensure that if it's EVC calling, the account is correctly authorized. This contract does
 /// not take the supply cap into account when calculating max deposit and max mint values.
-contract VaultSimple is VaultBase, Ownable, ERC4626 {
+contract VaultSimpleOZ is VaultBase, Ownable, ERC4626 {
     event SupplyCapSet(uint256 newSupplyCap);
 
     error SnapshotNotTaken();

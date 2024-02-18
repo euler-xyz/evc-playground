@@ -190,6 +190,21 @@ contract VaultSimpleHandler is BaseHandler {
         }
     }
 
+    function disableController(uint256 i) external setup {
+        bool success;
+        bytes memory returnData;
+
+        // Get one of the three actors randomly
+        address vaultAddress = _getRandomSupportedVault(i, VaultType.Simple);
+
+        (success, returnData) =
+            actor.proxy(address(vaultAddress), abi.encodeWithSelector(VaultSimple.disableController.selector));
+
+        if (success) {
+            assert(true);
+        }
+    }
+
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                     ROUNDTRIP PROPERTIES                                  //
     ///////////////////////////////////////////////////////////////////////////////////////////////

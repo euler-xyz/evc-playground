@@ -137,19 +137,25 @@ contract EVCHandler is BaseHandler {
         }
     }
 
-    function disableController(uint256 i) external setup {
+    function disableControllerEVC(uint256 i) external setup {
         bool success;
         bytes memory returnData;
 
         // Get one of the three actors randomly
         address account = _getRandomActor(i);
 
+        address[] memory controllers = evc.getControllers(account);
+
         (success, returnData) = actor.proxy(
             address(evc), abi.encodeWithSelector(EthereumVaultConnector.disableController.selector, account)
         );
 
-        if (success) {
-            assert(true);
+        address[] memory controllersAfter = evc.getControllers(account);
+        if (controllers.length == 0) {
+            assertTrue(success);
+            assertTrue(controllersAfter.length == 0);
+        } else {
+            assertEq(controllers.length, controllersAfter.length);
         }
     }
 

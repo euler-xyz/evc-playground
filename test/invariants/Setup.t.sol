@@ -2,6 +2,7 @@
 pragma solidity ^0.8.19;
 
 // Libraries
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {MockERC20} from "solmate/test/utils/mocks/MockERC20.sol";
 import {EthereumVaultConnector} from "evc/EthereumVaultConnector.sol";
 
@@ -10,7 +11,9 @@ import {
     VaultSimpleExtended as VaultSimple,
     VaultSimpleBorrowableExtended as VaultSimpleBorrowable,
     VaultRegularBorrowableExtended as VaultRegularBorrowable,
-    VaultBorrowableWETHExtended as VaultBorrowableWETH
+    VaultBorrowableWETHExtended as VaultBorrowableWETH,
+    VaultSimpleExtendedOz as VaultSimpleOZ,
+    VaultRegularBorrowableExtendedOz as VaultRegularBorrowableOZ
 } from "test/invariants/helpers/extended/VaultsExtended.sol";
 
 // Test Contracts
@@ -39,7 +42,7 @@ contract Setup is BaseTest {
         referenceAssets.push(address(referenceAsset));
 
         // Deploy base assets
-        liabilityAsset = new MockERC20("Liability Asset", "LA", 18);//TODO: add two liabilities
+        liabilityAsset = new MockERC20("Liability Asset", "LA", 18); //TODO: add two liabilities
         collateralAsset1 = new MockERC20("Collateral Asset 1", "CA1", 18);
         collateralAsset2 = new MockERC20("Collateral Asset 2", "CA2", 6);
         baseAssets.push(address(liabilityAsset));
@@ -59,6 +62,10 @@ contract Setup is BaseTest {
         vaults.push(address(vaultSimple));
         vaultNames[address(vaultSimple)] = "VaultSimple";
 
+        vaultSimpleOZ = new VaultSimpleOZ(evc, ERC20(address(collateralAsset1)), "VaultSimpleOZ", "VSOZ");
+        vaults.push(address(vaultSimpleOZ));
+        vaultNames[address(vaultSimpleOZ)] = "VaultSimpleOZ";
+
         vaultSimpleBorrowable = new VaultSimpleBorrowable(evc, collateralAsset2, "VaultSimpleBorrowable", "VSB");
         vaults.push(address(vaultSimpleBorrowable));
         vaultNames[address(vaultSimpleBorrowable)] = "VaultSimpleBorrowable";
@@ -68,6 +75,12 @@ contract Setup is BaseTest {
         );
         vaults.push(address(vaultRegularBorrowable));
         vaultNames[address(vaultRegularBorrowable)] = "VaultRegularBorrowable";
+
+        vaultRegularBorrowableOZ = new VaultRegularBorrowableOZ(
+            evc, liabilityAsset, irm, oracle, ERC20(address(referenceAsset)), "VaultRegularBorrowableOZ", "VRBOZ"
+        );
+        vaults.push(address(vaultRegularBorrowableOZ));
+        vaultNames[address(vaultRegularBorrowableOZ)] = "VaultRegularBorrowableOZ";
 
         //vaultBorrowableWETH = new VaultBorrowableWETH(evc, underlying, "VaultBorrowableWETH", "VBW");
         //vaults.push(address(vaultBorrowableWETH));

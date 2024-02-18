@@ -15,7 +15,7 @@ import "./VaultSimple.sol";
 /// account. This is done to ensure that if it's EVC calling, the account is correctly authorized and the vault is
 /// enabled as a controller if needed. This contract does not take the account health into account when calculating max
 /// withdraw and max redeem values.
-contract VaultRegularBorrowable is VaultSimple {
+contract VaultRegularBorrowableOZ is VaultSimpleOZ {
     using Math for uint256;
 
     uint256 internal constant COLLATERAL_FACTOR_SCALE = 100;
@@ -63,7 +63,7 @@ contract VaultRegularBorrowable is VaultSimple {
         ERC20 _referenceAsset,
         string memory _name,
         string memory _symbol
-    ) VaultSimple(_evc, _asset, _name, _symbol) {
+    ) VaultSimpleOZ(_evc, _asset, _name, _symbol) {
         irm = _irm;
         oracle = _oracle;
         referenceAsset = _referenceAsset;
@@ -130,7 +130,7 @@ contract VaultRegularBorrowable is VaultSimple {
     /// @return The total borrowed assets from the vault.
     function totalBorrowed() public view virtual returns (uint256) {
         (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
-        return currentTotalBorrowed;
+                return currentTotalBorrowed;
     }
 
     /// @notice Returns the debt of an account.

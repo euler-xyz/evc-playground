@@ -47,11 +47,16 @@ contract VaultRegularBorrowableHandler is BaseHandler {
         address collateral = _getRandomAccountCollateral(i + j, address(actor));
 
         address vaultAddress = _getRandomSupportedVault(j, VaultType.RegularBorrowable);
+        {
+            VaultRegularBorrowable vault = VaultRegularBorrowable(vaultAddress);
 
-        VaultRegularBorrowable vault = VaultRegularBorrowable(vaultAddress);
+            repayAssets = clampBetween(repayAssets, 0, vault.debtOf(violator));
 
-        repayAssets = clampBetween(repayAssets, 0, vault.debtOf(violator));
+            (uint256 liabilityValueAfter, uint256 collateralValueAfter) =
+                vault.getAccountLiabilityStatus(address(actor));
 
+            require(!isAccountHealthy(liabilityValueAfter, collateralValueAfter));
+        }
         // Since the owner is the deployer of the vault, we dont need to use a a proxy
         _before(vaultAddress, VaultType.RegularBorrowable);
         (success, returnData) = actor.proxy(

@@ -111,13 +111,13 @@ contract BaseHandler is HookAggregator {
 
     function _mintAndApprove(address token, address owner, address spender, uint256 amount) internal {
         _mint(token, owner, amount);
-        vm.prank(owner);
         _approve(token, owner, spender, amount);
     }
 
     function _mintApproveAndDeposit(address vault, address owner, uint256 amount) internal {
         VaultSimple _vault = VaultSimple(vault);
         _mintAndApprove(address(_vault.asset()), owner, vault, amount * 2);
+        vm.prank(owner);
         _vault.deposit(amount, owner);
     }
 
