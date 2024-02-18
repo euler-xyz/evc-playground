@@ -84,7 +84,7 @@ contract VaultRegularBorrowableHandler is BaseHandler {
 
         VaultRegularBorrowable vault = VaultRegularBorrowable(vaultAddress);
         _before(vaultAddress, VaultType.RegularBorrowable);
-        vault.setCollateralFactor(ERC4626(address(vault)), collateralFactor);
+        vault.setCollateralFactor(vaultAddress, collateralFactor);
         _after(vaultAddress, VaultType.RegularBorrowable);
 
         assert(true);
