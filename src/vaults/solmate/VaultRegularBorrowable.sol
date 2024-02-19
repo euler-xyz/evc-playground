@@ -321,7 +321,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
 
         if (debt == 0) return 0;
 
-        (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
+        (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate(true);
 
         return debt.mulDivUp(currentInterestAccumulator, userInterestAccumulator[account]);
     }
@@ -330,7 +330,7 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     /// @return The current values of total borrowed and interest accumulator.
     function _accrueInterest() internal virtual override returns (uint256, uint256) {
         (uint256 currentTotalBorrowed, uint256 currentInterestAccumulator, bool shouldUpdate) =
-            _accrueInterestCalculate();
+            _accrueInterestCalculate(false);
 
         if (shouldUpdate) {
             _totalBorrowed = currentTotalBorrowed;
@@ -342,9 +342,10 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     }
 
     /// @notice Calculates the accrued interest.
+    /// @param roundUp A flag indicating whether to round up the result.
     /// @return The total borrowed amount, the interest accumulator and a boolean value that indicates whether the data
     /// should be updated.
-    function _accrueInterestCalculate() internal view virtual override returns (uint256, uint256, bool) {
+    function _accrueInterestCalculate(bool roundUp) internal view virtual override returns (uint256, uint256, bool) {
         uint256 timeElapsed = block.timestamp - lastInterestUpdate;
         uint256 oldTotalBorrowed = _totalBorrowed;
         uint256 oldInterestAccumulator = interestAccumulator;
@@ -356,7 +357,9 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
         uint256 newInterestAccumulator =
             (FixedPointMathLib.rpow(uint256(interestRate) + ONE, timeElapsed, ONE) * oldInterestAccumulator) / ONE;
 
-        uint256 newTotalBorrowed = oldTotalBorrowed.mulDivUp(newInterestAccumulator, oldInterestAccumulator);
+        uint256 newTotalBorrowed = roundUp
+            ? oldTotalBorrowed.mulDivUp(newInterestAccumulator, oldInterestAccumulator)
+            : oldTotalBorrowed.mulDivDown(newInterestAccumulator, oldInterestAccumulator);
 
         return (newTotalBorrowed, newInterestAccumulator, true);
     }

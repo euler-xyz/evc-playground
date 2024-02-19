@@ -44,7 +44,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @notice Returns the total borrowed assets from the vault.
     /// @return The total borrowed assets from the vault.
     function totalBorrowed() public view virtual returns (uint256) {
-        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
+        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate(true);
         return currentTotalBorrowed;
     }
 
@@ -280,7 +280,7 @@ contract VaultSimpleBorrowable is VaultSimple {
 
     /// @dev This function is overridden to take into account the fact that some of the assets may be borrowed.
     function _convertToShares(uint256 assets, bool roundUp) internal view virtual override returns (uint256) {
-        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
+        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate(true);
 
         return roundUp
             ? assets.mulDivUp(totalSupply + 1, _totalAssets + currentTotalBorrowed + 1)
@@ -289,7 +289,7 @@ contract VaultSimpleBorrowable is VaultSimple {
 
     /// @dev This function is overridden to take into account the fact that some of the assets may be borrowed.
     function _convertToAssets(uint256 shares, bool roundUp) internal view virtual override returns (uint256) {
-        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
+        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate(true);
 
         return roundUp
             ? shares.mulDivUp(_totalAssets + currentTotalBorrowed + 1, totalSupply + 1)
@@ -337,7 +337,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// other functions which use it.
     /// @return The total borrowed amount, the interest accumulator and a boolean value that indicates whether the data
     /// should be updated.
-    function _accrueInterestCalculate() internal view virtual returns (uint256, uint256, bool) {
+    function _accrueInterestCalculate(bool) internal view virtual returns (uint256, uint256, bool) {
         return (_totalBorrowed, 0, false);
     }
 

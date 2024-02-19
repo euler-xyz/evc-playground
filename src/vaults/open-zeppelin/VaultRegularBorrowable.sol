@@ -129,7 +129,7 @@ contract VaultRegularBorrowable is VaultSimple {
     /// @notice Returns the total borrowed assets from the vault.
     /// @return The total borrowed assets from the vault.
     function totalBorrowed() public view virtual returns (uint256) {
-        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
+        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate(Math.Rounding.Ceil);
         return currentTotalBorrowed;
     }
 
@@ -169,7 +169,7 @@ contract VaultRegularBorrowable is VaultSimple {
         uint256 assets,
         Math.Rounding rounding
     ) internal view virtual override returns (uint256) {
-        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
+        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate(Math.Rounding.Ceil);
 
         return
             assets.mulDiv(totalSupply() + 10 ** _decimalsOffset(), totalAssets() + currentTotalBorrowed + 1, rounding);
@@ -180,7 +180,7 @@ contract VaultRegularBorrowable is VaultSimple {
         uint256 shares,
         Math.Rounding rounding
     ) internal view virtual override returns (uint256) {
-        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate();
+        (uint256 currentTotalBorrowed,,) = _accrueInterestCalculate(Math.Rounding.Ceil);
 
         return
             shares.mulDiv(totalAssets() + currentTotalBorrowed + 1, totalSupply() + 10 ** _decimalsOffset(), rounding);
@@ -568,7 +568,7 @@ contract VaultRegularBorrowable is VaultSimple {
 
         if (debt == 0) return 0;
 
-        (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
+        (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate(Math.Rounding.Ceil);
 
         return debt.mulDiv(currentInterestAccumulator, userInterestAccumulator[account], Math.Rounding.Ceil);
     }
@@ -577,7 +577,7 @@ contract VaultRegularBorrowable is VaultSimple {
     /// @return The current values of total borrowed and interest accumulator.
     function _accrueInterest() internal virtual returns (uint256, uint256) {
         (uint256 currentTotalBorrowed, uint256 currentInterestAccumulator, bool shouldUpdate) =
-            _accrueInterestCalculate();
+            _accrueInterestCalculate(Math.Rounding.Floor);
 
         if (shouldUpdate) {
             _totalBorrowed = currentTotalBorrowed;
@@ -589,9 +589,10 @@ contract VaultRegularBorrowable is VaultSimple {
     }
 
     /// @notice Calculates the accrued interest.
+    /// @param rounding The rounding method to use.
     /// @return The total borrowed amount, the interest accumulator and a boolean value that indicates whether the data
     /// should be updated.
-    function _accrueInterestCalculate() internal view virtual returns (uint256, uint256, bool) {
+    function _accrueInterestCalculate(Math.Rounding rounding) internal view virtual returns (uint256, uint256, bool) {
         uint256 timeElapsed = block.timestamp - lastInterestUpdate;
         uint256 oldTotalBorrowed = _totalBorrowed;
         uint256 oldInterestAccumulator = interestAccumulator;
@@ -603,8 +604,7 @@ contract VaultRegularBorrowable is VaultSimple {
         uint256 newInterestAccumulator =
             (FixedPointMathLib.rpow(uint256(interestRate) + ONE, timeElapsed, ONE) * oldInterestAccumulator) / ONE;
 
-        uint256 newTotalBorrowed =
-            oldTotalBorrowed.mulDiv(newInterestAccumulator, oldInterestAccumulator, Math.Rounding.Ceil);
+        uint256 newTotalBorrowed = oldTotalBorrowed.mulDiv(newInterestAccumulator, oldInterestAccumulator, rounding);
 
         return (newTotalBorrowed, newInterestAccumulator, true);
     }
