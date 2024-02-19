@@ -81,7 +81,7 @@ abstract contract Invariants is
 
     function echidna_invariant_VaultSimple_invariantABCD() public targetVaultsFrom(VaultType.Simple) returns (bool) {
         for (uint256 i = limitVault; i < vaults.length; i++) {
-            //assert_VaultSimple_invariantA(vaults[i]);
+            assert_VaultSimple_invariantA(vaults[i]);
             assert_VaultSimple_invariantB(vaults[i]);
 
             uint256 _sumBalanceOf;
@@ -108,6 +108,7 @@ abstract contract Invariants is
                 assert_VaultSimpleBorrowable_invariantA(vaults[i], actorAddresses[j]);
             }
             //assert_VaultSimpleBorrowable_invariantB(vaults[i]); //@audit-issue CRIT-1
+            assert_VaultSimpleBorrowable_invariantE(vaults[i]);
         }
         return true;
     }
@@ -115,6 +116,19 @@ abstract contract Invariants is
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                           VAULT REGULAR BORROWABLE INVARIANTS                             //
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    function echidna_invariant_VaultRegularBorrowable_invariantA()
+        public
+        targetVaultsFrom(VaultType.RegularBorrowable)
+        returns (bool)
+    {
+        for (uint256 i = limitVault; i < vaults.length; i++) {
+            for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
+                assert_VaultRegularBorrowable_invariantA(vaults[i], actorAddresses[j]);
+            }
+        }
+        return true;
+    }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                            VAULT BORROWABLE WETH INVARIANTS                               //

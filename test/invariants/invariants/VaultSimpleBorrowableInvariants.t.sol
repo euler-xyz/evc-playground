@@ -3,6 +3,8 @@ pragma solidity ^0.8.19;
 
 import {console} from "forge-std/console.sol";
 
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
 // Base Contracts
 import {VaultSimpleBorrowable} from "test/invariants/Setup.t.sol";
 import {Actor} from "../utils/Actor.sol";
@@ -20,6 +22,9 @@ abstract contract VaultSimpleBorrowableInvariants is HandlerAggregator {
     VaultSimpleBorrowable
         Invariant A: totalBorrowed >= any account owed balance
         Invariant B: totalBorrowed == sum of all user debt
+        Invariant C: User liability should always decrease after repayment (Implemented in the handler)
+        Invariant D: Unhealthy users can not borrow (Implemented in the handler)
+        Invariant E: If theres at least one borrow, the asset.balanceOf(vault) > 0
     */
 
     /////////////////////////////////////////////////////////////////////////////////////////////*/
@@ -48,5 +53,15 @@ abstract contract VaultSimpleBorrowableInvariants is HandlerAggregator {
             1,
             string.concat("VaultSimpleBorrowable_invariantB: ", vaultNames[_vault])
         );
+    }
+
+    function assert_VaultSimpleBorrowable_invariantE(address _vault) internal monotonicTimestamp(_vault) {
+        if (VaultSimpleBorrowable(_vault).totalBorrowed() > 0) {
+            assertGt(
+                ERC20(address(VaultSimpleBorrowable(_vault).asset())).balanceOf(_vault),
+                0,
+                string.concat("VaultSimpleBorrowable_invariantE: ", vaultNames[_vault])
+            );
+        }
     }
 }

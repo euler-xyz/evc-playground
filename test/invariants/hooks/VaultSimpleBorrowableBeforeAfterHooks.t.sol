@@ -60,10 +60,9 @@ abstract contract VaultSimpleBorrowableBeforeAfterHooks is BaseHooks {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     VaultSimpleBorrowable
-        Post Condition A: 
-    (borrowCapAfter != 0) && (totalBorrowedAfter >= totalBorrowedBefore) => borrowCapAfter >= totalBorrowedAfter
-        Post Condition B: Controller cannot be disabled if there is any liability       
-
+        Post Condition A: (borrowCapAfter != 0) && (totalBorrowedAfter >= totalBorrowedBefore) 
+            => borrowCapAfter >= totalBorrowedAfter
+        Post Condition B: Controller cannot be disabled if there is any liability  
     */
 
     /////////////////////////////////////////////////////////////////////////////////////////////*/

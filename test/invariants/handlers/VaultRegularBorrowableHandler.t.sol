@@ -15,23 +15,9 @@ contract VaultRegularBorrowableHandler is BaseHandler {
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    /* 
-    
-    E.g. num of active pools
-    uint256 public activePools;
-
-     */
-
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                       GHOST VARAIBLES                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
-
-    /* 
-    
-    E.g. sum of all balances
-    uint256 public ghost_sumBalances;
-
-     */
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                           ACTIONS                                         //
@@ -41,43 +27,39 @@ contract VaultRegularBorrowableHandler is BaseHandler {
         bool success;
         bytes memory returnData;
 
-        // Get one of the three actors randomly
-        address violator = _getRandomActor(i);
-
-        address collateral = _getRandomAccountCollateral(i + j, address(actor));
-
         address vaultAddress = _getRandomSupportedVault(j, VaultType.RegularBorrowable);
+
+        address violator = _getActorWithDebt(vaultAddress);
+
+        require(violator != address(0), "VaultRegularBorrowableHandler: no violator");
+
+        bool violatorStatus = isAccountHealthy(vaultAddress, violator);
+
+        VaultRegularBorrowable vault = VaultRegularBorrowable(vaultAddress);
+
+        repayAssets = clampBetween(repayAssets, 1, vault.debtOf(violator));
+
         {
-            VaultRegularBorrowable vault = VaultRegularBorrowable(vaultAddress);
+            // Get one of the three actors randomly
+            address collateral = _getRandomAccountCollateral(i + j, address(actor));
 
-            repayAssets = clampBetween(repayAssets, 0, vault.debtOf(violator));
-
-            (uint256 liabilityValueAfter, uint256 collateralValueAfter) =
-                vault.getAccountLiabilityStatus(address(actor));
-
-            require(!isAccountHealthy(liabilityValueAfter, collateralValueAfter));
+            _before(vaultAddress, VaultType.RegularBorrowable);
+            (success, returnData) = actor.proxy(
+                vaultAddress,
+                abi.encodeWithSelector(VaultRegularBorrowable.liquidate.selector, violator, collateral, repayAssets)
+            );
         }
-        // Since the owner is the deployer of the vault, we dont need to use a a proxy
-        _before(vaultAddress, VaultType.RegularBorrowable);
-        (success, returnData) = actor.proxy(
-            vaultAddress,
-            abi.encodeWithSelector(VaultRegularBorrowable.liquidate.selector, violator, collateral, repayAssets)
-        );
-
         if (success) {
-            assert(false);
             _after(vaultAddress, VaultType.RegularBorrowable);
+
+            // VaultRegularBorrowable_invariantB
+            assertFalse(violatorStatus);
         }
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                         OWNER ACTIONS                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
-
-    //TODO: add owner actions:
-    // - setIRM
-    // - setReferenceAsset
-    // - setOracle
 
     function setCollateralFactor(uint256 i, uint256 collateralFactor) public {
         address vaultAddress = _getRandomSupportedVault(i, VaultType.RegularBorrowable);
@@ -93,4 +75,15 @@ contract VaultRegularBorrowableHandler is BaseHandler {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                           HELPERS                                         //
     ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    function _getActorWithDebt(address vaultAddress) internal view returns (address) {
+        VaultRegularBorrowable vault = VaultRegularBorrowable(vaultAddress);
+        address _actor = address(actor);
+        for (uint256 k; k < NUMBER_OF_ACTORS; k++) {
+            if (_actor != actorAddresses[k] && vault.debtOf(address(actorAddresses[k])) > 0) {
+                return address(actorAddresses[k]);
+            }
+        }
+        return address(0);
+    }
 }

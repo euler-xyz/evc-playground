@@ -26,5 +26,5 @@ contract Tester is Invariants, Setup {
     }
 
     /// @dev Needed in order for foundry to recognise the contract as a test, faster debugging
-    function testAux() public view {}
+    //function testAux() public view {}
 }

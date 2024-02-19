@@ -73,7 +73,6 @@ abstract contract VaultSimpleBeforeAfterHooks is BaseHooks {
     VaultSimple
         Post Condition A: 
             (supplyCapAfter != 0) && (totalSupplyAfter >= totalSupplyBefore) => supplyCapAfter >= totalSupplyAfter
-            if pirceBefore == priceAfter => no bad debt TODO: implement bad debt invariant
             
         */
 

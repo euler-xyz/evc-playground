@@ -10,23 +10,9 @@ contract PriceOracleHandler is BaseHandler {
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    /* 
-    
-    E.g. num of active pools
-    uint256 public activePools;
-
-     */
-
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                       GHOST VARAIBLES                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
-
-    /* 
-    
-    E.g. sum of all balances
-    uint256 public ghost_sumBalances;
-
-     */
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                           ACTIONS                                         //
@@ -37,6 +23,13 @@ contract PriceOracleHandler is BaseHandler {
         address baseAsset = _getRandomBaseAsset(i);
 
         oracle.setPrice(baseAsset, address(referenceAsset), price);
+    }
+
+    /// @notice This function simulates changes in the interest rate model
+    function setResolvedAsset(uint256 i) external {
+        address vaultAddress = _getRandomSupportedVault(i, VaultType.RegularBorrowable);
+
+        oracle.setResolvedAsset(vaultAddress);
     }
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

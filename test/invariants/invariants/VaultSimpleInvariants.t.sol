@@ -21,7 +21,7 @@ abstract contract VaultSimpleInvariants is HandlerAggregator {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     VaultSimple
-        Invariant A: totalAssets == sum of all balances
+        Invariant A: underlying.balanceOf(vault) >= totalAssets
         Invariant B: totalSupply == sum of all minted shares
         Invariant C: balanceOf(actor) == sum of all shares owned by address
         Invariant D: totalSupply == sum of balanceOf(actors)
@@ -85,17 +85,19 @@ abstract contract VaultSimpleInvariants is HandlerAggregator {
                 s = withdraw(a)
                 s' = deposit(a)
                 s' <= s
-    */
+                
+    /////////////////////////////////////////////////////////////////////////////////////////////*/
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                        VAULT SIMPLE                                       //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     function assert_VaultSimple_invariantA(address _vault) internal {
-        //TODO: implement balance changes
-        uint256 totalAssets = VaultSimple(_vault).totalAssets();
-
-        assertEq(totalAssets, ghost_sumBalances[_vault], string.concat("VaultSimple_invariantA: ", vaultNames[_vault]));
+        assertGe(
+            IERC20(address(VaultSimple(_vault).asset())).balanceOf(_vault),
+            VaultSimple(_vault).totalAssets(),
+            string.concat("VaultSimple_invariantA: ", vaultNames[_vault])
+        );
     }
 
     function assert_VaultSimple_invariantB(address _vault) internal {
@@ -219,6 +221,16 @@ abstract contract VaultSimpleInvariants is HandlerAggregator {
             assert(false);
         }
     }
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+    //                                        DISCARDED                                          //
+    ///////////////////////////////////////////////////////////////////////////////////////////////
+
+    /*     function assert_VaultSimple_invariantA(address _vault) internal {
+        uint256 totalAssets = VaultSimple(_vault).totalAssets();
+
+    assertEq(totalAssets, ghost_sumBalances[_vault], string.concat("VaultSimple_invariantA: ", vaultNames[_vault]));
+    } */
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                         UTILS                                             //

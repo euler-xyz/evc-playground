@@ -15,6 +15,13 @@ abstract contract ProtocolAssertions is StdAsserts, BaseTest {
     }
 
     /// @notice Checks wheter the account is healthy
+    function isAccountHealthy(address _vault, address _account) internal view returns (bool) {
+        (uint256 liabilityValue, uint256 collateralValue) =
+            VaultRegularBorrowable(_vault).getAccountLiabilityStatus(_account);
+        return isAccountHealthy(liabilityValue, collateralValue);
+    }
+
+    /// @notice Checks wheter the account is healthy
     function assertAccountIsHealthy(address _vault, address _account) internal {
         (uint256 liabilityValue, uint256 collateralValue) =
             VaultRegularBorrowable(_vault).getAccountLiabilityStatus(_account);

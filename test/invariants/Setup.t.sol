@@ -31,6 +31,9 @@ contract Setup is BaseTest {
 
         // Deploy vaults
         _deployVaults();
+
+        // Set the initial mock prices
+        _setDefaultPrices();
     }
 
     function _deployProtocolCore() internal {
@@ -84,6 +87,18 @@ contract Setup is BaseTest {
 
         //vaultBorrowableWETH = new VaultBorrowableWETH(evc, underlying, "VaultBorrowableWETH", "VBW");
         //vaults.push(address(vaultBorrowableWETH));
+    }
+
+    function _setDefaultPrices() public {
+        // Set the initial mock prices
+        oracle.setResolvedAsset(address(vaultSimple));
+        oracle.setResolvedAsset(address(vaultSimpleOZ));
+        oracle.setResolvedAsset(address(vaultSimpleBorrowable));
+        oracle.setResolvedAsset(address(vaultRegularBorrowable));
+        oracle.setResolvedAsset(address(vaultRegularBorrowableOZ));
+        oracle.setPrice(address(liabilityAsset), address(referenceAsset), 1e17); // 1 LA = 0.1 RA
+        oracle.setPrice(address(collateralAsset1), address(referenceAsset), 1e16); // 1 CA1 = 0.01 RA
+        oracle.setPrice(address(collateralAsset2), address(referenceAsset), 1e17); // 1 CA2 = 0.1 RA
     }
 
     function _setUpActors() internal {

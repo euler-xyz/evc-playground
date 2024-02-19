@@ -11,13 +11,6 @@ contract VaultSimpleBorrowableHandler is BaseHandler {
     //                                      STATE VARIABLES                                      //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-    /* 
-    
-    E.g. num of active pools
-    uint256 public activePools;
-
-     */
-
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                       GHOST VARAIBLES                                     //
     ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -25,24 +18,6 @@ contract VaultSimpleBorrowableHandler is BaseHandler {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     //                                           ACTIONS                                         //
     ///////////////////////////////////////////////////////////////////////////////////////////////
-
-    /*     function borrow(uint256 assets, address receiver, uint256 j) external setup {
-        bool success;
-        bytes memory returnData;
-
-        address vaultAddress = _getRandomSupportedVault(j, VaultType.SimpleBorrowable);
-
-        VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
-
-        // Since the owner is the deployer of the vault, we dont need to use a a proxy
-        _before(vaultAddress, VaultType.SimpleBorrowable);
-        (success, returnData) =
-    actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.borrow.selector, assets, receiver));
-
-        if (success) {
-            _after(vaultAddress, VaultType.SimpleBorrowable);
-        }
-    } */
 
     function borrowTo(uint256 assets, uint256 i, uint256 j) external setup {
         bool success;
@@ -55,34 +30,21 @@ contract VaultSimpleBorrowableHandler is BaseHandler {
 
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
-        // Since the owner is the deployer of the vault, we dont need to use a a proxy
+        bool isAccountHealthyBefore = isAccountHealthy(vaultAddress, receiver);
+
         _before(vaultAddress, VaultType.SimpleBorrowable);
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.borrow.selector, assets, receiver));
 
-        if (success) {
-            _after(vaultAddress, VaultType.SimpleBorrowable);
+        if (!isAccountHealthyBefore) {
+            // VaultSimpleBorrowable_invariantD
+            assert(!success);
+        } else {
+            if (success) {
+                _after(vaultAddress, VaultType.SimpleBorrowable);
+            }
         }
     }
-
-    /*     function repay(uint256 assets, address receiver, uint256 j) external setup {
-        bool success;
-        bytes memory returnData;
-
-        address vaultAddress = _getRandomSupportedVault(j, VaultType.SimpleBorrowable);
-
-        VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
-
-        // Since the owner is the deployer of the vault, we dont need to use a a proxy
-        _before(vaultAddress, VaultType.SimpleBorrowable);
-        (success, returnData) =
-    actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.repay.selector, assets, receiver));
-
-        if (success) {
-            assert(false);
-           _after(vaultAddress, VaultType.SimpleBorrowable);
-        }
-    } */
 
     function repayTo(uint256 assets, uint256 i, uint256 j) external setup {
         bool success;
@@ -95,13 +57,19 @@ contract VaultSimpleBorrowableHandler is BaseHandler {
 
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
-        // Since the owner is the deployer of the vault, we dont need to use a a proxy
+        (uint256 liabilityValueBefore, uint256 collateralValueBefore) = vault.getAccountLiabilityStatus(receiver);
+
         _before(vaultAddress, VaultType.SimpleBorrowable);
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.repay.selector, assets, receiver));
 
         if (success) {
             _after(vaultAddress, VaultType.SimpleBorrowable);
+
+            (uint256 liabilityValueAfter, uint256 collateralValueAfter) = vault.getAccountLiabilityStatus(receiver);
+
+            // VaultSimpleBorrowable_invariantC
+            assertLe(liabilityValueAfter, liabilityValueBefore, "Liability value must decrease");
         }
     }
 
@@ -116,7 +84,6 @@ contract VaultSimpleBorrowableHandler is BaseHandler {
 
         VaultSimpleBorrowable vault = VaultSimpleBorrowable(vaultAddress);
 
-        // Since the owner is the deployer of the vault, we dont need to use a a proxy
         _before(vaultAddress, VaultType.SimpleBorrowable);
         (success, returnData) =
             actor.proxy(vaultAddress, abi.encodeWithSelector(VaultSimpleBorrowable.pullDebt.selector, from, assets));

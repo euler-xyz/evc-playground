@@ -78,6 +78,10 @@ contract VaultRegularBorrowableExtended is VaultRegularBorrowable, VaultBaseGett
         lastInterestUpdate_ = lastInterestUpdate;
     }
 
+    function getUserInterestAccumulator(address _borrower) external view returns (uint256 userInterestAccumulator_) {
+        userInterestAccumulator_ = userInterestAccumulator[_borrower];
+    }
+
     function getOwed(address _borrower) external view returns (uint256 owed_) {
         owed_ = owed[_borrower];
     }
@@ -136,6 +140,10 @@ contract VaultRegularBorrowableExtendedOz is VaultRegularBorrowableOZ, VaultBase
         string memory _name,
         string memory _symbol
     ) VaultRegularBorrowableOZ(_evc, IERC20(address(_asset)), _irm, _oracle, _referenceAsset, _name, _symbol) {}
+
+    function getUserInterestAccumulator(address _borrower) external view returns (uint256 userInterestAccumulator_) {
+        userInterestAccumulator_ = userInterestAccumulator[_borrower];
+    }
 
     function getLastInterestUpdate() external view returns (uint256 lastInterestUpdate_) {
         lastInterestUpdate_ = lastInterestUpdate;
