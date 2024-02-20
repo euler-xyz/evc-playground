@@ -8,7 +8,6 @@ import {
     VaultRegularBorrowableOZ as VaultRegularBorrowable,
     VaultSimpleOZ as VaultSimple
 } from "../../src/vaults/open-zeppelin/VaultRegularBorrowable.sol";
-
 import "../../src/vaults/open-zeppelin/VaultRegularBorrowable.sol";
 import "../../src/ERC20/ERC20CollateralWrapper.sol";
 import {IRMMock} from "../mocks/IRMMock.sol";
