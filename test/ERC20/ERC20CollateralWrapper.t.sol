@@ -145,7 +145,7 @@ contract ERC20CollateralWrapperTest is Test {
         // his account is no longer healthy
         vm.warp(block.timestamp + 365 days);
         assertEq(liabilityAsset.balanceOf(bob), 35e18);
-        assertEq(liabilityVault.debtOf(bob), 35e18 + 3.680982126514837396e18);
+        assertEq(liabilityVault.debtOf(bob), 35e18 + 3.680982126514837395e18);
         assertEq(liabilityVault.maxWithdraw(alice), 15e18);
         vm.expectRevert(abi.encodeWithSelector(VaultRegularBorrowable.AccountUnhealthy.selector));
         evc.requireAccountStatusCheck(bob);
@@ -155,10 +155,10 @@ contract ERC20CollateralWrapperTest is Test {
         liabilityAsset.approve(address(liabilityVault), type(uint256).max);
 
         vm.prank(bob);
-        liabilityVault.repay(2.680982126514837396e18, bob);
-        assertEq(liabilityAsset.balanceOf(bob), 35e18 - 2.680982126514837396e18);
+        liabilityVault.repay(2.680982126514837395e18, bob);
+        assertEq(liabilityAsset.balanceOf(bob), 35e18 - 2.680982126514837395e18);
         assertEq(liabilityVault.debtOf(bob), 35e18 + 1e18);
-        assertEq(liabilityVault.maxWithdraw(alice), 15e18 + 2.680982126514837396e18);
+        assertEq(liabilityVault.maxWithdraw(alice), 15e18 + 2.680982126514837395e18);
         vm.expectRevert(abi.encodeWithSelector(VaultRegularBorrowable.AccountUnhealthy.selector));
         evc.requireAccountStatusCheck(bob);
 
@@ -188,7 +188,7 @@ contract ERC20CollateralWrapperTest is Test {
         vm.prank(alice);
         liabilityVault.liquidate(bob, address(wrappedCollateralAsset2), 6e18);
 
-        assertEq(liabilityAsset.balanceOf(bob), 35e18 - 2.680982126514837396e18); // bob's LA balance stays unchanged
+        assertEq(liabilityAsset.balanceOf(bob), 35e18 - 2.680982126514837395e18); // bob's LA balance stays unchanged
         assertEq(liabilityVault.debtOf(bob), 30e18); // bob's debt decreased by 6 LA due to liquidation
         assertEq(collateralVault1.maxWithdraw(bob), 100e18); // bob's CA1 deposit stays unchanged
         assertEq(wrappedCollateralAsset2.balanceOf(bob), 50e6 - 6.18e6); // bob's WCA2 balance decreased by 6.18 CA2 due
@@ -196,7 +196,7 @@ contract ERC20CollateralWrapperTest is Test {
             // liquidation
         assertEq(liabilityVault.debtOf(alice), 6e18); // alices's debt increased to 6 LA due to liquidation (she took on
             // bob's debt)
-        assertEq(liabilityVault.maxWithdraw(alice), 15e18 + 2.680982126514837396e18); // alice's ability to withdraw LA
+        assertEq(liabilityVault.maxWithdraw(alice), 15e18 + 2.680982126514837395e18); // alice's ability to withdraw LA
             // didn't change
         assertEq(collateralVault1.maxWithdraw(alice), 0); // alices's CA1 deposit stays unchanged
         assertEq(wrappedCollateralAsset2.balanceOf(alice), 6.18e6); // alices's WCA2 balance increased by 6.18 CA2 due
@@ -233,7 +233,7 @@ contract ERC20CollateralWrapperTest is Test {
         // bob repays the rest of his debt
         vm.prank(bob);
         liabilityVault.repay(30e18, bob);
-        assertEq(liabilityAsset.balanceOf(bob), 35e18 - 2.680982126514837396e18 - 30e18);
+        assertEq(liabilityAsset.balanceOf(bob), 35e18 - 2.680982126514837395e18 - 30e18);
         assertEq(liabilityVault.debtOf(bob), 0);
 
         // he disables collaterals and controller
@@ -259,14 +259,14 @@ contract ERC20CollateralWrapperTest is Test {
 
         // alice withdraws her LA deposit, account for rounding
         vm.prank(alice);
-        liabilityVault.withdraw(50e18 - 35e18 + 2.680982126514837396e18 + 6e18 + 30e18 - 1, alice, alice);
-        assertEq(liabilityAsset.balanceOf(alice), 100e18 - 35e18 + 2.680982126514837396e18 + 30e18 - 1);
+        liabilityVault.withdraw(50e18 - 35e18 + 2.680982126514837395e18 + 6e18 + 30e18 - 1, alice, alice);
+        assertEq(liabilityAsset.balanceOf(alice), 100e18 - 35e18 + 2.680982126514837395e18 + 30e18 - 1);
         assertEq(liabilityVault.maxWithdraw(alice), 0);
 
         // final checks
         assertEq(liabilityAsset.balanceOf(address(liabilityVault)), 1);
-        assertEq(liabilityAsset.balanceOf(address(alice)), 100e18 - 35e18 + 2.680982126514837396e18 + 30e18 - 1);
-        assertEq(liabilityAsset.balanceOf(address(bob)), 35e18 - 2.680982126514837396e18 - 30e18);
+        assertEq(liabilityAsset.balanceOf(address(alice)), 100e18 - 35e18 + 2.680982126514837395e18 + 30e18 - 1);
+        assertEq(liabilityAsset.balanceOf(address(bob)), 35e18 - 2.680982126514837395e18 - 30e18);
         assertEq(liabilityVault.maxWithdraw(alice), 0);
         assertEq(liabilityVault.maxWithdraw(bob), 0);
         assertEq(liabilityVault.debtOf(alice), 0);
@@ -387,7 +387,7 @@ contract ERC20CollateralWrapperTest is Test {
         // his account is no longer healthy
         vm.warp(block.timestamp + 365 days);
         assertEq(liabilityAsset.balanceOf(bob), 35e18);
-        assertEq(liabilityVault.debtOf(bob), 35e18 + 3.680982126514837396e18);
+        assertEq(liabilityVault.debtOf(bob), 35e18 + 3.680982126514837395e18);
         assertEq(liabilityVault.maxWithdraw(alice), 15e18);
         vm.expectRevert(abi.encodeWithSelector(VaultRegularBorrowable.AccountUnhealthy.selector));
         evc.requireAccountStatusCheck(bob);
@@ -397,10 +397,10 @@ contract ERC20CollateralWrapperTest is Test {
         liabilityAsset.approve(address(liabilityVault), type(uint256).max);
 
         vm.prank(bob);
-        liabilityVault.repay(2.680982126514837396e18, bob);
-        assertEq(liabilityAsset.balanceOf(bob), 35e18 - 2.680982126514837396e18);
+        liabilityVault.repay(2.680982126514837395e18, bob);
+        assertEq(liabilityAsset.balanceOf(bob), 35e18 - 2.680982126514837395e18);
         assertEq(liabilityVault.debtOf(bob), 35e18 + 1e18);
-        assertEq(liabilityVault.maxWithdraw(alice), 15e18 + 2.680982126514837396e18);
+        assertEq(liabilityVault.maxWithdraw(alice), 15e18 + 2.680982126514837395e18);
         vm.expectRevert(abi.encodeWithSelector(VaultRegularBorrowable.AccountUnhealthy.selector));
         evc.requireAccountStatusCheck(bob);
 
@@ -478,10 +478,10 @@ contract ERC20CollateralWrapperTest is Test {
         vm.prank(alice);
         evc.batch(items);
 
-        assertEq(liabilityAsset.balanceOf(address(liabilityVault)), 50e18 - 35e18 + 2.680982126514837396e18 + 6e18);
+        assertEq(liabilityAsset.balanceOf(address(liabilityVault)), 50e18 - 35e18 + 2.680982126514837395e18 + 6e18);
         assertEq(liabilityAsset.balanceOf(address(alice)), 50e18 - 6e18);
-        assertEq(liabilityAsset.balanceOf(address(bob)), 35e18 - 2.680982126514837396e18);
-        assertEq(liabilityVault.maxWithdraw(alice), 50e18 - 35e18 + 2.680982126514837396e18 + 6e18);
+        assertEq(liabilityAsset.balanceOf(address(bob)), 35e18 - 2.680982126514837395e18);
+        assertEq(liabilityVault.maxWithdraw(alice), 50e18 - 35e18 + 2.680982126514837395e18 + 6e18);
         assertEq(liabilityVault.maxWithdraw(bob), 0);
         assertEq(liabilityVault.debtOf(alice), 0);
         assertEq(liabilityVault.debtOf(bob), 30e18);
@@ -542,12 +542,12 @@ contract ERC20CollateralWrapperTest is Test {
 
         // alice withdraws her LA deposit
         vm.prank(alice);
-        liabilityVault.withdraw(50e18 - 35e18 + 2.680982126514837396e18 + 6e18 + 30e18 - 1, alice, alice);
+        liabilityVault.withdraw(50e18 - 35e18 + 2.680982126514837395e18 + 6e18 + 30e18 - 1, alice, alice);
 
         // final checks
         assertEq(liabilityAsset.balanceOf(address(liabilityVault)), 1);
-        assertEq(liabilityAsset.balanceOf(address(alice)), 100e18 - 35e18 + 2.680982126514837396e18 + 30e18 - 1);
-        assertEq(liabilityAsset.balanceOf(address(bob)), 35e18 - 2.680982126514837396e18 - 30e18);
+        assertEq(liabilityAsset.balanceOf(address(alice)), 100e18 - 35e18 + 2.680982126514837395e18 + 30e18 - 1);
+        assertEq(liabilityAsset.balanceOf(address(bob)), 35e18 - 2.680982126514837395e18 - 30e18);
         assertEq(liabilityVault.maxWithdraw(alice), 0);
         assertEq(liabilityVault.maxWithdraw(bob), 0);
         assertEq(liabilityVault.debtOf(alice), 0);
