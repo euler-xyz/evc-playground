@@ -194,8 +194,8 @@ contract VaultRegularBorrowable is VaultSimple {
     function doCreateVaultSnapshot() internal virtual override returns (bytes memory) {
         (uint256 currentTotalBorrowed,) = _accrueInterest();
 
-        // make total supply and total borrows snapshot:
-        return abi.encode(_convertToAssets(totalSupply(), Math.Rounding.Floor), currentTotalBorrowed);
+        // make total assets and total borrows snapshot:
+        return abi.encode(_totalAssets, currentTotalBorrowed);
     }
 
     /// @notice Checks the vault's status.
@@ -217,12 +217,15 @@ contract VaultRegularBorrowable is VaultSimple {
         _updateInterest();
 
         // validate the vault state here:
-        (uint256 initialSupply, uint256 initialBorrowed) = abi.decode(oldSnapshot, (uint256, uint256));
-        uint256 finalSupply = _convertToAssets(totalSupply(), Math.Rounding.Floor);
+        (uint256 initialAssets, uint256 initialBorrowed) = abi.decode(oldSnapshot, (uint256, uint256));
+        uint256 finalAssets = _totalAssets;
         uint256 finalBorrowed = _totalBorrowed;
 
         // the supply cap can be implemented like this:
-        if (supplyCap != 0 && finalSupply > supplyCap && finalSupply > initialSupply) {
+        if (
+            supplyCap != 0 && finalAssets + finalBorrowed > supplyCap
+                && finalAssets + finalBorrowed > initialAssets + initialBorrowed
+        ) {
             revert SupplyCapExceeded();
         }
 
