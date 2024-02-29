@@ -310,7 +310,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @param account The account.
     /// @param assets The assets.
     function _increaseOwed(address account, uint256 assets) internal virtual {
-        owed[account] = _debtOf(account) + assets;
+        owed[account] += assets;
         _totalBorrowed += assets;
     }
 
@@ -318,7 +318,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @param account The account.
     /// @param assets The assets.
     function _decreaseOwed(address account, uint256 assets) internal virtual {
-        owed[account] = _debtOf(account) - assets;
+        owed[account] -= assets;
 
         uint256 __totalBorrowed = _totalBorrowed;
         _totalBorrowed = __totalBorrowed >= assets ? __totalBorrowed - assets : 0;

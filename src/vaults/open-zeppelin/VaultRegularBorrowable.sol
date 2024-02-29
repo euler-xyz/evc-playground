@@ -29,7 +29,6 @@ contract VaultRegularBorrowable is VaultSimple {
     uint256 internal lastInterestUpdate;
     uint256 internal interestAccumulator;
     mapping(address account => uint256 assets) internal owed;
-    mapping(address account => uint256) internal userInterestAccumulator;
     mapping(address asset => uint256) internal collateralFactor;
 
     // IRM
@@ -544,9 +543,10 @@ contract VaultRegularBorrowable is VaultSimple {
     /// @param account The account.
     /// @param assets The assets.
     function _increaseOwed(address account, uint256 assets) internal virtual {
-        owed[account] = _debtOf(account) + assets;
+        (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
+
+        owed[account] += (assets * ONE + currentInterestAccumulator / 2) / currentInterestAccumulator;
         _totalBorrowed += assets;
-        userInterestAccumulator[account] = interestAccumulator;
     }
 
     /// @notice Decreases the owed amount of an account.
@@ -554,12 +554,12 @@ contract VaultRegularBorrowable is VaultSimple {
     /// @param account The account.
     /// @param assets The assets.
     function _decreaseOwed(address account, uint256 assets) internal virtual {
-        owed[account] = _debtOf(account) - assets;
+        (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
+
+        owed[account] -= (assets * ONE + currentInterestAccumulator / 2) / currentInterestAccumulator;
 
         uint256 __totalBorrowed = _totalBorrowed;
         _totalBorrowed = __totalBorrowed >= assets ? __totalBorrowed - assets : 0;
-
-        userInterestAccumulator[account] = interestAccumulator;
     }
 
     /// @notice Returns the debt of an account.
@@ -573,7 +573,7 @@ contract VaultRegularBorrowable is VaultSimple {
 
         (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
 
-        return debt * currentInterestAccumulator / userInterestAccumulator[account];
+        return (debt * currentInterestAccumulator + ONE / 2) / ONE;
     }
 
     /// @notice Accrues interest.
@@ -606,7 +606,8 @@ contract VaultRegularBorrowable is VaultSimple {
         uint256 newInterestAccumulator =
             (FixedPointMathLib.rpow(uint256(interestRate) + ONE, timeElapsed, ONE) * oldInterestAccumulator) / ONE;
 
-        uint256 newTotalBorrowed = oldTotalBorrowed * newInterestAccumulator / oldInterestAccumulator;
+        uint256 newTotalBorrowed =
+            (oldTotalBorrowed * newInterestAccumulator + oldInterestAccumulator / 2) / oldInterestAccumulator;
 
         return (newTotalBorrowed, newInterestAccumulator, true);
     }
