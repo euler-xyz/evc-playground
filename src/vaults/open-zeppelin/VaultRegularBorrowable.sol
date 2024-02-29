@@ -573,7 +573,7 @@ contract VaultRegularBorrowable is VaultSimple {
 
         (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
 
-        return debt.mulDiv(currentInterestAccumulator, userInterestAccumulator[account], Math.Rounding.Ceil);
+        return debt * currentInterestAccumulator / userInterestAccumulator[account];
     }
 
     /// @notice Accrues interest.
@@ -606,8 +606,7 @@ contract VaultRegularBorrowable is VaultSimple {
         uint256 newInterestAccumulator =
             (FixedPointMathLib.rpow(uint256(interestRate) + ONE, timeElapsed, ONE) * oldInterestAccumulator) / ONE;
 
-        uint256 newTotalBorrowed =
-            oldTotalBorrowed.mulDiv(newInterestAccumulator, oldInterestAccumulator, Math.Rounding.Ceil);
+        uint256 newTotalBorrowed = oldTotalBorrowed * newInterestAccumulator / oldInterestAccumulator;
 
         return (newTotalBorrowed, newInterestAccumulator, true);
     }
