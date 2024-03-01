@@ -300,8 +300,9 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     function _increaseOwed(address account, uint256 assets) internal virtual override {
         (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
 
-        owed[account] += (assets * ONE + currentInterestAccumulator / 2) / currentInterestAccumulator;
-        _totalBorrowed += assets;
+        uint256 delta = (assets * ONE + currentInterestAccumulator / 2) / currentInterestAccumulator;
+        owed[account] += delta;
+        _totalBorrowed += delta;
     }
 
     /// @notice Decreases the owed amount of an account.
@@ -311,10 +312,11 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     function _decreaseOwed(address account, uint256 assets) internal virtual override {
         (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
 
-        owed[account] -= (assets * ONE + currentInterestAccumulator / 2) / currentInterestAccumulator;
+        uint256 delta = (assets * ONE + currentInterestAccumulator / 2) / currentInterestAccumulator;
+        owed[account] -= delta;
 
         uint256 __totalBorrowed = _totalBorrowed;
-        _totalBorrowed = __totalBorrowed >= assets ? __totalBorrowed - assets : 0;
+        _totalBorrowed = __totalBorrowed >= delta ? __totalBorrowed - delta : 0;
     }
 
     /// @notice Returns the debt of an account.
@@ -338,7 +340,6 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
             _accrueInterestCalculate();
 
         if (shouldUpdate) {
-            _totalBorrowed = currentTotalBorrowed;
             interestAccumulator = currentInterestAccumulator;
             lastInterestUpdate = block.timestamp;
         }
@@ -351,25 +352,21 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     /// should be updated.
     function _accrueInterestCalculate() internal view virtual override returns (uint256, uint256, bool) {
         uint256 timeElapsed = block.timestamp - lastInterestUpdate;
-        uint256 oldTotalBorrowed = _totalBorrowed;
-        uint256 oldInterestAccumulator = interestAccumulator;
+        uint256 borrowed = _totalBorrowed;
+        uint256 accumulator = interestAccumulator;
 
         if (timeElapsed == 0) {
-            return (oldTotalBorrowed, oldInterestAccumulator, false);
+            return ((borrowed * accumulator + ONE / 2) / ONE, accumulator, false);
         }
 
-        uint256 newInterestAccumulator =
-            (FixedPointMathLib.rpow(uint256(interestRate) + ONE, timeElapsed, ONE) * oldInterestAccumulator) / ONE;
+        accumulator = (FixedPointMathLib.rpow(uint256(interestRate) + ONE, timeElapsed, ONE) * accumulator) / ONE;
 
-        uint256 newTotalBorrowed =
-            (oldTotalBorrowed * newInterestAccumulator + oldInterestAccumulator / 2) / oldInterestAccumulator;
-
-        return (newTotalBorrowed, newInterestAccumulator, true);
+        return ((borrowed * accumulator + ONE / 2) / ONE, accumulator, true);
     }
 
     /// @notice Updates the interest rate.
     function _updateInterest() internal virtual override {
-        uint256 borrowed = _totalBorrowed;
+        (uint256 borrowed,,) = _accrueInterestCalculate();
         uint256 poolAssets = _totalAssets + borrowed;
 
         uint32 utilisation;

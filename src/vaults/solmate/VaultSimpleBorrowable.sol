@@ -110,7 +110,7 @@ contract VaultSimpleBorrowable is VaultSimple {
         // validate the vault state here:
         (uint256 initialAssets, uint256 initialBorrowed) = abi.decode(oldSnapshot, (uint256, uint256));
         uint256 finalAssets = _totalAssets;
-        uint256 finalBorrowed = _totalBorrowed;
+        (uint256 finalBorrowed,,) = _accrueInterestCalculate();
 
         // the supply cap can be implemented like this:
         if (
