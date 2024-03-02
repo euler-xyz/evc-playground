@@ -67,7 +67,7 @@ contract ERC20CollateralWrapper is ERC20Collateral {
 
         address sender = _msgSender();
         _burn(sender, amount);
-        SafeERC20.safeTransfer(IERC20(_underlying), _getAccountOwner(receiver), amount);
+        SafeERC20.safeTransfer(IERC20(_underlying), receiver, amount);
         evc.requireAccountStatusCheck(sender);
 
         return true;

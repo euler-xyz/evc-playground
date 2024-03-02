@@ -80,8 +80,6 @@ contract VaultBorrowableWETH is VaultRegularBorrowable {
         // Check for rounding error since we round down in previewRedeem.
         require((assets = _convertToAssets(shares, false)) != 0, "ZERO_ASSETS");
 
-        receiver = _getAccountOwner(receiver);
-
         _burn(owner, shares);
 
         emit Withdraw(msgSender, receiver, owner, assets, shares);
