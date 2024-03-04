@@ -85,8 +85,8 @@ contract VaultSimpleBorrowable is VaultSimple {
     function doCreateVaultSnapshot() internal virtual override returns (bytes memory) {
         (uint256 currentTotalBorrowed,) = _accrueInterest();
 
-        // make total supply and total borrows snapshot:
-        return abi.encode(_convertToAssets(totalSupply, false), currentTotalBorrowed);
+        // make total assets and total borrows snapshot:
+        return abi.encode(_totalAssets, currentTotalBorrowed);
     }
 
     /// @notice Checks the vault's status.
@@ -108,12 +108,15 @@ contract VaultSimpleBorrowable is VaultSimple {
         _updateInterest();
 
         // validate the vault state here:
-        (uint256 initialSupply, uint256 initialBorrowed) = abi.decode(oldSnapshot, (uint256, uint256));
-        uint256 finalSupply = _convertToAssets(totalSupply, false);
-        uint256 finalBorrowed = _totalBorrowed;
+        (uint256 initialAssets, uint256 initialBorrowed) = abi.decode(oldSnapshot, (uint256, uint256));
+        uint256 finalAssets = _totalAssets;
+        (uint256 finalBorrowed,,) = _accrueInterestCalculate();
 
         // the supply cap can be implemented like this:
-        if (supplyCap != 0 && finalSupply > supplyCap && finalSupply > initialSupply) {
+        if (
+            supplyCap != 0 && finalAssets + finalBorrowed > supplyCap
+                && finalAssets + finalBorrowed > initialAssets + initialBorrowed
+        ) {
             revert SupplyCapExceeded();
         }
 
@@ -307,7 +310,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @param account The account.
     /// @param assets The assets.
     function _increaseOwed(address account, uint256 assets) internal virtual {
-        owed[account] = _debtOf(account) + assets;
+        owed[account] += assets;
         _totalBorrowed += assets;
     }
 
@@ -315,7 +318,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @param account The account.
     /// @param assets The assets.
     function _decreaseOwed(address account, uint256 assets) internal virtual {
-        owed[account] = _debtOf(account) - assets;
+        owed[account] -= assets;
 
         uint256 __totalBorrowed = _totalBorrowed;
         _totalBorrowed = __totalBorrowed >= assets ? __totalBorrowed - assets : 0;

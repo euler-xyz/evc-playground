@@ -46,8 +46,8 @@ contract VaultSimpleOZ is VaultBase, Ownable, ERC4626 {
     /// @dev This function is called before any action that may affect the vault's state.
     /// @return A snapshot of the vault's state.
     function doCreateVaultSnapshot() internal virtual override returns (bytes memory) {
-        // make total supply snapshot here and return it:
-        return abi.encode(_convertToAssets(totalSupply(), Math.Rounding.Floor));
+        // make total assets snapshot here and return it:
+        return abi.encode(_totalAssets);
     }
 
     /// @notice Checks the vault's status.

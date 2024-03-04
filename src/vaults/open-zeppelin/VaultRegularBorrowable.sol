@@ -29,7 +29,6 @@ contract VaultRegularBorrowableOZ is VaultSimpleOZ {
     uint256 internal lastInterestUpdate;
     uint256 internal interestAccumulator;
     mapping(address account => uint256 assets) internal owed;
-    mapping(address account => uint256) internal userInterestAccumulator;
     mapping(address asset => uint256) internal collateralFactor;
 
     // IRM
@@ -194,8 +193,8 @@ contract VaultRegularBorrowableOZ is VaultSimpleOZ {
     function doCreateVaultSnapshot() internal virtual override returns (bytes memory) {
         (uint256 currentTotalBorrowed,) = _accrueInterest();
 
-        // make total supply and total borrows snapshot:
-        return abi.encode(_convertToAssets(totalSupply(), Math.Rounding.Floor), currentTotalBorrowed);
+        // make total assets and total borrows snapshot:
+        return abi.encode(_totalAssets, currentTotalBorrowed);
     }
 
     /// @notice Checks the vault's status.
@@ -217,12 +216,15 @@ contract VaultRegularBorrowableOZ is VaultSimpleOZ {
         _updateInterest();
 
         // validate the vault state here:
-        (uint256 initialSupply, uint256 initialBorrowed) = abi.decode(oldSnapshot, (uint256, uint256));
-        uint256 finalSupply = _convertToAssets(totalSupply(), Math.Rounding.Floor);
-        uint256 finalBorrowed = _totalBorrowed;
+        (uint256 initialAssets, uint256 initialBorrowed) = abi.decode(oldSnapshot, (uint256, uint256));
+        uint256 finalAssets = _totalAssets;
+        (uint256 finalBorrowed,,) = _accrueInterestCalculate();
 
         // the supply cap can be implemented like this:
-        if (supplyCap != 0 && finalSupply > supplyCap && finalSupply > initialSupply) {
+        if (
+            supplyCap != 0 && finalAssets + finalBorrowed > supplyCap
+                && finalAssets + finalBorrowed > initialAssets + initialBorrowed
+        ) {
             revert SupplyCapExceeded();
         }
 
@@ -541,9 +543,11 @@ contract VaultRegularBorrowableOZ is VaultSimpleOZ {
     /// @param account The account.
     /// @param assets The assets.
     function _increaseOwed(address account, uint256 assets) internal virtual {
-        owed[account] = _debtOf(account) + assets;
-        _totalBorrowed += assets;
-        userInterestAccumulator[account] = interestAccumulator;
+        (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
+
+        uint256 delta = (assets * ONE + currentInterestAccumulator / 2) / currentInterestAccumulator;
+        owed[account] += delta;
+        _totalBorrowed += delta;
     }
 
     /// @notice Decreases the owed amount of an account.
@@ -551,12 +555,13 @@ contract VaultRegularBorrowableOZ is VaultSimpleOZ {
     /// @param account The account.
     /// @param assets The assets.
     function _decreaseOwed(address account, uint256 assets) internal virtual {
-        owed[account] = _debtOf(account) - assets;
+        (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
+
+        uint256 delta = (assets * ONE + currentInterestAccumulator / 2) / currentInterestAccumulator;
+        owed[account] -= delta;
 
         uint256 __totalBorrowed = _totalBorrowed;
-        _totalBorrowed = __totalBorrowed >= assets ? __totalBorrowed - assets : 0;
-
-        userInterestAccumulator[account] = interestAccumulator;
+        _totalBorrowed = __totalBorrowed >= delta ? __totalBorrowed - delta : 0;
     }
 
     /// @notice Returns the debt of an account.
@@ -570,7 +575,7 @@ contract VaultRegularBorrowableOZ is VaultSimpleOZ {
 
         (, uint256 currentInterestAccumulator,) = _accrueInterestCalculate();
 
-        return debt * currentInterestAccumulator / userInterestAccumulator[account];
+        return (debt * currentInterestAccumulator + ONE / 2) / ONE;
     }
 
     /// @notice Accrues interest.
@@ -580,7 +585,6 @@ contract VaultRegularBorrowableOZ is VaultSimpleOZ {
             _accrueInterestCalculate();
 
         if (shouldUpdate) {
-            _totalBorrowed = currentTotalBorrowed;
             interestAccumulator = currentInterestAccumulator;
             lastInterestUpdate = block.timestamp;
         }
@@ -593,24 +597,21 @@ contract VaultRegularBorrowableOZ is VaultSimpleOZ {
     /// should be updated.
     function _accrueInterestCalculate() internal view virtual returns (uint256, uint256, bool) {
         uint256 timeElapsed = block.timestamp - lastInterestUpdate;
-        uint256 oldTotalBorrowed = _totalBorrowed;
-        uint256 oldInterestAccumulator = interestAccumulator;
+        uint256 borrowed = _totalBorrowed;
+        uint256 accumulator = interestAccumulator;
 
         if (timeElapsed == 0) {
-            return (oldTotalBorrowed, oldInterestAccumulator, false);
+            return ((borrowed * accumulator + ONE / 2) / ONE, accumulator, false);
         }
 
-        uint256 newInterestAccumulator =
-            (FixedPointMathLib.rpow(uint256(interestRate) + ONE, timeElapsed, ONE) * oldInterestAccumulator) / ONE;
+        accumulator = (FixedPointMathLib.rpow(uint256(interestRate) + ONE, timeElapsed, ONE) * accumulator) / ONE;
 
-        uint256 newTotalBorrowed = oldTotalBorrowed * newInterestAccumulator / oldInterestAccumulator;
-
-        return (newTotalBorrowed, newInterestAccumulator, true);
+        return ((borrowed * accumulator + ONE / 2) / ONE, accumulator, true);
     }
 
     /// @notice Updates the interest rate.
     function _updateInterest() internal virtual {
-        uint256 borrowed = _totalBorrowed;
+        (uint256 borrowed,,) = _accrueInterestCalculate();
         uint256 poolAssets = _totalAssets + borrowed;
 
         uint32 utilisation;
