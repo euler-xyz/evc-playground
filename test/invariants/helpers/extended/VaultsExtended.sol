@@ -56,9 +56,18 @@ contract VaultSimpleBorrowableExtended is VaultSimpleBorrowable, VaultBaseGetter
         lastInterestUpdate_ = 0;
     }
 
+    function getUserInterestAccumulator(address _borrower) external view returns (uint256 userInterestAccumulator_) {
+        userInterestAccumulator_ = 0;
+    }
+
     function getOwed(address _borrower) external view returns (uint256 owed_) {
         owed_ = owed[_borrower];
     }
+    
+    function getInterestAccumulator() external view returns (uint256 interestAccumulator_) {
+        interestAccumulator_ = 0;
+    }
+
 }
 
 /// @title VaultRegularBorrowableExtended

@@ -77,7 +77,7 @@ contract BaseHandler is HookAggregator {
         return uint256(keccak256(abi.encodePacked(seed, salt)));
     }
 
-    function _getRandomValue(uint256 modulus) public view returns (uint256) {
+    function _getRandomValue(uint256 modulus) internal view returns (uint256) {
         uint256 randomNumber = uint256(keccak256(abi.encode(block.timestamp, block.prevrandao, msg.sender)));
         return randomNumber % modulus; // Adjust the modulus to the desired range
     }

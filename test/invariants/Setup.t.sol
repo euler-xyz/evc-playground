@@ -89,7 +89,7 @@ contract Setup is BaseTest {
         //vaults.push(address(vaultBorrowableWETH));
     }
 
-    function _setDefaultPrices() public {
+    function _setDefaultPrices() internal {
         // Set the initial mock prices
         oracle.setResolvedAsset(address(vaultSimple));
         oracle.setResolvedAsset(address(vaultSimpleOZ));

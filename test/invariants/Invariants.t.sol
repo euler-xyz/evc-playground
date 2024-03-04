@@ -107,8 +107,8 @@ abstract contract Invariants is
             for (uint256 j; j < NUMBER_OF_ACTORS; j++) {
                 assert_VaultSimpleBorrowable_invariantA(vaults[i], actorAddresses[j]);
             }
-            //assert_VaultSimpleBorrowable_invariantB(vaults[i]); //@audit-issue CRIT-1
-            assert_VaultSimpleBorrowable_invariantE(vaults[i]);
+            assert_VaultSimpleBorrowable_invariantB(vaults[i]); //@audit-issue CRIT-1
+            //assert_VaultSimpleBorrowable_invariantE(vaults[i]);
         }
         return true;
     }

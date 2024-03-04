@@ -7,7 +7,7 @@ import "forge-std/console.sol";
 
 // Test Contracts
 import {Invariants} from "./Invariants.t.sol";
-import {Setup} from "./Setup.t.sol";
+import {Setup, VaultSimpleBorrowable} from "./Setup.t.sol";
 
 /// @title CryticToFoundry
 /// @notice Foundry wrapper for fuzzer failed call sequences
@@ -254,109 +254,111 @@ contract CryticToFoundry is Invariants, Setup {
     }
 
     function test_VaultSimpleBorrowable_broken2_invariantAB() public {
-        _setUpTimeStampAndActor(15414, USER1);
+        _setUpBlockAndActor(15414, USER1);
         this.deposit(
             1050000000000000000,
             0xbFbfc6a023C7E6442850E51fd2Ef95b74fBBF6f4,
             50056591937129702866172700757417936275481751556309114581921989481229494072685
         );
 
-        _setUpTimeStampAndActor(15414, USER1);
+        _setUpBlockAndActor(15414, USER1);
         this.setInterestRate(88);
 
-        _setUpTimeStampAndActor(45273, USER3);
+        _setUpBlockAndActor(45273, USER3);
         this.enableController(108625544386678735225858684630049397735743002180634093873999478415703162244086, 159);
 
-        _setUpTimeStampAndActor(45648, USER3);
+        _setUpBlockAndActor(45648, USER3);
         this.borrowTo(
             112,
             103399230860284986570016836398760076070658451595311608713646046885630128186661,
             115792089237316195423570985008196446929927800447604857151448833963935374526881
         );
 
-        _setUpTimeStampAndActor(76591, USER3);
+        _setUpBlockAndActor(76591, USER3);
         this.mint(
             115792089237316195423570985008687907853269984665640564039457584007913129639688,
             0x4e59b44847b379578588920cA78FbF26c0B4956C,
             115792089237316195423570985008687907853269984665640564039457584007913129639704
         );
 
-        _setUpTimeStampAndActor(106831, USER1);
+        _setUpBlockAndActor(106831, USER1);
         this.deposit(
             31536088,
             0x391e5Dc7799Aa1E8758CE1700e40C73efefe8c41,
             51786712791901310870594756932122677743360462015290283621742065965238361064669
         );
 
-        _setUpTimeStampAndActor(155846, USER3);
+        _setUpBlockAndActor(155846, USER3);
         this.disableCollateral(
             32220021555707170768584030699185698262736873175132847617807613853112393377309,
             55819861866768326092802605806234486825607256418538461438421219871777557769789
         );
 
-        _setUpTimeStampAndActor(189891, USER1);
+        _setUpBlockAndActor(189891, USER1);
         /*         this.liquidate(
             115792089237316195417318403201955081311167928794867302570293128389404032761856,
             2,
             82724627276871182428008648132635260656470637032185566592379648295974448495796
         ); */
 
-        _setUpTimeStampAndActor(213633, USER1);
+        _setUpBlockAndActor(213633, USER1);
         this.borrowTo(
             4937055118740282326130742133518971481113926288934338992857321759835015568137,
             75257621328158587392298270386332921435697482778552542990467193070716649064954,
             7
         );
 
-        _setUpTimeStampAndActor(272781, USER2);
+        _setUpBlockAndActor(272781, USER2);
         /*         this.liquidate(
             66991370483085252580711178094891356941393433033382472513296549634411924411471,
             115792089237316195423570985008687907853269984665640564039457584007913129639766,
             115792089237316195423570985008687907853269984665640564039457584007395022782416
         ); */
 
-        _setUpTimeStampAndActor(280025, USER3);
+        _setUpBlockAndActor(280025, USER3);
         this.echidna_invariant_ERC4626_depositMintWithdrawRedeem_invariantA();
 
-        _setUpTimeStampAndActor(313096, USER2);
+        _setUpBlockAndActor(313096, USER2);
         this.transferFromTo(
             115792089237316195423570985008687907853269984665640564039457584007913129639736,
             67603374289203028177518852574732449174340673859433545291209897156528982962267,
             3101000729240708009187251112301202222791343326492150108612738121379767967366
         );
 
-        _setUpTimeStampAndActor(351190, USER1);
+        _setUpBlockAndActor(351190, USER1);
         this.mint(
             115792089237316195423570985008687907853269984665640564039457584007913129639520,
             0x00000000000000000000000000000000000000C0,
             89533572641196918554973006617941583554242098664904413708501613422884176312236
         );
 
-        _setUpTimeStampAndActor(396031, USER1);
+        _setUpBlockAndActor(396031, USER1);
         this.assert_ERC4626_roundtrip_invariantE(
             115792089237316195423570985008687907853269984665640564039457584007913129574145, 31536000
         );
 
-        _setUpTimeStampAndActor(439053, USER2);
+        _setUpBlockAndActor(439053, USER2);
         this.depositToActor(
             55321967524374208153831286240750404906819356501037520044483783676396467501698,
             96970996544270474534578468795209521593095711786171074964526048526805466424251,
             115792089237316195423570985008687907853269984665640564039457584007913129639920
         );
 
-        _setUpTimeStampAndActor(450668, USER1);
+        _setUpBlockAndActor(450668, USER1);
         /*         this.assert_ERC4626_roundtrip_invariantA(
             6525748109247358172679747170251572693632218111411188811558664605545868845492, 0
         );
         */
-        _setUpTimeStampAndActor(474478, USER3);
+        _setUpBlockAndActor(474478, USER3);
         this.withdraw(
             115792089237316195423570985008687907853269984665640564039457584007913129639571,
             20671408955595464485137310811010750722065004886169655379890537649634677148047,
             0x6370163583016BF2E71E3E26b1382422CecA1B9e
         );
 
-        _setUpTimeStampAndActor(493814, USER2);
+        echidna_invariant_VaultSimpleBorrowable_invariantAB();
+
+        _setUpBlockAndActor(493814, USER2);
         this.reorderCollaterals(
             1000000000000000131072,
             115792089237316195423570985008687907853269984665640564039457584007913127639680,
@@ -364,7 +366,9 @@ contract CryticToFoundry is Invariants, Setup {
             250
         );
 
-        _setUpTimeStampAndActor(501603, USER3);
+        echidna_invariant_VaultSimpleBorrowable_invariantAB();
+
+        _setUpBlockAndActor(501603, USER3);
         this.transferTo(
             115792089237316195423570985008687907853269984665640564039457584007913129639902,
             86895102588101535888800132252461206879806254156085816027395372582073938335790,
@@ -432,18 +436,388 @@ contract CryticToFoundry is Invariants, Setup {
         echidna_invariant_VaultSimpleBorrowable_invariantAB();
     }
 
+    function test_roudingFix2() public {
+        _setUpBlockAndActor(block.number + 37350, USER1);
+        this.setInterestRate(2673624617);
+
+        _setUpBlockAndActor(block.number + 37350, USER1);
+        this.enableController(
+            974705300023655143460649552783719145488647020390451951774924669773,
+            34889246559171040279680797389783392145037077580391580952356955697457
+        );
+
+        this.deposit(1, address(0), 220605381302003440560708727348400281633135326589260067928327855791);
+
+        this.borrowTo(1, 473635198873, 262095261126819711899063844952972822840422218072067871521661);
+
+        _setUpBlockAndActor(block.number + 4863, USER1);
+        this.setAccountOperator(
+            51, 30434352608857084685054669267088412332728388982313063270844720824187415065519, false
+        );
+
+        _setUpBlockAndActor(block.number + 1404, USER1);
+        this.assert_ERC4626_roundtrip_invariantA(
+            65799450299376707323338948449025236695300512193404263401708997460711039827966, 5
+        );
+
+        _setUpBlockAndActor(block.number + 1320, USER1);
+        this.transferTo(
+            8960251488519949584943349342676242197907823536321762306439177470893091129833,
+            29275607152695154577629778440270762108447764852561017502720869001617095103299,
+            13830
+        );
+
+        _setUpBlockAndActor(block.number + 4955, USER1);
+        this.setSupplyCap(
+            3402907875176710683879492596309679480880468689702959257630441803472653551867,
+            91989361991455497363413095452359672143475027571477426177411007498981541174454
+        );
+
+        _setUpBlockAndActor(block.number + 1963, USER1);
+        this.assert_ERC4626_roundtrip_invariantD(
+            112722202323136561393525325182086252757421649780318125509259905201002030044055, 86401
+        );
+
+        _setUpBlockAndActor(block.number + 9 + 53678, USER1);
+        this.pullDebt(
+            46926207934478795292271095332981566615810737506271995344122651492017207185121,
+            115792089237316195423570985008687907853269984665640564039457584007913129639812,
+            41564608065038052118924323189996551827377578224030497509910983649744599558470
+        );
+
+        _setUpBlockAndActor(block.number + 4957 + 12155 + 20, USER1);
+        this.repayTo(
+            24010309994245337217767231159130513631044693296372268907407548365748763919513,
+            41640768952628744582047398191588965358746061157833243991572796731729635380327,
+            4013301448
+        );
+
+        _setUpBlockAndActor(block.number + 4994, USER1);
+        this.assert_ERC4626_roundtrip_invariantB(
+            8591199908633007552025371622239154879542113097048527873023001595589534744245, 312
+        );
+
+        _setUpBlockAndActor(block.number + 28126 + 40809, USER1);
+        this.mintToActor(
+            1524785991, 94770901425382707645982434801208986081893116647861686451217818710293849056692, 2495578189
+        );
+
+        _setUpBlockAndActor(block.number + 1322 + 30304, USER1);
+        this.disableController(109590050855132395193547060399598738730679977601774708619272268965138753376521);
+
+        _setUpBlockAndActor(block.number + 1362, USER1);
+        this.assert_ERC4626_roundtrip_invariantD(
+            3102442652642231382127076256943147157695138054581104547590449676489188020172, 540897831
+        );
+
+        _setUpBlockAndActor(block.number + 30042, USER1);
+        this.setBorrowCap(115792089237316195423570985008687907853269984665640564039457584007912972441676, 255);
+
+        _setUpBlockAndActor(block.number + 967, USER1);
+        this.assert_ERC4626_roundtrip_invariantA(
+            33356899129821815970778104081402036888062049267702776824083264833762268447412,
+            28557190890115485444325240282485014970052958918523069272707086587162403874256
+        );
+
+        _setUpBlockAndActor(block.number + 2512, USER1);
+        this.disableCollateral(
+            16156842317565293874272834530371880720966471053262404558597773956279093428223,
+            100493319074610262040629111243543395895843514107432533086161102923386496457182
+        );
+
+        _setUpBlockAndActor(block.number + 41598, USER1);
+        this.mint(
+            46770447827580554747587026655870071609628978727156205,
+            address(0x1fffffffe),
+            68022912246876231712114681105074816469712937980606894640033681072982160563276
+        );
+
+        _setUpBlockAndActor(block.number + 14735, USER1);
+        this.transferFrom(
+            977020907293985692412636172214525632789895995827472659445650,
+            0,
+            address(0xdeadbeef),
+            20017260443575432544396792571181719361916266269906175455897478327045921514395
+        );
+
+        _setUpBlockAndActor(block.number + 4960, USER1);
+        this.approveTo(
+            0,
+            115754477555338170954245134728382081014515253725470521188593404063622758786140,
+            115792089237316195423570985008687907853269984665635564039457584007913129639935
+        );
+
+        _setUpBlockAndActor(block.number + 1321, USER1);
+        this.approveTo(
+            36,
+            99635246919750901549298150478316027132303513612378159480859810051634036211712,
+            32550744143136045529702861637878048568153605992259719136
+        );
+
+        _setUpBlockAndActor(block.number + 126, USER1);
+        this.transferTo(413792, 0, 15529932101878100335745995777163542365671092845182061356594225049570360617116);
+
+        _setUpBlockAndActor(block.number + 160, USER1);
+        this.disableControllerEVC(20884043087835592912171152197139391427992117930768665219795490849248880858579);
+
+        echidna_invariant_VaultSimpleBorrowable_invariantAB();
+    }
+
+    function test_roundingFix() public {
+        VaultSimpleBorrowable vault = VaultSimpleBorrowable(address(vaultRegularBorrowable));
+
+        _setUpTimestampAndActor(block.timestamp + 389488, USER1);
+        this.setInterestRate(260388328);
+        this.enableController(
+            974705300023655143460649552783719145488647020390451951774924669773,
+            34889246559171040279680797389783392145037077580391580952356955697457
+        );
+
+        this.deposit(1, address(0), 220605381302003440560708727348400281633135326589260067928327855791);
+        this.borrowTo(1, 473635198873, 262095261126819711899063844952972822840422218072067871521661);
+
+        _setUpTimestampAndActor(block.timestamp + 592111, USER1);
+        this.setAccountOperator(
+            27, 75256891512924542210405387466462267520421098117241549512760825530570359614130, false
+        );
+
+        _setUpTimestampAndActor(block.timestamp + 419861, USER2);
+        this.assert_ERC4626_roundtrip_invariantA(
+            115792089237316195423570985008687907853269984665640564039457584007909567631783, 11
+        );
+
+        _setUpTimestampAndActor(block.timestamp + 405856, USER1);
+        this.transferTo(
+            115792089237316195423570985008687907853269984665640564039457584007913129639932,
+            76450787359836037641860180984291677749980919077056822294353438043884394381312,
+            86399
+        );
+
+        _setUpTimestampAndActor(block.timestamp, USER2);
+        this.assert_ERC4626_roundtrip_invariantD(
+            112722202323136561393525325182086252757421649780318125509259905201002030044055, 86401
+        );
+
+        _setUpTimestampAndActor(block.timestamp + 322310, USER1);
+        this.depositToActor(
+            30801455118388354985489167069655619358074621728553375131727290562972475801734,
+            31222198430446618515890072030168329717621179102177167,
+            17358719832304557345062271652453693257416628727317314939806503511715905065400
+        );
+
+        _setUpTimestampAndActor(block.timestamp + 332369, USER1);
+        this.disableCollateral(
+            59944016244377421561993078273766566327839745292197934465282207972123457829260,
+            8880262287579196378029262876999703543940517390671845084346853443895751002117
+        );
+
+        _setUpTimestampAndActor(block.timestamp + 322307, USER1);
+        this.assert_ERC4626_roundtrip_invariantE(
+            71356314893123551091944761899311546987794118357729888246202958509589302038637,
+            9326360656094746519392628367200455867275768365361418461564853084786320017858
+        );
+
+        _setUpTimestampAndActor(block.timestamp + 583581, USER1);
+        this.disableController(115792089237316195423570985008687907853269984665640564039457584007910231963626);
+
+        _setUpTimestampAndActor(block.timestamp + 554889, USER1);
+        this.pullDebt(
+            46926207934478795292271095332981566615810737506271995344122651492017207185121,
+            115792089237316195423570985008687907853269984665640564039457584007913129639812,
+            41564608065038052118924323189996551827377578224030497509910983649744599558470
+        );
+
+        console.log("totalBorrowed: ", vault.totalBorrowed());
+        console.log("totalDebt: ", _getDebtSum(address(vaultRegularBorrowable)));
+
+        console.log("interestAccumulator: ", vault.getInterestAccumulator());
+        console.log("interestAccumulator: ", vault.getUserInterestAccumulator(actorAddresses[0]));
+
+        console.log("AFTER    ##############################################");
+
+        _setUpTimestampAndActor(block.timestamp + 276464, USER1);
+        this.setAccountOperator(
+            115792089237316195423570985008687907853269984665640564039457584007913129639713,
+            36378991325885162174397283495306774927410675805417650463773818618331982136940,
+            true
+        );
+
+        console.log("totalBorrowed: ", vault.totalBorrowed());
+        console.log("totalDebt: ", _getDebtSum(address(vaultRegularBorrowable)));
+
+        console.log("interestAccumulator: ", vault.getInterestAccumulator());
+        console.log("interestAccumulator: ", vault.getUserInterestAccumulator(actorAddresses[0]));
+
+        console.log("AFTER    ##############################################");
+
+        _setUpTimestampAndActor(block.timestamp + 389489, USER2);
+        this.pullDebt(
+            62181819423937839877406419391829465972856742985055010332424472791996772680512,
+            115792089237316195423570985008687907853269984665640564039457584007913129639934,
+            115792089237316195423570985008687907853269984665640564039457584007913129639932
+        );
+
+        console.log("totalBorrowed: ", vault.totalBorrowed());
+        console.log("totalDebt: ", _getDebtSum(address(vaultRegularBorrowable)));
+
+        console.log("interestAccumulator: ", vault.getInterestAccumulator());
+        console.log("interestAccumulator: ", vault.getUserInterestAccumulator(actorAddresses[0]));
+
+        console.log("AFTER    ##############################################");
+
+        _setUpTimestampAndActor(block.timestamp + 276465, USER1);
+        //this.enableController(5, 1461501637330902918203684832716283019655932542975);
+
+        console.log("totalBorrowed: ", vault.totalBorrowed());
+        console.log("totalDebt: ", _getDebtSum(address(vaultRegularBorrowable)));
+
+        console.log("interestAccumulator: ", vault.getInterestAccumulator());
+        console.log("interestAccumulator: ", vault.getUserInterestAccumulator(actorAddresses[0]));
+
+        console.log("BEFORE    ##############################################");
+
+        _setUpTimestampAndActor(block.timestamp + 361136, USER1);
+        this.repayTo(
+            115792089237316195423570985008687907853269984665640564039457584007911448862145,
+            43299353513533551894186139189640417258433143999370443772555398876445798892777,
+            4294967295
+        );
+
+        _setUpTimestampAndActor(block.timestamp + 419861, USER1);
+        this.assert_ERC4626_roundtrip_invariantB(
+            11950378725187969665512393791905120766524859598146700867180397703827904679826, 376
+        );
+
+        echidna_invariant_VaultSimpleBorrowable_invariantAB();
+
+        console.log("##############################################");
+
+        _setUpTimestampAndActor(block.timestamp + 236027, USER1);
+        this.borrowTo(
+            115792089237316195423570985008687907853269984665640564039457584007913129639933,
+            12679160512295910505134524200668209442888434120768545302994985489236337400461,
+            110622404646957170741979884429158225310959902106993115290285157431178281462317
+        );
+
+        echidna_invariant_VaultSimpleBorrowable_invariantAB();
+
+        console.log("##############################################");
+
+        _setUpTimestampAndActor(block.timestamp + 519847 + 537688, USER1);
+        this.mintToActor(
+            1524785991, 94770901425382707645982434801208986081893116647861686451217818710293849056692, 2495578189
+        );
+
+        echidna_invariant_VaultSimpleBorrowable_invariantAB();
+
+        console.log("##############################################");
+
+        _setUpTimestampAndActor(block.timestamp + 482914, USER1);
+        this.pullDebt(
+            115792089237316195423570985008687907853269984665640564039457584007913129639930,
+            6531774282870008395670377842959747891557266514980951417067242944360095099411,
+            1564406459415799172898330
+        );
+
+        echidna_invariant_VaultSimpleBorrowable_invariantAB();
+
+        console.log("##############################################");
+
+        _setUpTimestampAndActor(block.timestamp + 325359, USER1);
+        this.disableController(109590050855132395193547060399598738730679977601774708619272268965138753376521);
+
+        _setUpTimestampAndActor(block.timestamp + 350070, USER2);
+        this.setBorrowCap(110216325551435478160438372316229115063607853874091438833657319383429084445967, 149);
+
+        _setUpTimestampAndActor(block.timestamp + 38059, USER2);
+        this.disableCollateral(11608936110889483328924818573616368211107254603491700205727981958565312158824, 995);
+
+        _setUpTimestampAndActor(block.timestamp + 311539, USER1);
+        this.disableCollateral(
+            16156842317565293874272834530371880720966471053262404558597773956279093428223,
+            100493319074610262040629111243543395895843514107432533086161102923386496457182
+        );
+
+        echidna_invariant_VaultSimpleBorrowable_invariantAB();
+
+        console.log("##############################################");
+
+        _setUpTimestampAndActor(block.timestamp + 519847, USER1);
+        this.enableCollateral(
+            58763369478890212134538580855076743927036989342241379362500560758417647827485,
+            20501314626389661569539759282732492334705586976301171833563712236224178131551
+        );
+
+        _setUpTimestampAndActor(block.timestamp + 499804, USER1);
+        this.mint(
+            1695024648156951019808627303400112514851726106141251,
+            address(0),
+            67684336012151363931415626370408570264818677174237722096940949297581557117354
+        );
+
+        echidna_invariant_VaultSimpleBorrowable_invariantAB();
+
+        console.log("##############################################");
+
+        _setUpTimestampAndActor(block.timestamp + 372377, USER2);
+        this.approveTo(
+            0,
+            115754477555338170954245134728382081014515253725470521188593404063622758786140,
+            115792089237316195423570985008687907853269984665635564039457584007913129639935
+        );
+
+        _setUpTimestampAndActor(block.timestamp + 583581, USER2);
+        this.enableCollateral(478, 5318912439207034739885087447242316354);
+
+        echidna_invariant_VaultSimpleBorrowable_invariantAB();
+
+        console.log("##############################################");
+
+        _setUpTimestampAndActor(block.timestamp + 290780, USER1);
+        this.approveTo(
+            36,
+            99635246919750901549298150478316027132303513612378159480859810051634036211712,
+            32550744143136045529702861637878048568153605992259719136
+        );
+
+        _setUpTimestampAndActor(block.timestamp + 352543, USER1);
+        this.disableController(101);
+
+        echidna_invariant_VaultSimpleBorrowable_invariantAB();
+
+        console.log("##############################################");
+
+        _setUpTimestampAndActor(block.timestamp + 289607, USER1);
+        this.setAccountOperator(
+            11516053223275709395408191732293294461887652883742857219859026575491494794307,
+            23948141631302998739422445039489121684887947944813059340784139873751617409259,
+            false
+        );
+
+        echidna_invariant_VaultSimpleBorrowable_invariantAB();
+
+        console.log("##############################################");
+
+        _setUpTimestampAndActor(block.timestamp + 33361136, USER1);
+        this.enableController(
+            12759405680323048689114877319407988437412221457213781195479409487177867114510,
+            2936906420797400932574689231204431074772854713696823380517384429523889475632
+        );
+        echidna_invariant_VaultSimpleBorrowable_invariantAB();
+    }
+
     function test_disableControllerEVC() public {
-        _setUpTimeStampAndActor(41042, USER2);
+        _setUpBlockAndActor(41042, USER2);
         this.disableControllerEVC(10709246616502725659467506005679776718551158952008047283088709786807569473950);
     }
 
     function test_disableControllerEVC2() public {
-        _setUpTimeStampAndActor(23878, USER2);
+        _setUpBlockAndActor(23878, USER2);
         this.enableController(
             77472102764689050402378783894995354064998398760128963999802111240406467630227,
             13643531396961746712283185656709236708675306836998809720103771604973879420174
         );
-        _setUpTimeStampAndActor(47698, USER3);
+        _setUpBlockAndActor(47698, USER3);
         this.disableControllerEVC(516928969809447300998084754503071017202098145828752518033292785749612185892);
     }
 
@@ -455,12 +829,12 @@ contract CryticToFoundry is Invariants, Setup {
         );
         this.depositToActor(1, 473635198873, 220605381302003440560708727348400281633135326589260067928327855791);
         this.borrowTo(1, 473635198873, 262095261126819711899063844952972822840422218072067871521661);
-        _setUpTimeStampAndActor(block.timestamp + 30499, USER2);
+        _setUpBlockAndActor(block.timestamp + 30499, USER2);
         this.enableCollateral(
             115792089237316195423570985008687907853269984665639564039457584007913129639937,
             115792089237316195423570985008687907853269984665640564039457584007912758003074
         );
-        _setUpTimeStampAndActor(block.timestamp + 60248, USER2);
+        _setUpBlockAndActor(block.timestamp + 60248, USER2);
         this.liquidate(
             180880131227986985161633523337705529400762681312585404606768428973234476,
             21260194320874265685928414717765199604362481389315980923222372657056189318,
@@ -468,8 +842,13 @@ contract CryticToFoundry is Invariants, Setup {
         );
     }
 
-    function _setUpTimeStampAndActor(uint256 _block, address _user) internal {
+    function _setUpBlockAndActor(uint256 _block, address _user) internal {
         vm.roll(_block);
+        actor = actors[_user];
+    }
+
+    function _setUpTimestampAndActor(uint256 _timestamp, address _user) internal {
+        vm.warp(_timestamp);
         actor = actors[_user];
     }
 }
