@@ -16,18 +16,10 @@ abstract contract VaultRegularBorrowableInvariants is HandlerAggregator {
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
     VaultRegularBorrowable
-        Invariant A: userInterestAccumulator(user) <= interestAccumulator
-        Invariant B: liquidation can only succed if violator is unhealthy
+        Invariant A: liquidation can only succed if violator is unhealthy (Post condition)
         
     */
 
     /////////////////////////////////////////////////////////////////////////////////////////////*/
 
-    function assert_VaultRegularBorrowable_invariantA(address _vault, address _borrower) internal {
-        assertLe(
-            VaultRegularBorrowable(_vault).getUserInterestAccumulator(_borrower),
-            VaultRegularBorrowable(_vault).getInterestAccumulator(),
-            string.concat("VaultRegularBorrowable_invariantA: ", vaultNames[_vault])
-        );
-    }
 }

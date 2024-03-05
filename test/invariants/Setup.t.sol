@@ -12,8 +12,8 @@ import {
     VaultSimpleBorrowableExtended as VaultSimpleBorrowable,
     VaultRegularBorrowableExtended as VaultRegularBorrowable,
     VaultBorrowableWETHExtended as VaultBorrowableWETH,
-    VaultSimpleExtendedOz as VaultSimpleOZ,
-    VaultRegularBorrowableExtendedOz as VaultRegularBorrowableOZ
+    VaultSimpleExtendedOZ as VaultSimpleOZ,
+    VaultRegularBorrowableExtendedOZ as VaultRegularBorrowableOZ
 } from "test/invariants/helpers/extended/VaultsExtended.sol";
 
 // Test Contracts

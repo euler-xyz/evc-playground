@@ -9,8 +9,8 @@ import {VaultSimple} from "src/vaults/solmate/VaultSimple.sol";
 import {VaultSimpleBorrowable} from "src/vaults/solmate/VaultSimpleBorrowable.sol";
 import {VaultRegularBorrowable} from "src/vaults/solmate/VaultRegularBorrowable.sol";
 import {VaultBorrowableWETH} from "src/vaults/solmate/VaultBorrowableWETH.sol";
-import {VaultSimpleOZ} from "src/vaults/open-zeppelin/VaultSimple.sol";
-import {VaultRegularBorrowableOZ} from "src/vaults/open-zeppelin/VaultRegularBorrowable.sol";
+import {VaultSimple as VaultSimpleOZ} from "src/vaults/open-zeppelin/VaultSimple.sol";
+import {VaultRegularBorrowable as VaultRegularBorrowableOZ} from "src/vaults/open-zeppelin/VaultRegularBorrowable.sol";
 
 // Mocks
 import {IRMMock} from "test/mocks/IRMMock.sol";
@@ -63,7 +63,7 @@ abstract contract BaseStorage {
     /// @notice VaultSimple contract
     VaultSimple internal vaultSimple;
 
-    /// @notice VaultSimpleOZ contract
+    /// @notice VaultSimple contract
     VaultSimpleOZ internal vaultSimpleOZ;
 
     /// @notice VaultSimpleBorrowable contract
@@ -72,8 +72,8 @@ abstract contract BaseStorage {
     /// @notice VaultRegularBorrowable contract
     VaultRegularBorrowable internal vaultRegularBorrowable;
 
-    /// @notice VaultRegularBorrowableOZ contract  
-    VaultRegularBorrowableOZ internal vaultRegularBorrowableOZ;
+    /// @notice VaultRegularBorrowable contract  
+    VaultRegularBorrowableOZ  internal vaultRegularBorrowableOZ;
 
     /// @notice VaultBorrowableETH contract
     VaultBorrowableWETH internal vaultBorrowableWETH;

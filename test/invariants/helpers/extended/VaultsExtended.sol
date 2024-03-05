@@ -56,10 +56,6 @@ contract VaultSimpleBorrowableExtended is VaultSimpleBorrowable, VaultBaseGetter
         lastInterestUpdate_ = 0;
     }
 
-    function getUserInterestAccumulator(address _borrower) external view returns (uint256 userInterestAccumulator_) {
-        userInterestAccumulator_ = 0;
-    }
-
     function getOwed(address _borrower) external view returns (uint256 owed_) {
         owed_ = owed[_borrower];
     }
@@ -85,10 +81,6 @@ contract VaultRegularBorrowableExtended is VaultRegularBorrowable, VaultBaseGett
 
     function getLastInterestUpdate() external view returns (uint256 lastInterestUpdate_) {
         lastInterestUpdate_ = lastInterestUpdate;
-    }
-
-    function getUserInterestAccumulator(address _borrower) external view returns (uint256 userInterestAccumulator_) {
-        userInterestAccumulator_ = userInterestAccumulator[_borrower];
     }
 
     function getOwed(address _borrower) external view returns (uint256 owed_) {
@@ -124,7 +116,7 @@ contract VaultBorrowableWETHExtended is VaultBorrowableWETH, VaultBaseGetters {
 
 /// @title VaultSimpleExtended
 /// @notice Extended version of VaultSimple, it implements extra getters
-contract VaultSimpleExtendedOz is VaultSimpleOZ, VaultBaseGetters {
+contract VaultSimpleExtendedOZ is VaultSimpleOZ, VaultBaseGetters {
     constructor(
         IEVC _evc,
         ERC20OZ _asset,
@@ -139,7 +131,7 @@ contract VaultSimpleExtendedOz is VaultSimpleOZ, VaultBaseGetters {
 
 /// @title VaultRegularBorrowableExtended
 /// @notice Extended version of VaultVaultRegularBorrowableSimple, it implements extra getters
-contract VaultRegularBorrowableExtendedOz is VaultRegularBorrowableOZ, VaultBaseGetters {
+contract VaultRegularBorrowableExtendedOZ is VaultRegularBorrowableOZ, VaultBaseGetters {
     constructor(
         IEVC _evc,
         ERC20 _asset,
@@ -149,10 +141,6 @@ contract VaultRegularBorrowableExtendedOz is VaultRegularBorrowableOZ, VaultBase
         string memory _name,
         string memory _symbol
     ) VaultRegularBorrowableOZ(_evc, IERC20(address(_asset)), _irm, _oracle, _referenceAsset, _name, _symbol) {}
-
-    function getUserInterestAccumulator(address _borrower) external view returns (uint256 userInterestAccumulator_) {
-        userInterestAccumulator_ = userInterestAccumulator[_borrower];
-    }
 
     function getLastInterestUpdate() external view returns (uint256 lastInterestUpdate_) {
         lastInterestUpdate_ = lastInterestUpdate;

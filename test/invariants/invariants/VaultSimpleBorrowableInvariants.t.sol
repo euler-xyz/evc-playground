@@ -42,17 +42,6 @@ abstract contract VaultSimpleBorrowableInvariants is HandlerAggregator {
     }
 
     function assert_VaultSimpleBorrowable_invariantB(address _vault) internal monotonicTimestamp(_vault) {
-        //@audit-issue CRIT-1: broken invariant totalDebt > sum of total Borrowed -> rounding error on totalBorrowed
-
-        uint256 totalBorrowed = VaultSimpleBorrowable(_vault).totalBorrowed();
-
-        uint256 totalDebt = _getDebtSum(_vault);
-
-/*         console.log("interestAccumulator: ",  VaultSimpleBorrowable(_vault).getInterestAccumulator());
-
-        console.log("totalBorrowed: ", totalBorrowed);
-        console.log("totalDebt: ", totalDebt); */
-
         assertApproxEqAbs(
             VaultSimpleBorrowable(_vault).totalBorrowed(),
             _getDebtSum(_vault),
@@ -72,7 +61,7 @@ abstract contract VaultSimpleBorrowableInvariants is HandlerAggregator {
         }
     }
 
-/*     function assert_VaultSimpleBorrowable_invariantE(address _vault) internal monotonicTimestamp(_vault) {
+    function assert_VaultSimpleBorrowable_invariantE(address _vault) internal monotonicTimestamp(_vault) {
         if (VaultSimpleBorrowable(_vault).totalBorrowed() > 0) {
             assertGt(
                 ERC20(address(VaultSimpleBorrowable(_vault).asset())).balanceOf(_vault),
@@ -80,7 +69,7 @@ abstract contract VaultSimpleBorrowableInvariants is HandlerAggregator {
                 string.concat("VaultSimpleBorrowable_invariantE: ", vaultNames[_vault])
             );
         }
-    } */
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////
     //                                        HELPERS                                           //

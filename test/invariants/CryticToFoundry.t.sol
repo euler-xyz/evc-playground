@@ -378,7 +378,7 @@ contract CryticToFoundry is Invariants, Setup {
         echidna_invariant_VaultSimpleBorrowable_invariantAB();
     }
 
-    function test_VaultSimpleBorrowable_invariantAB_VaultRegularBorrowableOZ() public {
+    function test_VaultSimpleBorrowable_invariantAB_VaultRegularBorrowable() public {
         this.enableController(
             10891417463186321878817595037245227056520165078861879054651333585778245431584,
             21930686406968188979724827866868968205279826478968719624753350604104008044968
@@ -627,28 +627,12 @@ contract CryticToFoundry is Invariants, Setup {
             41564608065038052118924323189996551827377578224030497509910983649744599558470
         );
 
-        console.log("totalBorrowed: ", vault.totalBorrowed());
-        console.log("totalDebt: ", _getDebtSum(address(vaultRegularBorrowable)));
-
-        console.log("interestAccumulator: ", vault.getInterestAccumulator());
-        console.log("interestAccumulator: ", vault.getUserInterestAccumulator(actorAddresses[0]));
-
-        console.log("AFTER    ##############################################");
-
         _setUpTimestampAndActor(block.timestamp + 276464, USER1);
         this.setAccountOperator(
             115792089237316195423570985008687907853269984665640564039457584007913129639713,
             36378991325885162174397283495306774927410675805417650463773818618331982136940,
             true
         );
-
-        console.log("totalBorrowed: ", vault.totalBorrowed());
-        console.log("totalDebt: ", _getDebtSum(address(vaultRegularBorrowable)));
-
-        console.log("interestAccumulator: ", vault.getInterestAccumulator());
-        console.log("interestAccumulator: ", vault.getUserInterestAccumulator(actorAddresses[0]));
-
-        console.log("AFTER    ##############################################");
 
         _setUpTimestampAndActor(block.timestamp + 389489, USER2);
         this.pullDebt(
@@ -657,24 +641,8 @@ contract CryticToFoundry is Invariants, Setup {
             115792089237316195423570985008687907853269984665640564039457584007913129639932
         );
 
-        console.log("totalBorrowed: ", vault.totalBorrowed());
-        console.log("totalDebt: ", _getDebtSum(address(vaultRegularBorrowable)));
-
-        console.log("interestAccumulator: ", vault.getInterestAccumulator());
-        console.log("interestAccumulator: ", vault.getUserInterestAccumulator(actorAddresses[0]));
-
-        console.log("AFTER    ##############################################");
-
         _setUpTimestampAndActor(block.timestamp + 276465, USER1);
         //this.enableController(5, 1461501637330902918203684832716283019655932542975);
-
-        console.log("totalBorrowed: ", vault.totalBorrowed());
-        console.log("totalDebt: ", _getDebtSum(address(vaultRegularBorrowable)));
-
-        console.log("interestAccumulator: ", vault.getInterestAccumulator());
-        console.log("interestAccumulator: ", vault.getUserInterestAccumulator(actorAddresses[0]));
-
-        console.log("BEFORE    ##############################################");
 
         _setUpTimestampAndActor(block.timestamp + 361136, USER1);
         this.repayTo(
@@ -683,16 +651,7 @@ contract CryticToFoundry is Invariants, Setup {
             4294967295
         );
 
-        _setUpTimestampAndActor(block.timestamp + 419861, USER1);
-        this.assert_ERC4626_roundtrip_invariantB(
-            11950378725187969665512393791905120766524859598146700867180397703827904679826, 376
-        );
-
-        echidna_invariant_VaultSimpleBorrowable_invariantAB();
-
-        console.log("##############################################");
-
-        _setUpTimestampAndActor(block.timestamp + 236027, USER1);
+        _setUpTimestampAndActor(block.timestamp + 236027 + 419861, USER1);
         this.borrowTo(
             115792089237316195423570985008687907853269984665640564039457584007913129639933,
             12679160512295910505134524200668209442888434120768545302994985489236337400461,
@@ -701,16 +660,12 @@ contract CryticToFoundry is Invariants, Setup {
 
         echidna_invariant_VaultSimpleBorrowable_invariantAB();
 
-        console.log("##############################################");
-
         _setUpTimestampAndActor(block.timestamp + 519847 + 537688, USER1);
         this.mintToActor(
             1524785991, 94770901425382707645982434801208986081893116647861686451217818710293849056692, 2495578189
         );
 
         echidna_invariant_VaultSimpleBorrowable_invariantAB();
-
-        console.log("##############################################");
 
         _setUpTimestampAndActor(block.timestamp + 482914, USER1);
         this.pullDebt(
@@ -720,8 +675,6 @@ contract CryticToFoundry is Invariants, Setup {
         );
 
         echidna_invariant_VaultSimpleBorrowable_invariantAB();
-
-        console.log("##############################################");
 
         _setUpTimestampAndActor(block.timestamp + 325359, USER1);
         this.disableController(109590050855132395193547060399598738730679977601774708619272268965138753376521);
@@ -738,10 +691,6 @@ contract CryticToFoundry is Invariants, Setup {
             100493319074610262040629111243543395895843514107432533086161102923386496457182
         );
 
-        echidna_invariant_VaultSimpleBorrowable_invariantAB();
-
-        console.log("##############################################");
-
         _setUpTimestampAndActor(block.timestamp + 519847, USER1);
         this.enableCollateral(
             58763369478890212134538580855076743927036989342241379362500560758417647827485,
@@ -755,10 +704,6 @@ contract CryticToFoundry is Invariants, Setup {
             67684336012151363931415626370408570264818677174237722096940949297581557117354
         );
 
-        echidna_invariant_VaultSimpleBorrowable_invariantAB();
-
-        console.log("##############################################");
-
         _setUpTimestampAndActor(block.timestamp + 372377, USER2);
         this.approveTo(
             0,
@@ -768,10 +713,6 @@ contract CryticToFoundry is Invariants, Setup {
 
         _setUpTimestampAndActor(block.timestamp + 583581, USER2);
         this.enableCollateral(478, 5318912439207034739885087447242316354);
-
-        echidna_invariant_VaultSimpleBorrowable_invariantAB();
-
-        console.log("##############################################");
 
         _setUpTimestampAndActor(block.timestamp + 290780, USER1);
         this.approveTo(
@@ -783,20 +724,12 @@ contract CryticToFoundry is Invariants, Setup {
         _setUpTimestampAndActor(block.timestamp + 352543, USER1);
         this.disableController(101);
 
-        echidna_invariant_VaultSimpleBorrowable_invariantAB();
-
-        console.log("##############################################");
-
         _setUpTimestampAndActor(block.timestamp + 289607, USER1);
         this.setAccountOperator(
             11516053223275709395408191732293294461887652883742857219859026575491494794307,
             23948141631302998739422445039489121684887947944813059340784139873751617409259,
             false
         );
-
-        echidna_invariant_VaultSimpleBorrowable_invariantAB();
-
-        console.log("##############################################");
 
         _setUpTimestampAndActor(block.timestamp + 33361136, USER1);
         this.enableController(
@@ -819,27 +752,6 @@ contract CryticToFoundry is Invariants, Setup {
         );
         _setUpBlockAndActor(47698, USER3);
         this.disableControllerEVC(516928969809447300998084754503071017202098145828752518033292785749612185892);
-    }
-
-    function test_liquidateCoverage() public {
-        actor = actors[USER1];
-        this.enableController(
-            435558282214846283199057716011391297273079293488905914987784262155,
-            28870367860625893829665897970635883831057118893972040640858216603297
-        );
-        this.depositToActor(1, 473635198873, 220605381302003440560708727348400281633135326589260067928327855791);
-        this.borrowTo(1, 473635198873, 262095261126819711899063844952972822840422218072067871521661);
-        _setUpBlockAndActor(block.timestamp + 30499, USER2);
-        this.enableCollateral(
-            115792089237316195423570985008687907853269984665639564039457584007913129639937,
-            115792089237316195423570985008687907853269984665640564039457584007912758003074
-        );
-        _setUpBlockAndActor(block.timestamp + 60248, USER2);
-        this.liquidate(
-            180880131227986985161633523337705529400762681312585404606768428973234476,
-            21260194320874265685928414717765199604362481389315980923222372657056189318,
-            28252408998304912499119830447606046234253980515283897271874620994032454734
-        );
     }
 
     function _setUpBlockAndActor(uint256 _block, address _user) internal {

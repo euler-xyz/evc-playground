@@ -33,7 +33,6 @@ contract EVCHandler is BaseHandler {
         bool success;
         bytes memory returnData;
 
-        // TODO: extend not only for actors
         address account = _getRandomActor(i);
 
         address operator = _getRandomActor(j);
