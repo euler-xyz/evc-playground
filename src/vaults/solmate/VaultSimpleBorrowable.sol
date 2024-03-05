@@ -110,7 +110,7 @@ contract VaultSimpleBorrowable is VaultSimple {
         // validate the vault state here:
         (uint256 initialAssets, uint256 initialBorrowed) = abi.decode(oldSnapshot, (uint256, uint256));
         uint256 finalAssets = _totalAssets;
-        uint256 finalBorrowed = _totalBorrowed;
+        (uint256 finalBorrowed,,) = _accrueInterestCalculate();
 
         // the supply cap can be implemented like this:
         if (
@@ -307,7 +307,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @param account The account.
     /// @param assets The assets.
     function _increaseOwed(address account, uint256 assets) internal virtual {
-        owed[account] = _debtOf(account) + assets;
+        owed[account] += assets;
         _totalBorrowed += assets;
     }
 
@@ -315,7 +315,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     /// @param account The account.
     /// @param assets The assets.
     function _decreaseOwed(address account, uint256 assets) internal virtual {
-        owed[account] = _debtOf(account) - assets;
+        owed[account] -= assets;
 
         uint256 __totalBorrowed = _totalBorrowed;
         _totalBorrowed = __totalBorrowed >= assets ? __totalBorrowed - assets : 0;
