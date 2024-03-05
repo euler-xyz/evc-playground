@@ -156,7 +156,7 @@ forge test
 
 ## Invariant Testing Suite
 
-This project has been set up with a suite of tests that check for certain invariants. These tests are located in the `test/invariants` directory. The tests are written in Solidity and are designed to be run with [medusa](https://github.com/crytic/medusa) and [echidna](https://github.com/crytic/echidna) fuzzing tools.
+This project has been set up with a suite of tests that check for specific invariants for the EVC vaults, implemented by [vnmrtz.eth](https://twitter.com/vn_martinez_). These tests are located in the `test/invariants` directory. They are written in Solidity and are designed to be run with [medusa](https://github.com/crytic/medusa) and [echidna](https://github.com/crytic/echidna) fuzzing tools.
 
 Installation and usage of these tools is outside the scope of this README, but you can find more information in the respective repositories:
 - [Echidna Installation](https://github.com/crytic/echidna)
