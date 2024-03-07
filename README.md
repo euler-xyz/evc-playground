@@ -154,6 +154,33 @@ To run the tests:
 forge test
 ```
 
+## Invariant Testing Suite
+
+This project has been set up with a suite of tests that check for specific invariants for the EVC vaults, implemented by [vnmrtz.eth](https://twitter.com/vn_martinez_). These tests are located in the `test/invariants` directory. They are written in Solidity and are designed to be run with [medusa](https://github.com/crytic/medusa) and [echidna](https://github.com/crytic/echidna) fuzzing tools.
+
+Installation and usage of these tools is outside the scope of this README, but you can find more information in the respective repositories:
+- [Echidna Installation](https://github.com/crytic/echidna)
+- [Medusa Installation](https://github.com/crytic/echidna)
+
+To run invariant tests with Echidna:
+
+```sh
+make echidna
+```
+
+To run assert tests with Echidna:
+
+```sh
+make echidna-assert
+```
+
+To run invariant tests with Medusa:
+
+```sh
+make medusa
+```
+
+
 ## Deployment on a local anvil fork
 
 First, create the `.env` file in the root directory of the repository by copying `.env.example`:
