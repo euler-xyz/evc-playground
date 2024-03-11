@@ -22,10 +22,12 @@ contract VaultRegularBorrowable is VaultSimple {
     uint256 internal constant MAX_LIQUIDATION_INCENTIVE = 20;
     uint256 internal constant TARGET_HEALTH_FACTOR = 125;
     uint256 internal constant ONE = 1e27;
+    uint256 internal constant SECONDS_PER_YEAR = 365.2425 * 86400; // Gregorian calendar
+    uint256 internal constant MAX_ALLOWED_INTEREST_RATE = uint256(5 * ONE) / SECONDS_PER_YEAR; // 500% APR
 
     uint256 public borrowCap;
     uint256 internal _totalBorrowed;
-    uint96 internal interestRate;
+    uint256 internal interestRate;
     uint256 internal lastInterestUpdate;
     uint256 internal interestAccumulator;
     mapping(address account => uint256 assets) internal owed;
@@ -601,7 +603,7 @@ contract VaultRegularBorrowable is VaultSimple {
             return ((borrowed * accumulator + ONE / 2) / ONE, accumulator, false);
         }
 
-        accumulator = (FixedPointMathLib.rpow(uint256(interestRate) + ONE, timeElapsed, ONE) * accumulator) / ONE;
+        accumulator = (FixedPointMathLib.rpow(interestRate + ONE, timeElapsed, ONE) * accumulator) / ONE;
 
         return ((borrowed * accumulator + ONE / 2) / ONE, accumulator, true);
     }
@@ -609,13 +611,13 @@ contract VaultRegularBorrowable is VaultSimple {
     /// @notice Updates the interest rate.
     function _updateInterest() internal virtual {
         (uint256 borrowed,,) = _accrueInterestCalculate();
-        uint256 poolAssets = _totalAssets + borrowed;
 
-        uint32 utilisation;
-        if (poolAssets != 0) {
-            utilisation = uint32((borrowed * type(uint32).max) / poolAssets);
+        uint256 newInterestRate = irm.computeInterestRate(address(this), _totalAssets, borrowed);
+
+        if (newInterestRate > MAX_ALLOWED_INTEREST_RATE) {
+            newInterestRate = MAX_ALLOWED_INTEREST_RATE;
         }
 
-        interestRate = irm.computeInterestRate(address(this), asset(), utilisation);
+        interestRate = newInterestRate;
     }
 }

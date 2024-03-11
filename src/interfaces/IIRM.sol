@@ -5,8 +5,8 @@ pragma solidity ^0.8.19;
 interface IIRM {
     /// @notice Computes the interest rate for a given vault, asset and utilisation.
     /// @param vault The address of the vault.
-    /// @param asset The address of the asset.
-    /// @param utilisation The utilisation rate.
+    /// @param cash The amount of assets in the vault.
+    /// @param borrows The amount of assets borrowed from the vault.
     /// @return The computed interest rate in SPY (Second Percentage Yield).
-    function computeInterestRate(address vault, address asset, uint32 utilisation) external returns (uint96);
+    function computeInterestRate(address vault, uint256 cash, uint256 borrows) external returns (uint256);
 }

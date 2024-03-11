@@ -8,6 +8,7 @@ import "./Types.sol";
 
 contract BorrowableVaultLensForEVC {
     uint256 internal constant SECONDS_PER_YEAR = 365.2425 * 86400;
+    uint256 internal constant ONE = 1e27;
     IEVC public immutable evc;
 
     constructor(IEVC _evc) {
@@ -66,7 +67,7 @@ contract BorrowableVaultLensForEVC {
             totalAssets: ERC4626(vault).totalAssets(),
             totalBorrowed: VaultRegularBorrowable(vault).totalBorrowed(),
             interestRateSPY: interestRateSPY,
-            interestRateAPY: FixedPointMathLib.rpow(interestRateSPY + 1e27, SECONDS_PER_YEAR, 1e27) - 1e27,
+            interestRateAPY: FixedPointMathLib.rpow(interestRateSPY + ONE, SECONDS_PER_YEAR, ONE) - ONE,
             irm: address(VaultRegularBorrowable(vault).irm()),
             oracle: address(VaultRegularBorrowable(vault).oracle())
         });
