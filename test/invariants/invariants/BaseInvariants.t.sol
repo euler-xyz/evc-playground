@@ -25,10 +25,14 @@ abstract contract BaseInvariants is HandlerAggregator {
     /////////////////////////////////////////////////////////////////////////////////////////////*/
 
     function assert_VaultBase_invariantA(address _vault) internal {
-        assertEq(VaultSimple(_vault).getReentrancyLock(), 1, string.concat("VaultBase_invariantA: ", vaultNames[_vault]));
+        assertEq(
+            VaultSimple(_vault).getReentrancyLock(), 1, string.concat("VaultBase_invariantA: ", vaultNames[_vault])
+        );
     }
 
     function assert_VaultBase_invariantB(address _vault) internal {
-        assertEq(VaultSimple(_vault).getSnapshotLength(), 0, string.concat("VaultBase_invariantB: ", vaultNames[_vault]));
+        assertEq(
+            VaultSimple(_vault).getSnapshotLength(), 0, string.concat("VaultBase_invariantB: ", vaultNames[_vault])
+        );
     }
 }

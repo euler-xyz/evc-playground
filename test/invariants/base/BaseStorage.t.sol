@@ -72,8 +72,8 @@ abstract contract BaseStorage {
     /// @notice VaultRegularBorrowable contract
     VaultRegularBorrowable internal vaultRegularBorrowable;
 
-    /// @notice VaultRegularBorrowable contract  
-    VaultRegularBorrowableOZ  internal vaultRegularBorrowableOZ;
+    /// @notice VaultRegularBorrowable contract
+    VaultRegularBorrowableOZ internal vaultRegularBorrowableOZ;
 
     /// @notice VaultBorrowableETH contract
     VaultBorrowableWETH internal vaultBorrowableWETH;

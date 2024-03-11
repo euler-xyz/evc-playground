@@ -104,7 +104,10 @@ abstract contract VaultSimpleInvariants is HandlerAggregator {
         uint256 totalSupply = VaultSimple(_vault).totalSupply();
 
         assertApproxEqAbs(
-            totalSupply, ghost_sumSharesBalances[_vault], NUMBER_OF_ACTORS, string.concat("VaultSimple_invariantB: ", vaultNames[_vault])
+            totalSupply,
+            ghost_sumSharesBalances[_vault],
+            NUMBER_OF_ACTORS,
+            string.concat("VaultSimple_invariantB: ", vaultNames[_vault])
         );
     }
 
@@ -226,10 +229,10 @@ abstract contract VaultSimpleInvariants is HandlerAggregator {
     //                                        DISCARDED                                          //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-/*  function assert_VaultSimple_invariantA(address _vault) internal {
+    /*  function assert_VaultSimple_invariantA(address _vault) internal {
         uint256 totalAssets = VaultSimple(_vault).totalAssets();
 
-        assertEq(totalAssets, ghost_sumBalances[_vault], string.concat("VaultSimple_invariantA: ", vaultNames[_vault]));
+    assertEq(totalAssets, ghost_sumBalances[_vault], string.concat("VaultSimple_invariantA: ", vaultNames[_vault]));
     } */
 
     ///////////////////////////////////////////////////////////////////////////////////////////////

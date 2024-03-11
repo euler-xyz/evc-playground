@@ -114,7 +114,7 @@ abstract contract Invariants is
     //                           VAULT REGULAR BORROWABLE INVARIANTS                             //
     ///////////////////////////////////////////////////////////////////////////////////////////////
 
-/*     function echidna_invariant_VaultRegularBorrowable_invariantA()
+    /*     function echidna_invariant_VaultRegularBorrowable_invariantA()
         public
         targetVaultsFrom(VaultType.RegularBorrowable)
         returns (bool)

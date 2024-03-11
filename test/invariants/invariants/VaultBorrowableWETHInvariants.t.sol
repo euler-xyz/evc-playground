@@ -36,4 +36,3 @@ abstract contract VaultBorrowableWETHInvariants is HandlerAggregator {
     } 
     */
 }
-

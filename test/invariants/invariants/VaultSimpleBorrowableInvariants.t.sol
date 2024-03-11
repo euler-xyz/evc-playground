@@ -50,7 +50,6 @@ abstract contract VaultSimpleBorrowableInvariants is HandlerAggregator {
         );
     }
 
-
     function assert_VaultSimpleBorrowable_invariantC(address _vault) internal monotonicTimestamp(_vault) {
         if (_getDebtSum(_vault) == 0) {
             assertEq(
