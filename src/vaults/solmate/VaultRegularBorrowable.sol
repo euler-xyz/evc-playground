@@ -33,7 +33,6 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
 
     error InvalidCollateralFactor();
     error SelfLiquidation();
-    error VaultStatusCheckDeferred();
     error ViolatorStatusCheckDeferred();
     error NoLiquidationOpportunity();
     error RepayAssetsInsufficient();
@@ -91,10 +90,18 @@ contract VaultRegularBorrowable is VaultSimpleBorrowable {
     /// @return The current interest rate.
     function getInterestRate() external view returns (uint256) {
         if (isVaultStatusCheckDeferred(address(this))) {
-            revert VaultStatusCheckDeferred();
-        }
+            (uint256 borrowed,,) = _accrueInterestCalculate();
 
-        return interestRate;
+            uint256 newInterestRate = irm.computeInterestRateView(address(this), _totalAssets, borrowed);
+
+            if (newInterestRate > MAX_ALLOWED_INTEREST_RATE) {
+                newInterestRate = MAX_ALLOWED_INTEREST_RATE;
+            }
+
+            return newInterestRate;
+        } else {
+            return interestRate;
+        }
     }
 
     /// @notice Gets the collateral factor of an asset.

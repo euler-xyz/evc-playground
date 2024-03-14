@@ -10,7 +10,17 @@ contract IRMMock is IIRM {
         interestRate = _interestRate;
     }
 
-    function computeInterestRate(address, uint256, uint256) external view returns (uint256) {
+    function computeInterestRateInternal(address, uint256, uint256) internal view returns (uint256) {
         return uint256((1e27 * interestRate) / 100) / (86400 * 365); // not SECONDS_PER_YEAR to avoid
+    }
+
+    function computeInterestRate(address vault, uint256, uint256) external view override returns (uint256) {
+        if (msg.sender != vault) revert E_IRMUpdateUnauthorized();
+
+        return computeInterestRateInternal(address(0), 0, 0);
+    }
+
+    function computeInterestRateView(address, uint256, uint256) external view override returns (uint256) {
+        return computeInterestRateInternal(address(0), 0, 0);
     }
 }
