@@ -13,7 +13,7 @@ contract ERC20CollateralWrapperCapped is ERC20CollateralWrapper {
     bytes private _totalSupplySnapshot;
 
     constructor(
-        IEVC _evc_,
+        address _evc_,
         IERC20 _underlying_,
         string memory _name_,
         string memory _symbol_,

@@ -56,7 +56,7 @@ contract VaultRegularBorrowable is VaultSimple {
     error CollateralDisabled();
 
     constructor(
-        IEVC _evc,
+        address _evc,
         IERC20 _asset,
         IIRM _irm,
         IPriceOracle _oracle,

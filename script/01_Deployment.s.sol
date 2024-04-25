@@ -47,13 +47,13 @@ contract Deployment is Script {
 
         // deploy vaults
         VaultRegularBorrowable vault1 =
-            new VaultRegularBorrowable(evc, asset1, irm, oracle, asset1, "Vault Asset 1", "VA1");
+            new VaultRegularBorrowable(address(evc), asset1, irm, oracle, asset1, "Vault Asset 1", "VA1");
 
         VaultRegularBorrowable vault2 =
-            new VaultRegularBorrowable(evc, asset2, irm, oracle, asset1, "Vault Asset 2", "VA2");
+            new VaultRegularBorrowable(address(evc), asset2, irm, oracle, asset1, "Vault Asset 2", "VA2");
 
         VaultRegularBorrowable vault3 =
-            new VaultRegularBorrowable(evc, asset3, irm, oracle, asset1, "Vault Asset 3", "VA3");
+            new VaultRegularBorrowable(address(evc), asset3, irm, oracle, asset1, "Vault Asset 3", "VA3");
 
         // setup the vaults
         vault1.setCollateralFactor(address(vault1), 95); // cf = 0.95, self-collateralization

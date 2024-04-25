@@ -28,7 +28,7 @@ contract VaultSimpleBorrowable is VaultSimple {
     mapping(address account => uint256 assets) internal owed;
 
     constructor(
-        IEVC _evc,
+        address _evc,
         ERC20 _asset,
         string memory _name,
         string memory _symbol

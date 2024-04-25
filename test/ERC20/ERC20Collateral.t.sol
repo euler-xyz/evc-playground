@@ -17,7 +17,7 @@ contract MockERC20Collateral is ERC20Collateral {
     uint8 private immutable _decimals;
 
     constructor(
-        IEVC _evc,
+        address _evc,
         string memory _name_,
         string memory _symbol_,
         uint8 _decimals_
@@ -53,15 +53,21 @@ contract ERC20CollateralTest is Test {
         referenceAsset = new MockERC20("Reference Asset", "RA", 18);
         liabilityAsset = new MockERC20("Liability Asset", "LA", 18);
         collateralAsset1 = new MockERC20("Collateral Asset 1", "CA1", 18);
-        collateralAsset2 = new MockERC20Collateral(evc, "Collateral Asset 2", "CA2", 6);
+        collateralAsset2 = new MockERC20Collateral(address(evc), "Collateral Asset 2", "CA2", 6);
         irm = new IRMMock();
         oracle = new PriceOracleMock();
 
         liabilityVault = new VaultRegularBorrowable(
-            evc, IERC20(address(liabilityAsset)), irm, oracle, ERC20(address(referenceAsset)), "Liability Vault", "LV"
+            address(evc),
+            IERC20(address(liabilityAsset)),
+            irm,
+            oracle,
+            ERC20(address(referenceAsset)),
+            "Liability Vault",
+            "LV"
         );
 
-        collateralVault1 = new VaultSimple(evc, IERC20(address(collateralAsset1)), "Collateral Vault 1", "CV1");
+        collateralVault1 = new VaultSimple(address(evc), IERC20(address(collateralAsset1)), "Collateral Vault 1", "CV1");
 
         irm.setInterestRate(10); // 10% APY
 

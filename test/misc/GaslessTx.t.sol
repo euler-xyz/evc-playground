@@ -18,7 +18,7 @@ contract GaslessTxTest is Test {
     function setUp() public {
         evc = new EthereumVaultConnector();
         asset = new MockERC20("Asset", "ASS", 18);
-        vault = new VaultSimple(evc, asset, "Vault", "VAU");
+        vault = new VaultSimple(address(evc), asset, "Vault", "VAU");
         piggyBank = new TipsPiggyBank();
         permitSigner = new EVCPermitSignerECDSA(address(evc));
     }
@@ -51,14 +51,16 @@ contract GaslessTxTest is Test {
         });
 
         bytes memory data = abi.encodeWithSelector(IEVC.batch.selector, items);
-        bytes memory signature = permitSigner.signPermit(alice, 0, 0, type(uint256).max, 0, data);
+        bytes memory signature = permitSigner.signPermit(alice, address(0), 0, 0, type(uint256).max, 0, data);
 
         // having the signature, anyone can execute the calldata on behalf of alice and get tipped
         items[0] = IEVC.BatchItem({
             targetContract: address(evc),
             onBehalfOfAccount: address(0),
             value: 0,
-            data: abi.encodeWithSelector(IEVC.permit.selector, alice, 0, 0, type(uint256).max, 0, data, signature)
+            data: abi.encodeWithSelector(
+                IEVC.permit.selector, alice, address(0), 0, 0, type(uint256).max, 0, data, signature
+                )
         });
         items[1] = IEVC.BatchItem({
             targetContract: address(piggyBank),

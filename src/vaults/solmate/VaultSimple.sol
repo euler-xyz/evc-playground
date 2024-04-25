@@ -28,7 +28,7 @@ contract VaultSimple is VaultBase, Owned, ERC4626 {
     uint256 public supplyCap;
 
     constructor(
-        IEVC _evc,
+        address _evc,
         ERC20 _asset,
         string memory _name,
         string memory _symbol

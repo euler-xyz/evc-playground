@@ -7,12 +7,12 @@ import "./VaultRegularBorrowable.sol";
 
 /// @title VaultBorrowableWETH
 /// @notice This contract extends VaultRegularBorrowable with additional feature for handling ETH deposits (and
-/// redemption) into a WETH vault. It's an exaple of how callThroughEVCPayable modifier can be used.
+/// redemption) into a WETH vault.
 contract VaultBorrowableWETH is VaultRegularBorrowable {
     WETH internal immutable weth;
 
     constructor(
-        IEVC _evc,
+        address _evc,
         ERC20 _asset,
         IIRM _irm,
         IPriceOracle _oracle,
@@ -28,14 +28,7 @@ contract VaultBorrowableWETH is VaultRegularBorrowable {
     /// @dev Deposits a certain amount of ETH for a receiver.
     /// @param receiver The receiver of the deposit.
     /// @return shares The shares equivalent to the deposited assets.
-    function depositETH(address receiver)
-        public
-        payable
-        virtual
-        callThroughEVCPayable
-        nonReentrant
-        returns (uint256 shares)
-    {
+    function depositETH(address receiver) public payable virtual callThroughEVC nonReentrant returns (uint256 shares) {
         address msgSender = _msgSender();
 
         createVaultSnapshot();

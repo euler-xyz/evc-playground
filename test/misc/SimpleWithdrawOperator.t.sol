@@ -16,7 +16,7 @@ contract SimpleWithdrawOperatorTest is Test {
     function setUp() public {
         evc = new EthereumVaultConnector();
         asset = new MockERC20("Asset", "ASS", 18);
-        vault = new VaultSimpleBorrowable(evc, asset, "Vault", "VAU");
+        vault = new VaultSimpleBorrowable(address(evc), asset, "Vault", "VAU");
         withdrawOperator = new SimpleWithdrawOperator(evc);
     }
 

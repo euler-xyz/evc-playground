@@ -10,7 +10,7 @@ import "evc/utils/EVCUtil.sol";
 /// @notice It extends the ERC20 token standard to add the EVC authentication and account status checks so that the
 /// token contract can be used as collateral in the EVC ecosystem.
 abstract contract ERC20Collateral is EVCUtil, ERC20, ReentrancyGuard {
-    constructor(IEVC _evc_, string memory _name_, string memory _symbol_) EVCUtil(_evc_) ERC20(_name_, _symbol_) {}
+    constructor(address _evc_, string memory _name_, string memory _symbol_) EVCUtil(_evc_) ERC20(_name_, _symbol_) {}
 
     /// @notice Transfers a certain amount of tokens to a recipient.
     /// @dev Overriden to add re-entrancy protection.

@@ -19,7 +19,7 @@ abstract contract VaultBase is IVault, EVCClient {
     uint256 private reentrancyLock;
     bytes private snapshot;
 
-    constructor(IEVC _evc) EVCClient(_evc) {
+    constructor(address _evc) EVCClient(_evc) {
         reentrancyLock = REENTRANCY_UNLOCKED;
     }
 

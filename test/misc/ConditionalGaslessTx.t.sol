@@ -18,7 +18,7 @@ contract ConditionalGaslessTxTest is Test {
     function setUp() public {
         evc = new EthereumVaultConnector();
         asset = new MockERC20("Asset", "ASS", 18);
-        vault = new VaultSimple(evc, asset, "Vault", "VAU");
+        vault = new VaultSimple(address(evc), asset, "Vault", "VAU");
         conditionsEnforcer = new SimpleConditionsEnforcer();
         permitSigner = new EVCPermitSignerECDSA(address(evc));
     }
@@ -58,7 +58,7 @@ contract ConditionalGaslessTxTest is Test {
         });
 
         bytes memory data = abi.encodeWithSelector(IEVC.batch.selector, items);
-        bytes memory signature = permitSigner.signPermit(alice, 0, 0, type(uint256).max, 0, data);
+        bytes memory signature = permitSigner.signPermit(alice, address(0), 0, 0, type(uint256).max, 0, data);
 
         assertEq(asset.balanceOf(address(alice)), 0);
         assertEq(vault.maxWithdraw(alicesSubAccount), 100e18);
@@ -70,11 +70,11 @@ contract ConditionalGaslessTxTest is Test {
         // -------- conditionsEnforcer.currentBlockTimestamp() using evc.callInternal() to check the condition
         // -------- vault.withdraw() using evc.callInternal() to withdraw the funds
         vm.expectRevert(abi.encodeWithSelector(SimpleConditionsEnforcer.ConditionNotMet.selector));
-        evc.permit(alice, 0, 0, type(uint256).max, 0, data, signature);
+        evc.permit(alice, address(0), 0, 0, type(uint256).max, 0, data, signature);
 
         // succeeds if enough time elapses
         vm.warp(100);
-        evc.permit(alice, 0, 0, type(uint256).max, 0, data, signature);
+        evc.permit(alice, address(0), 0, 0, type(uint256).max, 0, data, signature);
 
         assertEq(asset.balanceOf(address(alice)), 100e18);
         assertEq(vault.maxWithdraw(alicesSubAccount), 0);

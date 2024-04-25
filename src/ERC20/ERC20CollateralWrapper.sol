@@ -15,7 +15,7 @@ contract ERC20CollateralWrapper is ERC20Collateral {
     uint8 private immutable _decimals;
 
     constructor(
-        IEVC _evc_,
+        address _evc_,
         IERC20 _underlying_,
         string memory _name_,
         string memory _symbol_

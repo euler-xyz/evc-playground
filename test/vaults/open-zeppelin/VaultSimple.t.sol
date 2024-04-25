@@ -13,7 +13,7 @@ import "../../../src/vaults/open-zeppelin/VaultSimple.sol";
 
 contract VaultSimpleWithYield is VaultSimple {
     constructor(
-        IEVC _evc,
+        address _evc,
         IERC20 _asset,
         string memory _name,
         string memory _symbol
@@ -36,7 +36,7 @@ contract VaultSimpleTest is DSTestPlus {
     function setUp() public {
         evc = new EthereumVaultConnector();
         underlying = new MockERC20("Mock Token", "TKN", 18);
-        vault = new VaultSimpleWithYield(evc, IERC20(address(underlying)), "Mock Token Vault", "vTKN");
+        vault = new VaultSimpleWithYield(address(evc), IERC20(address(underlying)), "Mock Token Vault", "vTKN");
     }
 
     function invariantMetadata() public {
@@ -48,7 +48,7 @@ contract VaultSimpleTest is DSTestPlus {
     function testMetadata(address evcAddr, string calldata name, string calldata symbol) public {
         hevm.assume(evcAddr != address(0));
 
-        VaultSimple vlt = new VaultSimple(IEVC(evcAddr), IERC20(address(underlying)), name, symbol);
+        VaultSimple vlt = new VaultSimple(evcAddr, IERC20(address(underlying)), name, symbol);
         assertEq(vlt.name(), name);
         assertEq(vlt.symbol(), symbol);
         assertEq(address(vlt.asset()), address(underlying));

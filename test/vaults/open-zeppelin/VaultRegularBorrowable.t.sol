@@ -37,12 +37,18 @@ contract VaultRegularBorrowableTest is Test {
         oracle = new PriceOracleMock();
 
         liabilityVault = new VaultRegularBorrowable(
-            evc, IERC20(address(liabilityAsset)), irm, oracle, ERC20(address(referenceAsset)), "Liability Vault", "LV"
+            address(evc),
+            IERC20(address(liabilityAsset)),
+            irm,
+            oracle,
+            ERC20(address(referenceAsset)),
+            "Liability Vault",
+            "LV"
         );
 
-        collateralVault1 = new VaultSimple(evc, IERC20(address(collateralAsset1)), "Collateral Vault 1", "CV1");
+        collateralVault1 = new VaultSimple(address(evc), IERC20(address(collateralAsset1)), "Collateral Vault 1", "CV1");
 
-        collateralVault2 = new VaultSimple(evc, IERC20(address(collateralAsset2)), "Collateral Vault 2", "CV2");
+        collateralVault2 = new VaultSimple(address(evc), IERC20(address(collateralAsset2)), "Collateral Vault 2", "CV2");
 
         irm.setInterestRate(10); // 10% APY
 

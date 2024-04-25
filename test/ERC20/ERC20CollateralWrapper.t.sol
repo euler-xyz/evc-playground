@@ -38,13 +38,20 @@ contract ERC20CollateralWrapperTest is Test {
         oracle = new PriceOracleMock();
 
         liabilityVault = new VaultRegularBorrowable(
-            evc, IERC20(address(liabilityAsset)), irm, oracle, ERC20(address(referenceAsset)), "Liability Vault", "LV"
+            address(evc),
+            IERC20(address(liabilityAsset)),
+            irm,
+            oracle,
+            ERC20(address(referenceAsset)),
+            "Liability Vault",
+            "LV"
         );
 
-        collateralVault1 = new VaultSimple(evc, IERC20(address(collateralAsset1)), "Collateral Vault 1", "CV1");
+        collateralVault1 = new VaultSimple(address(evc), IERC20(address(collateralAsset1)), "Collateral Vault 1", "CV1");
 
-        wrappedCollateralAsset2 =
-            new ERC20CollateralWrapper(evc, IERC20(address(collateralAsset2)), "Wrapped Collateral Asset 2", "WCA2");
+        wrappedCollateralAsset2 = new ERC20CollateralWrapper(
+            address(evc), IERC20(address(collateralAsset2)), "Wrapped Collateral Asset 2", "WCA2"
+        );
 
         irm.setInterestRate(10); // 10% APY
 

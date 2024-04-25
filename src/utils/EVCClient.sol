@@ -11,7 +11,7 @@ import "evc/utils/EVCUtil.sol";
 abstract contract EVCClient is EVCUtil {
     error SharesSeizureFailed();
 
-    constructor(IEVC _evc) EVCUtil(_evc) {}
+    constructor(address _evc) EVCUtil(_evc) {}
 
     /// @notice Retrieves the collaterals enabled for an account.
     /// @param account The address of the account.

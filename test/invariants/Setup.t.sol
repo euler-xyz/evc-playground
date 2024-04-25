@@ -61,26 +61,33 @@ contract Setup is BaseTest {
         // Deploy vaults
         /// @dev vaults are stored in the vaults array in the order of complexity,
         /// this helps with property inheritance and modularity
-        vaultSimple = new VaultSimple(evc, collateralAsset1, "VaultSimple", "VS");
+        vaultSimple = new VaultSimple(address(evc), collateralAsset1, "VaultSimple", "VS");
         vaults.push(address(vaultSimple));
         vaultNames[address(vaultSimple)] = "VaultSimple";
 
-        vaultSimpleOZ = new VaultSimpleOZ(evc, ERC20(address(collateralAsset1)), "VaultSimpleOZ", "VSOZ");
+        vaultSimpleOZ = new VaultSimpleOZ(address(evc), ERC20(address(collateralAsset1)), "VaultSimpleOZ", "VSOZ");
         vaults.push(address(vaultSimpleOZ));
         vaultNames[address(vaultSimpleOZ)] = "VaultSimpleOZ";
 
-        vaultSimpleBorrowable = new VaultSimpleBorrowable(evc, collateralAsset2, "VaultSimpleBorrowable", "VSB");
+        vaultSimpleBorrowable =
+            new VaultSimpleBorrowable(address(evc), collateralAsset2, "VaultSimpleBorrowable", "VSB");
         vaults.push(address(vaultSimpleBorrowable));
         vaultNames[address(vaultSimpleBorrowable)] = "VaultSimpleBorrowable";
 
         vaultRegularBorrowable = new VaultRegularBorrowable(
-            evc, liabilityAsset, irm, oracle, referenceAsset, "VaultRegularBorrowable", "VRB"
+            address(evc), liabilityAsset, irm, oracle, referenceAsset, "VaultRegularBorrowable", "VRB"
         );
         vaults.push(address(vaultRegularBorrowable));
         vaultNames[address(vaultRegularBorrowable)] = "VaultRegularBorrowable";
 
         vaultRegularBorrowableOZ = new VaultRegularBorrowableOZ(
-            evc, liabilityAsset, irm, oracle, ERC20(address(referenceAsset)), "VaultRegularBorrowableOZ", "VRBOZ"
+            address(evc),
+            liabilityAsset,
+            irm,
+            oracle,
+            ERC20(address(referenceAsset)),
+            "VaultRegularBorrowableOZ",
+            "VRBOZ"
         );
         vaults.push(address(vaultRegularBorrowableOZ));
         vaultNames[address(vaultRegularBorrowableOZ)] = "VaultRegularBorrowableOZ";

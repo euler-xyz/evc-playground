@@ -15,7 +15,7 @@ contract ERC4626StdTest is ERC4626Test {
     function setUp() public override {
         _evc_ = new EthereumVaultConnector();
         _underlying_ = address(new MockERC20("Mock ERC20", "MERC20", 18));
-        _vault_ = address(new VaultSimple(_evc_, MockERC20(_underlying_), "Mock ERC4626", "MERC4626"));
+        _vault_ = address(new VaultSimple(address(_evc_), MockERC20(_underlying_), "Mock ERC4626", "MERC4626"));
         _delta_ = 0;
         _vaultMayBeEmpty = false;
         _unlimitedAmount = false;

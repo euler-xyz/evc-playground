@@ -31,7 +31,7 @@ import {IPriceOracle} from "src/interfaces/IPriceOracle.sol";
 /// @notice Extended version of VaultSimple, it implements extra getters
 contract VaultSimpleExtended is VaultSimple, VaultBaseGetters {
     constructor(
-        IEVC _evc,
+        address _evc,
         ERC20 _asset,
         string memory _name,
         string memory _symbol
@@ -46,7 +46,7 @@ contract VaultSimpleExtended is VaultSimple, VaultBaseGetters {
 /// @notice Extended version of VaultSimpleBorrowable, it implements extra getters
 contract VaultSimpleBorrowableExtended is VaultSimpleBorrowable, VaultBaseGetters {
     constructor(
-        IEVC _evc,
+        address _evc,
         ERC20 _asset,
         string memory _name,
         string memory _symbol
@@ -69,7 +69,7 @@ contract VaultSimpleBorrowableExtended is VaultSimpleBorrowable, VaultBaseGetter
 /// @notice Extended version of VaultVaultRegularBorrowableSimple, it implements extra getters
 contract VaultRegularBorrowableExtended is VaultRegularBorrowable, VaultBaseGetters {
     constructor(
-        IEVC _evc,
+        address _evc,
         ERC20 _asset,
         IIRM _irm,
         IPriceOracle _oracle,
@@ -95,7 +95,7 @@ contract VaultRegularBorrowableExtended is VaultRegularBorrowable, VaultBaseGett
 /// @notice Extended version of VaultBorrowable, it implements extra getters
 contract VaultBorrowableWETHExtended is VaultBorrowableWETH, VaultBaseGetters {
     constructor(
-        IEVC _evc,
+        address _evc,
         ERC20 _asset,
         IIRM _irm,
         IPriceOracle _oracle,
@@ -117,7 +117,7 @@ contract VaultBorrowableWETHExtended is VaultBorrowableWETH, VaultBaseGetters {
 /// @notice Extended version of VaultSimple, it implements extra getters
 contract VaultSimpleExtendedOZ is VaultSimpleOZ, VaultBaseGetters {
     constructor(
-        IEVC _evc,
+        address _evc,
         ERC20OZ _asset,
         string memory _name,
         string memory _symbol
@@ -132,7 +132,7 @@ contract VaultSimpleExtendedOZ is VaultSimpleOZ, VaultBaseGetters {
 /// @notice Extended version of VaultVaultRegularBorrowableSimple, it implements extra getters
 contract VaultRegularBorrowableExtendedOZ is VaultRegularBorrowableOZ, VaultBaseGetters {
     constructor(
-        IEVC _evc,
+        address _evc,
         ERC20 _asset,
         IIRM _irm,
         IPriceOracle _oracle,
