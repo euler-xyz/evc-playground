@@ -160,7 +160,7 @@ This project has been set up with a suite of tests that check for specific invar
 
 Installation and usage of these tools is outside the scope of this README, but you can find more information in the respective repositories:
 - [Echidna Installation](https://github.com/crytic/echidna)
-- [Medusa Installation](https://github.com/crytic/echidna)
+- [Medusa Installation](https://github.com/crytic/medusa)
 
 To run invariant tests with Echidna:
 
